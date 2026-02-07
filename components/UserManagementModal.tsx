@@ -107,7 +107,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-lg font-bold text-slate-800">
                         {isEditing
@@ -162,8 +162,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                 <label
                                     key={r.value}
                                     className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-colors ${role === r.value
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-slate-200 hover:border-slate-300'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-slate-200 hover:border-slate-300'
                                         }`}
                                 >
                                     <input
@@ -212,8 +212,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                                     <div
                                                         onClick={() => togglePermission(perm.key)}
                                                         className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${permissions[perm.key]
-                                                                ? 'bg-primary border-primary'
-                                                                : 'border-slate-300 bg-white'
+                                                            ? 'bg-primary border-primary'
+                                                            : 'border-slate-300 bg-white'
                                                             }`}
                                                     >
                                                         {permissions[perm.key] && <Check className="w-3 h-3 text-white" />}

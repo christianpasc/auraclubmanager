@@ -248,9 +248,10 @@ const Finance: React.FC = () => {
           <h3 className="font-bold text-slate-800">
             {getText('Transações Recentes', 'Recent Transactions', 'Transacciones Recientes')}
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-100">
-              <Download className="w-4 h-4" /> {getText('Exportar', 'Export', 'Exportar')}
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">{getText('Exportar', 'Export', 'Exportar')}</span>
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -260,7 +261,7 @@ const Finance: React.FC = () => {
                 }`}
             >
               <Filter className="w-4 h-4" />
-              {t('common.filters')}
+              <span className="hidden sm:inline">{t('common.filters')}</span>
               {activeFiltersCount > 0 && (
                 <span className="w-5 h-5 bg-primary text-white rounded-full text-xs flex items-center justify-center">
                   {activeFiltersCount}
@@ -271,7 +272,8 @@ const Finance: React.FC = () => {
               onClick={() => setTransactionModal({ isOpen: true, editingId: null })}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark"
             >
-              <Plus className="w-4 h-4" /> {getText('Lançamento', 'New Entry', 'Nuevo Registro')}
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{getText('Lançamento', 'New Entry', 'Nuevo Registro')}</span>
             </button>
           </div>
         </div>
@@ -349,12 +351,12 @@ const Finance: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">{getText('Descrição', 'Description', 'Descripción')}</th>
-                <th className="px-6 py-4">{t('athletes.category')}</th>
-                <th className="px-6 py-4">{getText('Data', 'Date', 'Fecha')}</th>
-                <th className="px-6 py-4">{t('common.status')}</th>
-                <th className="px-6 py-4 text-right">{getText('Valor', 'Amount', 'Monto')}</th>
-                <th className="px-6 py-4 text-right">{t('common.actions')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4">{getText('Descrição', 'Description', 'Descripción')}</th>
+                <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4">{t('athletes.category')}</th>
+                <th className="hidden md:table-cell px-6 py-4">{getText('Data', 'Date', 'Fecha')}</th>
+                <th className="hidden lg:table-cell px-6 py-4">{t('common.status')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-right">{getText('Valor', 'Amount', 'Monto')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-right">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -370,34 +372,36 @@ const Finance: React.FC = () => {
               ) : (
                 filteredItems.map((item) => (
                   <tr key={`${item.isMonthlyFee ? 'fee' : 'tx'}-${item.id}`} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-6 py-4 flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${item.type === 'fee'
-                        ? (item.status === 'paid' ? 'bg-green-100 text-green-600' : item.status === 'overdue' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')
-                        : item.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                        }`}>
-                        {item.type === 'fee'
-                          ? <CreditCard className="w-4 h-4" />
-                          : item.type === 'income' ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />
-                        }
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className={`p-1.5 md:p-2 rounded-full ${item.type === 'fee'
+                          ? (item.status === 'paid' ? 'bg-green-100 text-green-600' : item.status === 'overdue' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')
+                          : item.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                          }`}>
+                          {item.type === 'fee'
+                            ? <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            : item.type === 'income' ? <ArrowUpCircle className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <ArrowDownCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          }
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800 truncate max-w-[120px] md:max-w-none">{item.description}</span>
                       </div>
-                      <span className="text-sm font-semibold text-slate-800">{item.description}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{item.category}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{formatDate(item.date)}</td>
-                    <td className="px-6 py-4">
+                    <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 text-sm text-slate-500">{item.category}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-500">{formatDate(item.date)}</td>
+                    <td className="hidden lg:table-cell px-6 py-4">
                       <StatusBadge
                         status={getStatusLabel(item.status)}
                         variant={getStatusVariant(item.status)}
                       />
                     </td>
-                    <td className={`px-6 py-4 text-sm font-bold text-right ${item.type === 'expense' ? 'text-red-600' :
+                    <td className={`px-3 md:px-6 py-3 md:py-4 text-sm font-bold text-right ${item.type === 'expense' ? 'text-red-600' :
                       (item.type === 'fee' && item.status !== 'paid') ? 'text-amber-600' : 'text-green-600'
                       }`}>
                       {item.type === 'expense' ? '-' : item.status === 'paid' || item.type === 'income' ? '+' : ''} {formatCurrency(item.amount)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-right">
                       {!item.isMonthlyFee ? (
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1 md:gap-2">
                           <button
                             onClick={() => setTransactionModal({ isOpen: true, editingId: item.id })}
                             className="p-1.5 text-slate-400 hover:text-primary transition-colors"
@@ -414,7 +418,7 @@ const Finance: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => navigate('/monthly-fees')}
-                          className="text-xs text-primary hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-primary hover:underline"
                         >
                           {getText('Ver', 'View', 'Ver')}
                         </button>

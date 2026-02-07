@@ -207,12 +207,12 @@ const Enrollments: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('enrollments.athlete')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('enrollments.plan')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('enrollments.enrollmentDate')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('enrollments.monthlyFee')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('common.status')}</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t('common.actions')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('enrollments.athlete')}</th>
+                <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('enrollments.plan')}</th>
+                <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('enrollments.enrollmentDate')}</th>
+                <th className="hidden lg:table-cell px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('enrollments.monthlyFee')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('common.status')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -225,33 +225,33 @@ const Enrollments: React.FC = () => {
               ) : (
                 filteredEnrollments.map((enrollment) => (
                   <tr key={enrollment.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <div className="flex items-center gap-2 md:gap-3">
                         {enrollment.athlete?.photo_url ? (
-                          <img src={enrollment.athlete.photo_url} alt={enrollment.athlete.full_name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                          <img src={enrollment.athlete.photo_url} alt={enrollment.athlete.full_name} className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-slate-200" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                             {enrollment.athlete?.full_name?.charAt(0).toUpperCase() || '?'}
                           </div>
                         )}
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">{enrollment.athlete?.full_name || t('common.noName')}</p>
-                          <p className="text-xs text-slate-500">{enrollment.athlete?.category || t('common.noCategory')}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{enrollment.athlete?.full_name || t('common.noName')}</p>
+                          <p className="text-xs text-slate-500 truncate">{enrollment.athlete?.category || t('common.noCategory')}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-600 rounded uppercase">
+                    <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded uppercase">
                         {getPlanLabel(enrollment.plan_type)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 text-center">{formatDate(enrollment.enrollment_date)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800 text-center font-semibold">{formatCurrency(enrollment.monthly_fee)}</td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-600 text-center">{formatDate(enrollment.enrollment_date)}</td>
+                    <td className="hidden lg:table-cell px-6 py-4 text-sm text-slate-800 text-center font-semibold">{formatCurrency(enrollment.monthly_fee)}</td>
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-center">
                       <StatusBadge status={getStatusLabel(enrollment.status)} variant={getStatusVariant(enrollment.status)} />
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 md:gap-2">
                         <button onClick={() => navigate(`/enrollments/${enrollment.id}`)} className="p-1.5 text-slate-400 hover:text-primary transition-colors">
                           <Edit2 className="w-4 h-4" />
                         </button>

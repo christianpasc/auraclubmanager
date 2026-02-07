@@ -133,26 +133,26 @@ const TrainingPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h3 className="text-xl font-bold text-slate-800">{t('training.title')}</h3>
-          <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h3 className="text-lg sm:text-xl font-bold text-slate-800">{t('training.title')}</h3>
+          <span className="text-xs sm:text-sm font-medium text-slate-500 bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
             {filteredTrainings.length} {filteredTrainings.length !== 1 ? t('training.trainings') : t('training.training')}
           </span>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 flex-wrap">
           {/* View Toggle */}
           <div className="flex bg-slate-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
               title={t('training.list')}
             >
               <List className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
               title={t('training.calendar')}
             >
               <CalendarIcon className="w-4 h-4" />
@@ -161,11 +161,11 @@ const TrainingPage: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-semibold transition-colors ${activeFilterCount > 0 ? 'border-primary text-primary' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              className={`flex items-center gap-1 sm:gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-semibold transition-colors ${activeFilterCount > 0 ? 'border-primary text-primary' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
             >
               <Filter className="w-4 h-4" />
-              {t('common.filters')}
+              <span className="hidden sm:inline">{t('common.filters')}</span>
               {activeFilterCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-primary text-white text-xs rounded-full">{activeFilterCount}</span>
               )}
@@ -252,9 +252,10 @@ const TrainingPage: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/training/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-sm"
+            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-sm"
           >
-            <Plus className="w-4 h-4" /> {t('training.scheduleTraining')}
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('training.scheduleTraining')}</span>
           </button>
         </div>
       </div>

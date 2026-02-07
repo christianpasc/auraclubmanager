@@ -16,7 +16,8 @@ import {
   DollarSign,
   Calendar,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +25,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
@@ -146,20 +152,34 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-50">
-      <div className="p-6 flex items-center gap-3">
-        {currentTenant?.logo_url ? (
-          <img
-            src={currentTenant.logo_url}
-            alt={currentTenant.name || 'Logo'}
-            className="w-8 h-8 rounded object-cover"
-          />
-        ) : (
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-            <Trophy className="w-5 h-5 text-white" />
-          </div>
-        )}
-        <h1 className="text-xl font-bold tracking-tight">Aura Club</h1>
+    <aside className={`
+      w-64 bg-slate-900 text-white flex flex-col fixed h-full z-50
+      transform transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      lg:translate-x-0
+    `}>
+      <div className="p-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {currentTenant?.logo_url ? (
+            <img
+              src={currentTenant.logo_url}
+              alt={currentTenant.name || 'Logo'}
+              className="w-8 h-8 rounded object-cover"
+            />
+          ) : (
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-white" />
+            </div>
+          )}
+          <h1 className="text-xl font-bold tracking-tight">Aura Club</h1>
+        </div>
+        {/* Close button for mobile */}
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1 text-white/70 hover:text-white transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
       </div>
 
       <nav className="flex-1 px-3 space-y-1 mt-4">

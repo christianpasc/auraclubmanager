@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Clock, AlertTriangle } from 'lucide-react';
+import { Bell, Search, Clock, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import { userService, UserProfile } from '../services/userService';
@@ -11,9 +11,10 @@ import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   title: string;
+  onMenuClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ title }) => {
+const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
   const { user } = useAuth();
   const { currentTenant } = useTenant();
   const { language } = useLanguage();
@@ -126,12 +127,23 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40">
-      <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
+      <div className="flex items-center gap-3">
+        {/* Hamburger menu for mobile */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-2 text-slate-600 hover:text-slate-800 transition-colors"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+      </div>
 
-      <div className="flex items-center gap-6">
-        {/* Trial Badge */}
-        {renderTrialBadge()}
+      <div className="flex items-center gap-4 lg:gap-6">
+        {/* Trial Badge - hidden on small screens */}
+        <div className="hidden md:block">
+          {renderTrialBadge()}
+        </div>
 
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

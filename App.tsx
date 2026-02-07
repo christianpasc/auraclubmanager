@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -34,6 +34,12 @@ import { useAuth } from './contexts/AuthContext';
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { t } = useLanguage();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar when route changes (mobile)
+  React.useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const getTitle = () => {
     switch (location.pathname) {
@@ -54,10 +60,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 ml-64 min-h-screen flex flex-col">
-        <Header title={getTitle()} />
-        <div className="p-8">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <main className="flex-1 lg:ml-64 min-h-screen flex flex-col">
+        <Header title={getTitle()} onMenuClick={() => setSidebarOpen(true)} />
+        <div className="p-4 lg:p-8">
           {children}
         </div>
       </main>

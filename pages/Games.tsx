@@ -189,27 +189,27 @@ const Games: React.FC = () => {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('games.date')}</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('games.date')}</th>
+                                    <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                         {language === 'en-US' ? 'Competition' : language === 'es-ES' ? 'Competición' : 'Competição'}
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
                                         {language === 'en-US' ? 'Match' : language === 'es-ES' ? 'Encuentro' : 'Confronto'}
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                                    <th className="hidden md:table-cell px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
                                         {language === 'en-US' ? 'Score' : language === 'es-ES' ? 'Marcador' : 'Placar'}
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('games.venue')}</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('common.status')}</th>
+                                    <th className="hidden lg:table-cell px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">{t('games.venue')}</th>
+                                    <th className="px-3 md:px-6 py-3 md:py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">{t('common.status')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredGames.map((game) => (
                                     <tr key={game.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/games/${game.id}`)}>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                                    <Calendar className="w-5 h-5" />
+                                        <td className="px-3 md:px-6 py-3 md:py-4">
+                                            <div className="flex items-center gap-2 md:gap-3">
+                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                    <Calendar className="w-4 h-4 md:w-5 md:h-5" />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-semibold text-slate-800">{formatDate(game.game_date)}</p>
@@ -220,27 +220,27 @@ const Games: React.FC = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4">
                                             <div className="flex items-center gap-2">
                                                 <Trophy className="w-4 h-4 text-slate-400" />
-                                                <div>
-                                                    <p className="text-sm font-medium text-slate-700">{game.competition?.name || '-'}</p>
-                                                    {game.round && <p className="text-xs text-slate-400">{game.round}</p>}
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-slate-700 truncate">{game.competition?.name || '-'}</p>
+                                                    {game.round && <p className="text-xs text-slate-400 truncate">{game.round}</p>}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-3">
-                                                <span className={`text-sm font-semibold ${game.is_home_game !== false ? 'text-primary' : 'text-slate-600'}`}>
+                                        <td className="px-3 md:px-6 py-3 md:py-4 text-center">
+                                            <div className="flex items-center justify-center gap-1 md:gap-3">
+                                                <span className={`text-xs md:text-sm font-semibold truncate max-w-[60px] md:max-w-none ${game.is_home_game !== false ? 'text-primary' : 'text-slate-600'}`}>
                                                     {game.home_team || '-'}
                                                 </span>
-                                                <span className="text-slate-300 font-bold">{t('games.vs')}</span>
-                                                <span className={`text-sm font-semibold ${game.is_home_game === false ? 'text-primary' : 'text-slate-600'}`}>
+                                                <span className="text-slate-300 font-bold text-xs">{t('games.vs')}</span>
+                                                <span className={`text-xs md:text-sm font-semibold truncate max-w-[60px] md:max-w-none ${game.is_home_game === false ? 'text-primary' : 'text-slate-600'}`}>
                                                     {game.away_team || '-'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="hidden md:table-cell px-6 py-4 text-center">
                                             {game.status === 'finished' && game.home_score !== undefined && game.away_score !== undefined ? (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <span className="text-lg font-bold text-slate-800">
@@ -252,21 +252,21 @@ const Games: React.FC = () => {
                                                 <span className="text-slate-400">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden lg:table-cell px-6 py-4">
                                             {game.venue ? (
                                                 <div className="flex items-center gap-2 text-sm text-slate-600">
                                                     <MapPin className="w-4 h-4 text-slate-400" />
-                                                    {game.venue}
+                                                    <span className="truncate max-w-[120px]">{game.venue}</span>
                                                 </div>
                                             ) : (
                                                 <span className="text-slate-400">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
+                                        <td className="px-3 md:px-6 py-3 md:py-4 text-center">
+                                            <div className="flex items-center justify-center gap-1 md:gap-2">
                                                 <StatusBadge status={getStatusLabel(game.status)} variant={getStatusVariant(game.status)} />
-                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/games/${game.id}`); }} className="p-1.5 text-slate-400 hover:text-primary transition-colors">
-                                                    <Edit2 className="w-4 h-4" />
+                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/games/${game.id}`); }} className="p-1 md:p-1.5 text-slate-400 hover:text-primary transition-colors">
+                                                    <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                 </button>
                                             </div>
                                         </td>

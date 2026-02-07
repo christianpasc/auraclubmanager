@@ -142,7 +142,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-[95vw] max-w-xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-lg font-bold text-slate-800">
@@ -239,7 +239,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Date */}
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
