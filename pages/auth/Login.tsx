@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Trophy, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
 // TenantContext is not used here to avoid circular dependencies during login
 import { supabase } from '../../lib/supabase';
@@ -121,11 +122,8 @@ const Login: React.FC = () => {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg shadow-primary/30 mb-4">
-                        <Trophy className="w-8 h-8 text-white" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white">Aura Club</h1>
-                    <p className="text-slate-400 mt-2">Gestão inteligente para seu clube</p>
+                    <img src={logoImg} alt="Aura Club Manager" className="mx-auto mb-1" style={{ width: '259px', height: '87px' }} />
+                    <p className="text-slate-400">Gestão inteligente para seu clube</p>
                 </div>
 
                 {/* Card */}
