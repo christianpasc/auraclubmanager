@@ -29,6 +29,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import AdminLayout from './components/layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminPlans from './pages/admin/AdminPlans';
 import { useAuth } from './contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -115,7 +116,14 @@ const ProtectedAdminLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
 const NotFoundPage: React.FC = () => {
   const { language } = useLanguage();
-  const message = language === 'en-US' ? 'Page not found.' : language === 'es-ES' ? 'Página no encontrada.' : 'Página não encontrada.';
+  const messages: Record<string, string> = {
+    'en-US': 'Page not found.',
+    'es-ES': 'Página no encontrada.',
+    'fr-FR': 'Page non trouvée.',
+    'pt-BR': 'Página não encontrada.',
+    'pt-PT': 'Página não encontrada.',
+  };
+  const message = messages[language] || messages['pt-BR'];
 
   return (
     <div className="flex flex-col items-center justify-center h-[70vh] text-slate-400">
@@ -147,6 +155,7 @@ const ProtectedRoutes: React.FC = () => {
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedAdminLayout><AdminDashboard /></ProtectedAdminLayout>} />
           <Route path="/admin/users" element={<ProtectedAdminLayout><AdminUsers /></ProtectedAdminLayout>} />
+          <Route path="/admin/plans" element={<ProtectedAdminLayout><AdminPlans /></ProtectedAdminLayout>} />
 
           {/* Plans route - accessible even with expired trial */}
           <Route path="/plans" element={<ProtectedLayoutExpired><Plans /></ProtectedLayoutExpired>} />

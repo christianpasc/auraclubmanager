@@ -7,6 +7,8 @@ export interface SubscriptionInfo {
     hasActiveSubscription: boolean;
     subscriptionStatus: 'trial' | 'active' | 'expired';
     trialEndsAt: Date | null;
+    planName: string | null;
+    subscriptionEndsAt: Date | null;
 }
 
 export const subscriptionService = {
@@ -20,14 +22,6 @@ export const subscriptionService = {
         const diffTime = trialEndDate.getTime() - now.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        console.log('[SubscriptionService] Trial calculation:', {
-            createdAt,
-            createdDate: createdDate.toISOString(),
-            trialEndDate: trialEndDate.toISOString(),
-            now: now.toISOString(),
-            diffDays,
-        });
-
         return Math.max(0, diffDays);
     },
 
@@ -38,11 +32,12 @@ export const subscriptionService = {
             return null;
         }
 
-        console.log('[SubscriptionService] Getting trial info for tenant:', tenantId);
-
         const { data: tenant, error } = await supabase
             .from('tenants')
-            .select('created_at, subscription_plan, subscription_status')
+            .select(`
+                created_at, subscription_plan, subscription_status,
+                subscription_plan_id, subscription_starts_at, subscription_ends_at
+            `)
             .eq('id', tenantId)
             .single();
 
@@ -58,23 +53,24 @@ export const subscriptionService = {
         const trialDaysRemaining = this.calculateTrialDaysRemaining(tenant.created_at);
         const isTrialExpired = trialDaysRemaining <= 0;
 
-        // Check for active subscription
-        // A tenant has an active subscription only if:
-        // 1. status is 'active'
-        // 2. plan is present and not null/empty
-        const hasActiveSubscription =
+        // Check for active subscription by plan dates
+        const now = new Date();
+        const subscriptionEndsAt = tenant.subscription_ends_at
+            ? new Date(tenant.subscription_ends_at)
+            : null;
+
+        const hasActivePlanSubscription =
+            tenant.subscription_plan_id &&
+            subscriptionEndsAt &&
+            subscriptionEndsAt > now;
+
+        // Also check legacy subscription fields
+        const hasLegacySubscription =
             tenant.subscription_status === 'active' &&
             !!tenant.subscription_plan &&
             tenant.subscription_plan !== '';
 
-        console.log('[SubscriptionService] Status check:', {
-            id: tenantId,
-            status: tenant.subscription_status,
-            plan: tenant.subscription_plan,
-            hasActiveSubscription,
-            trialDaysRemaining,
-            isTrialExpired
-        });
+        const hasActiveSubscription = !!(hasActivePlanSubscription || hasLegacySubscription);
 
         let subscriptionStatus: 'trial' | 'active' | 'expired';
         if (hasActiveSubscription) {
@@ -89,16 +85,77 @@ export const subscriptionService = {
         const trialEndsAt = new Date(createdDate);
         trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
+        // Fetch plan name if subscription_plan_id exists
+        let planName: string | null = tenant.subscription_plan || null;
+        if (tenant.subscription_plan_id) {
+            try {
+                const { data: planData } = await supabase
+                    .from('stripe_plans')
+                    .select('name')
+                    .eq('id', tenant.subscription_plan_id)
+                    .single();
+                if (planData) {
+                    planName = planData.name;
+                }
+            } catch {
+                // Ignore error - keep existing planName
+            }
+        }
+
         return {
             trialDaysRemaining,
             isTrialExpired,
             hasActiveSubscription,
             subscriptionStatus,
             trialEndsAt,
+            planName,
+            subscriptionEndsAt,
         };
     },
 
-    // Update subscription (for when user subscribes to a plan)
+    // Activate a subscription based on plan interval
+    async activateSubscription(tenantId: string, planId: string, interval: string): Promise<void> {
+        if (!tenantId) throw new Error('No tenant selected');
+
+        const now = new Date();
+        let endsAt: Date;
+
+        switch (interval) {
+            case 'monthly':
+                endsAt = new Date(now);
+                endsAt.setMonth(endsAt.getMonth() + 1);
+                break;
+            case 'quarterly':
+                endsAt = new Date(now);
+                endsAt.setMonth(endsAt.getMonth() + 3);
+                break;
+            case 'yearly':
+                endsAt = new Date(now);
+                endsAt.setFullYear(endsAt.getFullYear() + 1);
+                break;
+            case 'lifetime':
+                endsAt = new Date('2099-12-31T23:59:59Z');
+                break;
+            default:
+                endsAt = new Date(now);
+                endsAt.setMonth(endsAt.getMonth() + 1);
+        }
+
+        const { error } = await supabase
+            .from('tenants')
+            .update({
+                subscription_plan_id: planId,
+                subscription_status: 'active',
+                subscription_starts_at: now.toISOString(),
+                subscription_ends_at: endsAt.toISOString(),
+                updated_at: now.toISOString(),
+            })
+            .eq('id', tenantId);
+
+        if (error) throw error;
+    },
+
+    // Legacy: Update subscription (for when user subscribes to a plan)
     async updateSubscription(tenantId: string, planId: string): Promise<void> {
         if (!tenantId) throw new Error('No tenant selected');
 
@@ -113,5 +170,30 @@ export const subscriptionService = {
 
         if (error) throw error;
     },
+
+    // Check plan limits for the tenant
+    async checkPlanLimits(tenantId: string): Promise<PlanLimits | null> {
+        if (!tenantId) return null;
+
+        const { data, error } = await supabase.rpc('check_plan_limits', {
+            p_tenant_id: tenantId,
+        });
+
+        if (error) {
+            console.error('[SubscriptionService] Error checking plan limits:', error);
+            return null;
+        }
+
+        return data as PlanLimits;
+    },
 };
 
+export interface PlanLimits {
+    max_users: number | null;
+    max_athletes: number | null;
+    current_users: number;
+    current_athletes: number;
+    has_active_subscription: boolean;
+    can_add_user: boolean;
+    can_add_athlete: boolean;
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Shield, X, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Shield, X, Menu, CreditCard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminSidebarProps {
@@ -57,6 +57,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
             <nav className="flex-1 px-3 space-y-1 mt-4">
                 <AdminSidebarItem icon={LayoutDashboard} label="Dashboard" path="/admin" />
                 <AdminSidebarItem icon={Users} label="Usuários (Tenants)" path="/admin/users" />
+                <AdminSidebarItem icon={CreditCard} label="Planos Stripe" path="/admin/plans" />
             </nav>
 
             <div className="p-4 border-t border-white/10">
@@ -88,6 +89,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         switch (location.pathname) {
             case '/admin': return 'Visão Geral';
             case '/admin/users': return 'Gerenciar Usuários';
+            case '/admin/plans': return 'Gerenciar Planos';
             default: return 'Admin';
         }
     };

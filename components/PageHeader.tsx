@@ -11,6 +11,7 @@ interface PageHeaderProps {
     actionLabel?: string;
     actionIcon?: LucideIcon;
     onActionClick?: () => void;
+    actionDisabled?: boolean;
     viewMode?: 'grid' | 'list';
     onViewModeChange?: (mode: 'grid' | 'list') => void;
     showViewToggle?: boolean;
@@ -25,6 +26,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     actionLabel,
     actionIcon: ActionIcon,
     onActionClick,
+    actionDisabled = false,
     viewMode,
     onViewModeChange,
     showViewToggle = false,
@@ -83,7 +85,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 {actionLabel && onActionClick && (
                     <button
                         onClick={onActionClick}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-lg transition-all shadow-lg shadow-primary/20"
+                        disabled={actionDisabled}
+                        className={`flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-lg transition-all shadow-lg shadow-primary/20 ${actionDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {ActionIcon && <ActionIcon className="w-4 h-4" />}
                         <span className="hidden sm:inline">{actionLabel}</span>

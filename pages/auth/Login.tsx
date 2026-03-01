@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 // TenantContext is not used here to avoid circular dependencies during login
 import { supabase } from '../../lib/supabase';
 
@@ -14,6 +15,7 @@ const Login: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { signIn } = useAuth();
+    const { t } = useLanguage();
     // Note: TenantContext will automatically load tenants when auth state changes
     const navigate = useNavigate();
 
@@ -112,7 +114,7 @@ const Login: React.FC = () => {
                 return;
             }
             console.error('Login error:', err);
-            setError('Ocorreu um erro inesperado. Tente novamente.');
+            setError(t('auth.unexpectedError'));
             setLoading(false);
         }
     };
@@ -123,13 +125,13 @@ const Login: React.FC = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <img src={logoImg} alt="Aura Club Manager" className="mx-auto mb-1" style={{ width: '259px', height: '87px' }} />
-                    <p className="text-slate-400">Gestão inteligente para seu clube</p>
+                    <p className="text-slate-400">{t('auth.tagline')}</p>
                 </div>
 
                 {/* Card */}
                 <div className="bg-white rounded-2xl shadow-2xl p-8">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Bem-vindo de volta</h2>
-                    <p className="text-slate-500 mb-6">Entre com suas credenciais para acessar</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('auth.welcomeBack')}</h2>
+                    <p className="text-slate-500 mb-6">{t('auth.enterCredentials')}</p>
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -140,7 +142,7 @@ const Login: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                E-mail
+                                {t('auth.email')}
                             </label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -148,7 +150,7 @@ const Login: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="seu@email.com"
+                                    placeholder={t('auth.emailPlaceholder')}
                                     required
                                     className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                 />
@@ -157,7 +159,7 @@ const Login: React.FC = () => {
 
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Senha
+                                {t('auth.password')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -182,10 +184,10 @@ const Login: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                                <span className="text-sm text-slate-600">Lembrar de mim</span>
+                                <span className="text-sm text-slate-600">{t('auth.rememberMe')}</span>
                             </label>
                             <Link to="/forgot-password" className="text-sm font-semibold text-primary hover:text-primary-dark">
-                                Esqueceu a senha?
+                                {t('auth.forgotPassword')}
                             </Link>
                         </div>
 
@@ -197,26 +199,26 @@ const Login: React.FC = () => {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Entrando...
+                                    {t('auth.loading')}
                                 </>
                             ) : (
-                                'Entrar'
+                                t('auth.login')
                             )}
                         </button>
                     </form>
 
                     <div className="mt-6 text-center">
                         <p className="text-slate-500">
-                            Não tem uma conta?{' '}
+                            {t('auth.noAccount')}{' '}
                             <Link to="/signup" className="font-semibold text-primary hover:text-primary-dark">
-                                Criar conta
+                                {t('auth.createAccount')}
                             </Link>
                         </p>
                     </div>
                 </div>
 
                 <p className="text-center text-slate-500 text-sm mt-6">
-                    © 2026 Aura Club. Todos os direitos reservados.
+                    {t('auth.copyright')}
                 </p>
             </div>
         </div>

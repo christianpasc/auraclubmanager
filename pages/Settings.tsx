@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail } from 'lucide-react';
+import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle } from 'lucide-react';
 import { useLanguage, AVAILABLE_LANGUAGES } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
@@ -11,6 +11,7 @@ import { userService, UserProfile, NotificationSettings, DEFAULT_NOTIFICATION_SE
 import { usePermissions } from '../hooks/usePermissions';
 import UserManagementModal from '../components/UserManagementModal';
 import ConfirmModal from '../components/ConfirmModal';
+import { subscriptionService, PlanLimits } from '../services/subscriptionService';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
@@ -61,6 +62,9 @@ const Settings: React.FC = () => {
   const [userModal, setUserModal] = useState<{ isOpen: boolean; user: TenantUser | null }>({ isOpen: false, user: null });
   const [deleteUserModal, setDeleteUserModal] = useState<{ isOpen: boolean; user: any; loading: boolean }>({ isOpen: false, user: null, loading: false });
 
+  // Plan limits
+  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+
   // Language state
   const [selectedLanguage, setSelectedLanguage] = useState(language);
 
@@ -85,6 +89,9 @@ const Settings: React.FC = () => {
   useEffect(() => {
     if (currentTenant?.id && activeTab === 'users') {
       loadUsers();
+      subscriptionService.checkPlanLimits(currentTenant.id).then(limits => {
+        if (limits) setPlanLimits(limits);
+      });
     }
   }, [currentTenant, activeTab]);
 
@@ -717,12 +724,35 @@ const Settings: React.FC = () => {
               </div>
               <button
                 onClick={() => setUserModal({ isOpen: true, user: null })}
-                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark"
+                disabled={planLimits ? !planLimits.can_add_user : false}
+                className={`flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark ${planLimits && !planLimits.can_add_user ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Plus className="w-4 h-4" />
                 {getText('Novo Usuário', 'New User', 'Nuevo Usuario')}
               </button>
             </div>
+
+            {/* User Limit Warning */}
+            {planLimits && !planLimits.can_add_user && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    {getText('Limite de usuários atingido', 'User limit reached', 'Límite de usuarios alcanzado')}
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    {`${planLimits.current_users} / ${planLimits.max_users} ${getText('usuários cadastrados. Faça upgrade do seu plano para adicionar mais.', 'users registered. Upgrade your plan to add more.', 'usuarios registrados. Actualice su plan para agregar más.')}`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Usage Counter */}
+            {planLimits && planLimits.has_active_subscription && planLimits.max_users !== null && planLimits.can_add_user && (
+              <div className="text-xs text-slate-500">
+                {planLimits.current_users} / {planLimits.max_users} {getText('usuários', 'users', 'usuarios')}
+              </div>
+            )}
 
             {usersLoading ? (
               <div className="flex justify-center py-12">

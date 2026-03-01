@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, MoreVertical, Edit2, Trash2, Loader2, X, ChevronDown } from 'lucide-react';
+import { UserPlus, MoreVertical, Edit2, Trash2, Loader2, X, ChevronDown, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
 import { athleteService, Athlete } from '../services/athleteService';
+import { subscriptionService, PlanLimits } from '../services/subscriptionService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
 interface Filters {
   category: string;
@@ -17,6 +19,7 @@ interface Filters {
 const Athletes: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { currentTenant } = useTenant();
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -42,6 +45,16 @@ const Athletes: React.FC = () => {
   useEffect(() => {
     loadAthletes();
   }, []);
+
+  const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+
+  useEffect(() => {
+    if (currentTenant?.id) {
+      subscriptionService.checkPlanLimits(currentTenant.id).then(limits => {
+        if (limits) setPlanLimits(limits);
+      });
+    }
+  }, [currentTenant?.id]);
 
   const loadAthletes = async () => {
     try {
@@ -134,7 +147,30 @@ const Athletes: React.FC = () => {
         actionLabel={t('athletes.registerAthlete')}
         actionIcon={UserPlus}
         onActionClick={() => navigate('/athletes/new')}
+        actionDisabled={planLimits ? !planLimits.can_add_athlete : false}
       />
+
+      {/* Plan Limit Warning */}
+      {planLimits && !planLimits.can_add_athlete && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              {t('athletes.limitReached') || 'Limite de atletas atingido'}
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {`${planLimits.current_athletes} / ${planLimits.max_athletes} atletas cadastrados. Faça upgrade do seu plano para cadastrar mais.`}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Usage Counter */}
+      {planLimits && planLimits.has_active_subscription && planLimits.max_athletes !== null && planLimits.can_add_athlete && (
+        <div className="text-xs text-slate-500 flex items-center gap-1">
+          <span>{planLimits.current_athletes} / {planLimits.max_athletes} atletas</span>
+        </div>
+      )}
 
       {/* Filter Panel */}
       {showFilters && (

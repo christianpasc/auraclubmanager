@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
-type Language = 'pt-BR' | 'en-US' | 'es-ES';
+type Language = 'pt-BR' | 'pt-PT' | 'en-US' | 'es-ES' | 'fr-FR';
 
 interface LanguageContextType {
     language: Language;
@@ -257,6 +257,27 @@ const translations: Record<Language, Record<string, string>> = {
         'language.pt-BR': 'Português (Brasil)',
         'language.en-US': 'English (US)',
         'language.es-ES': 'Español',
+        'language.fr-FR': 'Français',
+        'language.pt-PT': 'Português (Portugal)',
+
+        // Auth extra
+        'auth.tagline': 'Gestão inteligente para seu clube',
+        'auth.loading': 'Entrando...',
+        'auth.creatingAccount': 'Criando conta...',
+        'auth.passwordMinLength': 'Mínimo de 6 caracteres',
+        'auth.systemLanguage': 'Idioma do Sistema',
+        'auth.namePlaceholder': 'Seu nome completo',
+        'auth.emailPlaceholder': 'seu@email.com',
+        'auth.nameRequired': 'O nome completo é obrigatório',
+        'auth.passwordMismatch': 'As senhas não coincidem',
+        'auth.passwordTooShort': 'A senha deve ter pelo menos 6 caracteres',
+        'auth.confirmEmailSent': 'Enviamos um e-mail de confirmação para',
+        'auth.confirmEmailInstructions': 'Por favor, verifique sua caixa de entrada para ativar sua conta.',
+        'auth.recoveryLinkSent': 'Enviamos um link de recuperação para',
+        'auth.recoveryInstructions': 'Verifique sua caixa de entrada e siga as instruções.',
+        'auth.sending': 'Enviando...',
+        'auth.unexpectedError': 'Ocorreu um erro inesperado. Tente novamente.',
+        'auth.copyright': '© 2026 Aura Club. Todos os direitos reservados.',
 
         // Page Titles
         'pages.dashboard': 'Dashboard',
@@ -516,6 +537,27 @@ const translations: Record<Language, Record<string, string>> = {
         'language.pt-BR': 'Portuguese (Brazil)',
         'language.en-US': 'English (US)',
         'language.es-ES': 'Spanish',
+        'language.fr-FR': 'French',
+        'language.pt-PT': 'Portuguese (Portugal)',
+
+        // Auth extra
+        'auth.tagline': 'Smart management for your club',
+        'auth.loading': 'Signing in...',
+        'auth.creatingAccount': 'Creating account...',
+        'auth.passwordMinLength': 'At least 6 characters',
+        'auth.systemLanguage': 'System Language',
+        'auth.namePlaceholder': 'Your full name',
+        'auth.emailPlaceholder': 'you@email.com',
+        'auth.nameRequired': 'Full name is required',
+        'auth.passwordMismatch': 'Passwords do not match',
+        'auth.passwordTooShort': 'Password must be at least 6 characters',
+        'auth.confirmEmailSent': 'We sent a confirmation email to',
+        'auth.confirmEmailInstructions': 'Please check your inbox to activate your account.',
+        'auth.recoveryLinkSent': 'We sent a recovery link to',
+        'auth.recoveryInstructions': 'Check your inbox and follow the instructions.',
+        'auth.sending': 'Sending...',
+        'auth.unexpectedError': 'An unexpected error occurred. Please try again.',
+        'auth.copyright': '© 2026 Aura Club. All rights reserved.',
 
         // Page Titles
         'pages.dashboard': 'Dashboard',
@@ -775,6 +817,27 @@ const translations: Record<Language, Record<string, string>> = {
         'language.pt-BR': 'Portugués (Brasil)',
         'language.en-US': 'Inglés (EE.UU.)',
         'language.es-ES': 'Español',
+        'language.fr-FR': 'Francés',
+        'language.pt-PT': 'Portugués (Portugal)',
+
+        // Auth extra
+        'auth.tagline': 'Gestión inteligente para tu club',
+        'auth.loading': 'Iniciando sesión...',
+        'auth.creatingAccount': 'Creando cuenta...',
+        'auth.passwordMinLength': 'Mínimo 6 caracteres',
+        'auth.systemLanguage': 'Idioma del Sistema',
+        'auth.namePlaceholder': 'Tu nombre completo',
+        'auth.emailPlaceholder': 'tu@email.com',
+        'auth.nameRequired': 'El nombre completo es obligatorio',
+        'auth.passwordMismatch': 'Las contraseñas no coinciden',
+        'auth.passwordTooShort': 'La contraseña debe tener al menos 6 caracteres',
+        'auth.confirmEmailSent': 'Enviamos un correo de confirmación a',
+        'auth.confirmEmailInstructions': 'Por favor, revisa tu bandeja de entrada para activar tu cuenta.',
+        'auth.recoveryLinkSent': 'Enviamos un enlace de recuperación a',
+        'auth.recoveryInstructions': 'Revisa tu bandeja de entrada y sigue las instrucciones.',
+        'auth.sending': 'Enviando...',
+        'auth.unexpectedError': 'Ocurrió un error inesperado. Inténtalo de nuevo.',
+        'auth.copyright': '© 2026 Aura Club. Todos los derechos reservados.',
 
         // Page Titles
         'pages.dashboard': 'Panel de Control',
@@ -789,6 +852,562 @@ const translations: Record<Language, Record<string, string>> = {
         'pages.plans': 'Planes de Suscripción',
         'pages.settings': 'Configuración del Club',
     },
+    'fr-FR': {
+        // Navigation
+        'nav.dashboard': 'Tableau de bord',
+        'nav.athletes': 'Athlètes',
+        'nav.enrollments': 'Inscriptions',
+        'nav.competitions': 'Compétitions',
+        'nav.training': 'Entraînements',
+        'nav.finance': 'Finances',
+        'nav.subscription': 'Abonnement',
+        'nav.settings': 'Paramètres',
+        'nav.logout': 'Déconnexion',
+        'nav.games': 'Matchs',
+
+        // Auth
+        'auth.login': 'Se connecter',
+        'auth.signup': "S'inscrire",
+        'auth.forgotPassword': 'Mot de passe oublié ?',
+        'auth.email': 'E-mail',
+        'auth.password': 'Mot de passe',
+        'auth.confirmPassword': 'Confirmer le mot de passe',
+        'auth.fullName': 'Nom complet',
+        'auth.language': 'Langue',
+        'auth.rememberMe': 'Se souvenir de moi',
+        'auth.noAccount': "Vous n'avez pas de compte ?",
+        'auth.hasAccount': 'Vous avez déjà un compte ?',
+        'auth.welcomeBack': 'Bon retour',
+        'auth.createAccount': 'Créer un compte',
+        'auth.enterCredentials': 'Entrez vos identifiants pour accéder',
+        'auth.fillData': 'Remplissez les informations pour commencer',
+        'auth.sendRecoveryLink': 'Envoyer le lien de récupération',
+        'auth.backToLogin': 'Retour à la connexion',
+        'auth.recoverPassword': 'Récupérer le mot de passe',
+        'auth.recoverPasswordDesc': 'Entrez votre e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.',
+        'auth.emailSent': 'E-mail envoyé !',
+        'auth.accountCreated': 'Compte créé !',
+        'auth.checkEmail': 'Vérifiez votre boîte de réception pour activer votre compte.',
+        'auth.goToLogin': 'Aller à la connexion',
+        'auth.tagline': 'Gestion intelligente pour votre club',
+        'auth.loading': 'Connexion...',
+        'auth.creatingAccount': 'Création du compte...',
+        'auth.passwordMinLength': 'Au moins 6 caractères',
+        'auth.systemLanguage': 'Langue du système',
+        'auth.namePlaceholder': 'Votre nom complet',
+        'auth.emailPlaceholder': 'vous@email.com',
+        'auth.nameRequired': 'Le nom complet est obligatoire',
+        'auth.passwordMismatch': 'Les mots de passe ne correspondent pas',
+        'auth.passwordTooShort': 'Le mot de passe doit comporter au moins 6 caractères',
+        'auth.confirmEmailSent': 'Nous avons envoyé un e-mail de confirmation à',
+        'auth.confirmEmailInstructions': 'Veuillez vérifier votre boîte de réception pour activer votre compte.',
+        'auth.recoveryLinkSent': 'Nous avons envoyé un lien de récupération à',
+        'auth.recoveryInstructions': 'Vérifiez votre boîte de réception et suivez les instructions.',
+        'auth.sending': 'Envoi...',
+        'auth.unexpectedError': 'Une erreur inattendue est survenue. Veuillez réessayer.',
+        'auth.copyright': '© 2026 Aura Club. Tous droits réservés.',
+
+        // Common
+        'common.loading': 'Chargement...',
+        'common.save': 'Enregistrer',
+        'common.cancel': 'Annuler',
+        'common.search': 'Rechercher...',
+        'common.filters': 'Filtres',
+        'common.actions': 'Actions',
+        'common.status': 'Statut',
+        'common.active': 'Actif',
+        'common.inactive': 'Inactif',
+        'common.edit': 'Modifier',
+        'common.delete': 'Supprimer',
+        'common.create': 'Créer',
+        'common.new': 'Nouveau',
+        'common.all': 'Tous',
+        'common.none': 'Aucun',
+        'common.yes': 'Oui',
+        'common.no': 'Non',
+        'common.back': 'Retour',
+        'common.next': 'Suivant',
+        'common.previous': 'Précédent',
+        'common.close': 'Fermer',
+        'common.confirm': 'Confirmer',
+        'common.clearFilters': 'Effacer les filtres',
+        'common.noResults': 'Aucun résultat trouvé',
+        'common.error': 'Erreur',
+        'common.success': 'Succès',
+        'common.tryAgain': 'Réessayer',
+        'common.comingSoon': 'Bientôt disponible',
+        'common.registered': 'inscrits',
+        'common.ofTotal': 'de la base totale',
+        'common.seeAll': 'Voir tout',
+        'common.details': 'Détails',
+        'common.viewDetails': 'Voir les détails',
+        'common.noEmail': 'Pas d\'e-mail',
+        'common.noPosition': 'Pas de poste',
+        'common.noCategory': 'Pas de catégorie',
+        'common.noName': 'Pas de nom',
+        'common.noDate': 'Pas de date',
+        'common.invalidDate': 'Date invalide',
+        'common.dateNotDefined': 'Date non définie',
+        'common.locationTBD': 'Lieu à définir',
+        'common.general': 'Général',
+
+        // Monthly Fees
+        'monthlyFees.title': 'Cotisations mensuelles',
+        'monthlyFees.overdue': 'en retard',
+        'monthlyFees.pending': 'en attente',
+        'monthlyFees.paid': 'payées',
+
+        // Dashboard
+        'dashboard.title': 'Tableau de bord',
+        'dashboard.totalAthletes': 'Total des athlètes',
+        'dashboard.activeEnrollments': 'Inscriptions actives',
+        'dashboard.pendingFees': 'Cotisations en attente',
+        'dashboard.nextTraining': 'Prochain entraînement',
+        'dashboard.financialFlow': 'Flux financier',
+        'dashboard.revenueVsExpenses': 'Comparaison : Revenus vs Dépenses',
+        'dashboard.weekly': 'Hebdomadaire',
+        'dashboard.monthly': 'Mensuel',
+        'dashboard.upcomingGames': 'Prochains matchs',
+        'dashboard.noGamesScheduled': 'Aucun match programmé',
+        'dashboard.errorLoading': 'Erreur lors du chargement des données',
+
+        // Athletes
+        'athletes.title': 'Athlètes',
+        'athletes.searchPlaceholder': 'Rechercher un athlète par nom ou catégorie...',
+        'athletes.registerAthlete': 'Inscrire un athlète',
+        'athletes.newAthlete': 'Nouvel athlète',
+        'athletes.deleteAthlete': 'Supprimer l\'athlète',
+        'athletes.deleteConfirm': 'Êtes-vous sûr de vouloir supprimer l\'athlète',
+        'athletes.deleteWarning': 'Toutes les données associées (équipement, physiologie, historique) seront également supprimées.',
+        'athletes.noAthletes': 'Aucun athlète inscrit',
+        'athletes.noAthletesFiltered': 'Aucun athlète trouvé avec les filtres appliqués',
+        'athletes.errorLoading': 'Erreur lors du chargement des athlètes',
+        'athletes.errorDeleting': 'Erreur lors de la suppression de l\'athlète',
+        'athletes.athlete': 'Athlète',
+        'athletes.athletes': 'athlètes',
+        'athletes.cpf': 'Numéro d\'identité',
+        'athletes.category': 'Catégorie',
+        'athletes.position': 'Poste',
+        'athletes.allCategories': 'Toutes les catégories',
+        'athletes.allPositions': 'Tous les postes',
+        'athletes.allStatuses': 'Tous les statuts',
+        'athletes.activeFilters': 'Filtres actifs',
+        'athletes.status.active': 'Actif',
+        'athletes.status.inactive': 'Inactif',
+        'athletes.status.injured': 'Blessé',
+        'athletes.status.suspended': 'Suspendu',
+
+        // Training
+        'training.title': 'Planning des entraînements',
+        'training.scheduleTraining': 'Planifier un entraînement',
+        'training.scheduleFirst': 'Planifier le premier entraînement',
+        'training.noTrainings': 'Aucun entraînement planifié',
+        'training.startScheduling': 'Commencez par planifier le premier entraînement de votre équipe.',
+        'training.deleteTraining': 'Supprimer l\'entraînement',
+        'training.deleteConfirm': 'Êtes-vous sûr de vouloir supprimer cet entraînement ? Cette action est irréversible.',
+        'training.training': 'Entraînement',
+        'training.trainings': 'entraînements',
+        'training.list': 'Liste',
+        'training.calendar': 'Calendrier',
+        'training.category': 'Catégorie',
+        'training.status': 'Statut',
+        'training.intensity': 'Intensité',
+        'training.from': 'Du',
+        'training.to': 'Au',
+        'training.allCategories': 'Toutes',
+        'training.allStatuses': 'Tous',
+        'training.allIntensities': 'Toutes',
+        'training.more': 'plus',
+        'training.status.scheduled': 'Planifié',
+        'training.status.inProgress': 'En cours',
+        'training.status.completed': 'Terminé',
+        'training.status.cancelled': 'Annulé',
+        'training.weekdays.sun': 'Dim',
+        'training.weekdays.mon': 'Lun',
+        'training.weekdays.tue': 'Mar',
+        'training.weekdays.wed': 'Mer',
+        'training.weekdays.thu': 'Jeu',
+        'training.weekdays.fri': 'Ven',
+        'training.weekdays.sat': 'Sam',
+
+        // Competitions
+        'competitions.title': 'Compétitions',
+        'competitions.searchPlaceholder': 'Rechercher des compétitions...',
+        'competitions.newCompetition': 'Nouvelle compétition',
+        'competitions.deleteCompetition': 'Supprimer la compétition',
+        'competitions.deleteConfirm': 'Êtes-vous sûr de vouloir supprimer la compétition',
+        'competitions.deleteWarning': 'Tous les matchs associés seront également supprimés.',
+        'competitions.noCompetitions': 'Aucune compétition enregistrée',
+        'competitions.noCompetitionsFiltered': 'Aucune compétition trouvée',
+        'competitions.clickToStart': 'Cliquez sur "Nouvelle compétition" pour commencer',
+        'competitions.competition': 'compétition',
+        'competitions.competitions': 'compétitions',
+        'competitions.season': 'Saison',
+        'competitions.errorLoading': 'Erreur lors du chargement des compétitions',
+        'competitions.errorDeleting': 'Erreur lors de la suppression de la compétition',
+        'competitions.status.upcoming': 'À venir',
+        'competitions.status.ongoing': 'En cours',
+        'competitions.status.finished': 'Terminée',
+        'competitions.status.cancelled': 'Annulée',
+        'competitions.type.league': 'Ligue régionale',
+        'competitions.type.cup': 'Coupe',
+        'competitions.type.tournament': 'Tournoi',
+        'competitions.type.friendly': 'Amical',
+        'competitions.type.championship': 'Championnat',
+        'competitions.dateStart': 'Début',
+        'competitions.dateEnd': 'Fin',
+
+        // Games
+        'games.title': 'Matchs',
+        'games.newGame': 'Nouveau match',
+        'games.searchPlaceholder': 'Rechercher des matchs...',
+        'games.game': 'Match',
+        'games.homeTeam': 'Équipe à domicile',
+        'games.awayTeam': 'Équipe à l\'extérieur',
+        'games.vs': 'vs',
+        'games.venue': 'Lieu',
+        'games.date': 'Date',
+        'games.time': 'Heure',
+        'games.noGames': 'Aucun match enregistré',
+
+        // Enrollments
+        'enrollments.title': 'Inscriptions',
+        'enrollments.searchPlaceholder': 'Rechercher par athlète...',
+        'enrollments.newEnrollment': 'Nouvelle inscription',
+        'enrollments.deleteEnrollment': 'Supprimer l\'inscription',
+        'enrollments.deleteConfirm': 'Êtes-vous sûr de vouloir supprimer l\'inscription de',
+        'enrollments.noEnrollments': 'Aucune inscription enregistrée',
+        'enrollments.noEnrollmentsFiltered': 'Aucune inscription trouvée avec les filtres appliqués',
+        'enrollments.enrollment': 'inscription',
+        'enrollments.enrollments': 'inscriptions',
+        'enrollments.athlete': 'Athlète',
+        'enrollments.plan': 'Plan',
+        'enrollments.enrollmentDate': 'Inscription',
+        'enrollments.monthlyFee': 'Cotisation mensuelle',
+        'enrollments.allStatuses': 'Tous les statuts',
+        'enrollments.allPlans': 'Tous les plans',
+        'enrollments.active': 'Actives',
+        'enrollments.pending': 'En attente',
+        'enrollments.inactive': 'Inactives',
+        'enrollments.errorLoading': 'Erreur lors du chargement des inscriptions',
+        'enrollments.errorDeleting': 'Erreur lors de la suppression de l\'inscription',
+        'enrollments.status.active': 'Active',
+        'enrollments.status.pending': 'En attente',
+        'enrollments.status.cancelled': 'Annulée',
+        'enrollments.status.expired': 'Expirée',
+
+        // Finance
+        'finance.title': 'Finances',
+        'finance.monthlyFees': 'Cotisations mensuelles',
+        'finance.overview': 'Aperçu',
+        'finance.revenue': 'Revenus',
+        'finance.expenses': 'Dépenses',
+        'finance.balance': 'Solde',
+
+        // Subscription
+        'subscription.title': 'Abonnement',
+        'subscription.currentPlan': 'Plan actuel',
+        'subscription.upgrade': 'Mettre à niveau',
+        'subscription.manage': 'Gérer l\'abonnement',
+
+        // Languages
+        'language.pt-BR': 'Portugais (Brésil)',
+        'language.en-US': 'Anglais (US)',
+        'language.es-ES': 'Espagnol',
+        'language.fr-FR': 'Français',
+        'language.pt-PT': 'Portugais (Portugal)',
+
+        // Page Titles
+        'pages.dashboard': 'Tableau de bord',
+        'pages.athletes': 'Gestion des athlètes',
+        'pages.enrollments': 'Gestion des inscriptions',
+        'pages.competitions': 'Compétitions et ligues',
+        'pages.games': 'Matchs',
+        'pages.training': 'Planning des entraînements',
+        'pages.finance': 'Flux de trésorerie',
+        'pages.monthlyFees': 'Cotisations et facturation',
+        'pages.subscription': 'Mon abonnement',
+        'pages.plans': 'Plans d\'abonnement',
+        'pages.settings': 'Paramètres du club',
+    },
+    'pt-PT': {
+        // Navigation
+        'nav.dashboard': 'Painel',
+        'nav.athletes': 'Atletas',
+        'nav.enrollments': 'Inscrições',
+        'nav.competitions': 'Competições',
+        'nav.training': 'Treinos',
+        'nav.finance': 'Finanças',
+        'nav.subscription': 'Subscrição',
+        'nav.settings': 'Definições',
+        'nav.logout': 'Sair',
+        'nav.games': 'Jogos',
+
+        // Auth
+        'auth.login': 'Entrar',
+        'auth.signup': 'Criar conta',
+        'auth.forgotPassword': 'Esqueceu a palavra-passe?',
+        'auth.email': 'E-mail',
+        'auth.password': 'Palavra-passe',
+        'auth.confirmPassword': 'Confirmar palavra-passe',
+        'auth.fullName': 'Nome completo',
+        'auth.language': 'Idioma',
+        'auth.rememberMe': 'Lembrar-me',
+        'auth.noAccount': 'Não tem uma conta?',
+        'auth.hasAccount': 'Já tem uma conta?',
+        'auth.welcomeBack': 'Bem-vindo de volta',
+        'auth.createAccount': 'Criar conta',
+        'auth.enterCredentials': 'Introduza as suas credenciais para aceder',
+        'auth.fillData': 'Preencha os dados para começar',
+        'auth.sendRecoveryLink': 'Enviar ligação de recuperação',
+        'auth.backToLogin': 'Voltar ao início de sessão',
+        'auth.recoverPassword': 'Recuperar palavra-passe',
+        'auth.recoverPasswordDesc': 'Introduza o seu e-mail e enviaremos uma ligação para redefinir a sua palavra-passe.',
+        'auth.emailSent': 'E-mail enviado!',
+        'auth.accountCreated': 'Conta criada!',
+        'auth.checkEmail': 'Verifique a sua caixa de entrada para ativar a sua conta.',
+        'auth.goToLogin': 'Ir para o início de sessão',
+        'auth.tagline': 'Gestão inteligente para o seu clube',
+        'auth.loading': 'A entrar...',
+        'auth.creatingAccount': 'A criar conta...',
+        'auth.passwordMinLength': 'Mínimo de 6 caracteres',
+        'auth.systemLanguage': 'Idioma do sistema',
+        'auth.namePlaceholder': 'O seu nome completo',
+        'auth.emailPlaceholder': 'seu@email.com',
+        'auth.nameRequired': 'O nome completo é obrigatório',
+        'auth.passwordMismatch': 'As palavras-passe não coincidem',
+        'auth.passwordTooShort': 'A palavra-passe deve ter pelo menos 6 caracteres',
+        'auth.confirmEmailSent': 'Enviámos um e-mail de confirmação para',
+        'auth.confirmEmailInstructions': 'Por favor, verifique a sua caixa de entrada para ativar a sua conta.',
+        'auth.recoveryLinkSent': 'Enviámos uma ligação de recuperação para',
+        'auth.recoveryInstructions': 'Verifique a sua caixa de entrada e siga as instruções.',
+        'auth.sending': 'A enviar...',
+        'auth.unexpectedError': 'Ocorreu um erro inesperado. Tente novamente.',
+        'auth.copyright': '© 2026 Aura Club. Todos os direitos reservados.',
+
+        // Common
+        'common.loading': 'A carregar...',
+        'common.save': 'Guardar',
+        'common.cancel': 'Cancelar',
+        'common.search': 'Pesquisar...',
+        'common.filters': 'Filtros',
+        'common.actions': 'Ações',
+        'common.status': 'Estado',
+        'common.active': 'Ativo',
+        'common.inactive': 'Inativo',
+        'common.edit': 'Editar',
+        'common.delete': 'Eliminar',
+        'common.create': 'Criar',
+        'common.new': 'Novo',
+        'common.all': 'Todos',
+        'common.none': 'Nenhum',
+        'common.yes': 'Sim',
+        'common.no': 'Não',
+        'common.back': 'Voltar',
+        'common.next': 'Seguinte',
+        'common.previous': 'Anterior',
+        'common.close': 'Fechar',
+        'common.confirm': 'Confirmar',
+        'common.clearFilters': 'Limpar filtros',
+        'common.noResults': 'Nenhum resultado encontrado',
+        'common.error': 'Erro',
+        'common.success': 'Sucesso',
+        'common.tryAgain': 'Tentar novamente',
+        'common.comingSoon': 'Em breve',
+        'common.registered': 'registados',
+        'common.ofTotal': 'da base total',
+        'common.seeAll': 'Ver todos',
+        'common.details': 'Detalhes',
+        'common.viewDetails': 'Ver detalhes',
+        'common.noEmail': 'Sem e-mail',
+        'common.noPosition': 'Sem posição',
+        'common.noCategory': 'Sem categoria',
+        'common.noName': 'Sem nome',
+        'common.noDate': 'Sem data',
+        'common.invalidDate': 'Data inválida',
+        'common.dateNotDefined': 'Sem data definida',
+        'common.locationTBD': 'Local a definir',
+        'common.general': 'Geral',
+
+        // Monthly Fees
+        'monthlyFees.title': 'Mensalidades',
+        'monthlyFees.overdue': 'em atraso',
+        'monthlyFees.pending': 'pendentes',
+        'monthlyFees.paid': 'pagas',
+
+        // Dashboard
+        'dashboard.title': 'Painel',
+        'dashboard.totalAthletes': 'Total de atletas',
+        'dashboard.activeEnrollments': 'Inscrições ativas',
+        'dashboard.pendingFees': 'Mensalidades pendentes',
+        'dashboard.nextTraining': 'Próximo treino',
+        'dashboard.financialFlow': 'Fluxo financeiro',
+        'dashboard.revenueVsExpenses': 'Comparativo: Receita vs Despesas',
+        'dashboard.weekly': 'Semanal',
+        'dashboard.monthly': 'Mensal',
+        'dashboard.upcomingGames': 'Próximos jogos',
+        'dashboard.noGamesScheduled': 'Nenhum jogo agendado',
+        'dashboard.errorLoading': 'Erro ao carregar dados do painel',
+
+        // Athletes
+        'athletes.title': 'Atletas',
+        'athletes.searchPlaceholder': 'Pesquisar atleta por nome ou categoria...',
+        'athletes.registerAthlete': 'Registar atleta',
+        'athletes.newAthlete': 'Novo atleta',
+        'athletes.deleteAthlete': 'Eliminar atleta',
+        'athletes.deleteConfirm': 'Tem a certeza de que pretende eliminar o atleta',
+        'athletes.deleteWarning': 'Todos os dados relacionados (equipamento, fisiologia, histórico) também serão removidos.',
+        'athletes.noAthletes': 'Nenhum atleta registado',
+        'athletes.noAthletesFiltered': 'Nenhum atleta encontrado com os filtros aplicados',
+        'athletes.errorLoading': 'Erro ao carregar atletas',
+        'athletes.errorDeleting': 'Erro ao eliminar atleta',
+        'athletes.athlete': 'Atleta',
+        'athletes.athletes': 'atletas',
+        'athletes.cpf': 'NIF',
+        'athletes.category': 'Categoria',
+        'athletes.position': 'Posição',
+        'athletes.allCategories': 'Todas as categorias',
+        'athletes.allPositions': 'Todas as posições',
+        'athletes.allStatuses': 'Todos os estados',
+        'athletes.activeFilters': 'Filtros ativos',
+        'athletes.status.active': 'Ativo',
+        'athletes.status.inactive': 'Inativo',
+        'athletes.status.injured': 'Lesionado',
+        'athletes.status.suspended': 'Suspenso',
+
+        // Training
+        'training.title': 'Calendário de treinos',
+        'training.scheduleTraining': 'Agendar treino',
+        'training.scheduleFirst': 'Agendar primeiro treino',
+        'training.noTrainings': 'Nenhum treino agendado',
+        'training.startScheduling': 'Comece por agendar o primeiro treino da sua equipa.',
+        'training.deleteTraining': 'Eliminar treino',
+        'training.deleteConfirm': 'Tem a certeza de que pretende eliminar este treino? Esta ação não pode ser desfeita.',
+        'training.training': 'Treino',
+        'training.trainings': 'treinos',
+        'training.list': 'Lista',
+        'training.calendar': 'Calendário',
+        'training.category': 'Categoria',
+        'training.status': 'Estado',
+        'training.intensity': 'Intensidade',
+        'training.from': 'De',
+        'training.to': 'Até',
+        'training.allCategories': 'Todas',
+        'training.allStatuses': 'Todos',
+        'training.allIntensities': 'Todas',
+        'training.more': 'mais',
+        'training.status.scheduled': 'Agendado',
+        'training.status.inProgress': 'Em curso',
+        'training.status.completed': 'Concluído',
+        'training.status.cancelled': 'Cancelado',
+        'training.weekdays.sun': 'Dom',
+        'training.weekdays.mon': 'Seg',
+        'training.weekdays.tue': 'Ter',
+        'training.weekdays.wed': 'Qua',
+        'training.weekdays.thu': 'Qui',
+        'training.weekdays.fri': 'Sex',
+        'training.weekdays.sat': 'Sáb',
+
+        // Competitions
+        'competitions.title': 'Competições',
+        'competitions.searchPlaceholder': 'Pesquisar competições...',
+        'competitions.newCompetition': 'Nova competição',
+        'competitions.deleteCompetition': 'Eliminar competição',
+        'competitions.deleteConfirm': 'Tem a certeza de que pretende eliminar a competição',
+        'competitions.deleteWarning': 'Todos os jogos relacionados também serão removidos.',
+        'competitions.noCompetitions': 'Nenhuma competição registada',
+        'competitions.noCompetitionsFiltered': 'Nenhuma competição encontrada',
+        'competitions.clickToStart': 'Clique em "Nova competição" para começar',
+        'competitions.competition': 'competição',
+        'competitions.competitions': 'competições',
+        'competitions.season': 'Época',
+        'competitions.errorLoading': 'Erro ao carregar competições',
+        'competitions.errorDeleting': 'Erro ao eliminar competição',
+        'competitions.status.upcoming': 'Próxima',
+        'competitions.status.ongoing': 'Em curso',
+        'competitions.status.finished': 'Terminada',
+        'competitions.status.cancelled': 'Cancelada',
+        'competitions.type.league': 'Liga regional',
+        'competitions.type.cup': 'Taça',
+        'competitions.type.tournament': 'Torneio',
+        'competitions.type.friendly': 'Amigável',
+        'competitions.type.championship': 'Campeonato',
+        'competitions.dateStart': 'Início',
+        'competitions.dateEnd': 'Fim',
+
+        // Games
+        'games.title': 'Jogos',
+        'games.newGame': 'Novo jogo',
+        'games.searchPlaceholder': 'Pesquisar jogos...',
+        'games.game': 'Jogo',
+        'games.homeTeam': 'Equipa da casa',
+        'games.awayTeam': 'Equipa visitante',
+        'games.vs': 'vs',
+        'games.venue': 'Local',
+        'games.date': 'Data',
+        'games.time': 'Hora',
+        'games.noGames': 'Nenhum jogo registado',
+
+        // Enrollments
+        'enrollments.title': 'Inscrições',
+        'enrollments.searchPlaceholder': 'Pesquisar por atleta...',
+        'enrollments.newEnrollment': 'Nova inscrição',
+        'enrollments.deleteEnrollment': 'Eliminar inscrição',
+        'enrollments.deleteConfirm': 'Tem a certeza de que pretende eliminar a inscrição de',
+        'enrollments.noEnrollments': 'Nenhuma inscrição registada',
+        'enrollments.noEnrollmentsFiltered': 'Nenhuma inscrição encontrada com os filtros aplicados',
+        'enrollments.enrollment': 'inscrição',
+        'enrollments.enrollments': 'inscrições',
+        'enrollments.athlete': 'Atleta',
+        'enrollments.plan': 'Plano',
+        'enrollments.enrollmentDate': 'Inscrição',
+        'enrollments.monthlyFee': 'Mensalidade',
+        'enrollments.allStatuses': 'Todos os estados',
+        'enrollments.allPlans': 'Todos os planos',
+        'enrollments.active': 'Ativas',
+        'enrollments.pending': 'Pendentes',
+        'enrollments.inactive': 'Inativas',
+        'enrollments.errorLoading': 'Erro ao carregar inscrições',
+        'enrollments.errorDeleting': 'Erro ao eliminar inscrição',
+        'enrollments.status.active': 'Ativa',
+        'enrollments.status.pending': 'Pendente',
+        'enrollments.status.cancelled': 'Cancelada',
+        'enrollments.status.expired': 'Expirada',
+
+        // Finance
+        'finance.title': 'Finanças',
+        'finance.monthlyFees': 'Mensalidades',
+        'finance.overview': 'Visão geral',
+        'finance.revenue': 'Receita',
+        'finance.expenses': 'Despesas',
+        'finance.balance': 'Saldo',
+
+        // Subscription
+        'subscription.title': 'Subscrição',
+        'subscription.currentPlan': 'Plano atual',
+        'subscription.upgrade': 'Melhorar plano',
+        'subscription.manage': 'Gerir subscrição',
+
+        // Languages
+        'language.pt-BR': 'Português (Brasil)',
+        'language.pt-PT': 'Português (Portugal)',
+        'language.en-US': 'English (US)',
+        'language.es-ES': 'Espanhol',
+        'language.fr-FR': 'Francês',
+
+        // Page Titles
+        'pages.dashboard': 'Painel',
+        'pages.athletes': 'Gestão de atletas',
+        'pages.enrollments': 'Gestão de inscrições',
+        'pages.competitions': 'Competições e ligas',
+        'pages.games': 'Jogos',
+        'pages.training': 'Calendário de treinos',
+        'pages.finance': 'Fluxo de caixa',
+        'pages.monthlyFees': 'Mensalidades e cobranças',
+        'pages.subscription': 'A minha subscrição',
+        'pages.plans': 'Planos de subscrição',
+        'pages.settings': 'Definições do clube',
+    },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -801,11 +1420,58 @@ export const useLanguage = () => {
     return context;
 };
 
+// Map short language codes from URL to full locale codes
+const LANG_SHORT_MAP: Record<string, Language> = {
+    'pt': 'pt-BR',
+    'pt-pt': 'pt-PT',
+    'en': 'en-US',
+    'es': 'es-ES',
+    'fr': 'fr-FR',
+};
+
+/** Read ?lang= parameter from the URL (works with HashRouter and various URL formats) */
+const getUrlLangParam = (): Language | null => {
+    const resolveLang = (langParam: string | null | undefined): Language | null => {
+        if (!langParam) return null;
+        const lower = langParam.toLowerCase();
+        if (LANG_SHORT_MAP[lower]) return LANG_SHORT_MAP[lower];
+        if (translations[lower as Language]) return lower as Language;
+        return null;
+    };
+
+    // 1) Check main URL query string: site.com/?lang=fr#/login
+    const mainSearch = window.location.search;
+    if (mainSearch) {
+        const mainParams = new URLSearchParams(mainSearch);
+        const result = resolveLang(mainParams.get('lang'));
+        if (result) return result;
+    }
+
+    // 2) Check hash query string: site.com/#/login?lang=fr
+    const hash = window.location.hash;
+    const hashQIndex = hash.indexOf('?');
+    if (hashQIndex !== -1) {
+        const hashParams = new URLSearchParams(hash.substring(hashQIndex));
+        const result = resolveLang(hashParams.get('lang'));
+        if (result) return result;
+    }
+
+    // 3) Fallback: check full URL for &lang= or ?lang= patterns (handles malformed URLs)
+    const fullUrl = window.location.href;
+    const langMatch = fullUrl.match(/[?&]lang=([^&#]+)/i);
+    if (langMatch) {
+        const result = resolveLang(langMatch[1]);
+        if (result) return result;
+    }
+
+    return null;
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [language, setLanguageState] = useState<Language>('pt-BR');
     const { user } = useAuth();
 
-    // Load language from user profile
+    // Load language from user profile or URL parameter
     useEffect(() => {
         const loadLanguage = async () => {
             if (user) {
@@ -817,13 +1483,21 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
                 if (data?.language) {
                     setLanguageState(data.language as Language);
+                    return;
                 }
-            } else {
-                // Try to load from localStorage for non-authenticated users
-                const savedLang = localStorage.getItem('language') as Language;
-                if (savedLang && translations[savedLang]) {
-                    setLanguageState(savedLang);
-                }
+            }
+
+            // For non-authenticated users: URL param > localStorage > default
+            const urlLang = getUrlLangParam();
+            if (urlLang) {
+                setLanguageState(urlLang);
+                localStorage.setItem('language', urlLang);
+                return;
+            }
+
+            const savedLang = localStorage.getItem('language') as Language;
+            if (savedLang && translations[savedLang]) {
+                setLanguageState(savedLang);
             }
         };
 
@@ -856,6 +1530,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const AVAILABLE_LANGUAGES: { value: Language; label: string }[] = [
     { value: 'pt-BR', label: 'Português (Brasil)' },
+    { value: 'pt-PT', label: 'Português (Portugal)' },
     { value: 'en-US', label: 'English (US)' },
     { value: 'es-ES', label: 'Español' },
+    { value: 'fr-FR', label: 'Français' },
 ];

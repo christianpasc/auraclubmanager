@@ -4,12 +4,11 @@ import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown } from 'lucide-react';
 import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
-import { AVAILABLE_LANGUAGES } from '../../contexts/LanguageContext';
+import { AVAILABLE_LANGUAGES, useLanguage } from '../../contexts/LanguageContext';
 
 const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
-    const [language, setLanguage] = useState('pt-BR');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -17,23 +16,30 @@ const Signup: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const { signUp } = useAuth();
+    const { t, language: contextLanguage } = useLanguage();
+    const [language, setLanguage] = useState(contextLanguage);
+
+    // Sync with context language when it changes (e.g., URL param loaded async)
+    React.useEffect(() => {
+        setLanguage(contextLanguage);
+    }, [contextLanguage]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
         if (!fullName.trim()) {
-            setError('O nome completo é obrigatório');
+            setError(t('auth.nameRequired'));
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('As senhas não coincidem');
+            setError(t('auth.passwordMismatch'));
             return;
         }
 
         if (password.length < 6) {
-            setError('A senha deve ter pelo menos 6 caracteres');
+            setError(t('auth.passwordTooShort'));
             return;
         }
 
@@ -60,16 +66,16 @@ const Signup: React.FC = () => {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                             <User className="w-8 h-8 text-green-600" />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Conta criada!</h2>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('auth.accountCreated')}</h2>
                         <p className="text-slate-500 mb-6">
-                            Enviamos um e-mail de confirmação para <strong>{email}</strong>.
-                            Por favor, verifique sua caixa de entrada para ativar sua conta.
+                            {t('auth.confirmEmailSent')} <strong>{email}</strong>.
+                            {' '}{t('auth.confirmEmailInstructions')}
                         </p>
                         <Link
                             to="/login"
                             className="inline-block w-full py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transition-all"
                         >
-                            Ir para o Login
+                            {t('auth.goToLogin')}
                         </Link>
                     </div>
                 </div>
@@ -83,13 +89,13 @@ const Signup: React.FC = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <img src={logoImg} alt="Aura Club Manager" className="mx-auto mb-1" style={{ width: '259px', height: '87px' }} />
-                    <p className="text-slate-400">Gestão inteligente para seu clube</p>
+                    <p className="text-slate-400">{t('auth.tagline')}</p>
                 </div>
 
                 {/* Card */}
                 <div className="bg-white rounded-2xl shadow-2xl p-8">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Criar conta</h2>
-                    <p className="text-slate-500 mb-6">Preencha os dados para começar</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('auth.createAccount')}</h2>
+                    <p className="text-slate-500 mb-6">{t('auth.fillData')}</p>
 
                     {error && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -101,7 +107,7 @@ const Signup: React.FC = () => {
                         {/* Full Name */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Nome Completo
+                                {t('auth.fullName')}
                             </label>
                             <div className="relative">
                                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -109,7 +115,7 @@ const Signup: React.FC = () => {
                                     type="text"
                                     value={fullName}
                                     onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="Seu nome completo"
+                                    placeholder={t('auth.namePlaceholder')}
                                     required
                                     className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                 />
@@ -119,7 +125,7 @@ const Signup: React.FC = () => {
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                E-mail
+                                {t('auth.email')}
                             </label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -127,7 +133,7 @@ const Signup: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="seu@email.com"
+                                    placeholder={t('auth.emailPlaceholder')}
                                     required
                                     className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                                 />
@@ -137,7 +143,7 @@ const Signup: React.FC = () => {
                         {/* Language */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Idioma do Sistema
+                                {t('auth.systemLanguage')}
                             </label>
                             <div className="relative">
                                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -159,7 +165,7 @@ const Signup: React.FC = () => {
                         {/* Password */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Senha
+                                {t('auth.password')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -179,13 +185,13 @@ const Signup: React.FC = () => {
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">Mínimo de 6 caracteres</p>
+                            <p className="text-xs text-slate-400 mt-1">{t('auth.passwordMinLength')}</p>
                         </div>
 
                         {/* Confirm Password */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Confirmar Senha
+                                {t('auth.confirmPassword')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -208,26 +214,26 @@ const Signup: React.FC = () => {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Criando conta...
+                                    {t('auth.creatingAccount')}
                                 </>
                             ) : (
-                                'Criar conta'
+                                t('auth.createAccount')
                             )}
                         </button>
                     </form>
 
                     <div className="mt-6 text-center">
                         <p className="text-slate-500">
-                            Já tem uma conta?{' '}
+                            {t('auth.hasAccount')}{' '}
                             <Link to="/login" className="font-semibold text-primary hover:text-primary-dark">
-                                Entrar
+                                {t('auth.login')}
                             </Link>
                         </p>
                     </div>
                 </div>
 
                 <p className="text-center text-slate-500 text-sm mt-6">
-                    © 2026 Aura Club. Todos os direitos reservados.
+                    {t('auth.copyright')}
                 </p>
             </div>
         </div>
