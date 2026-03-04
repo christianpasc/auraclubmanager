@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 interface UserMetadata {
     full_name?: string;
     language?: string;
+    organization_type?: 'school' | 'club';
 }
 
 interface AuthContextType {

@@ -9,6 +9,7 @@ export interface Tenant {
     primary_color?: string;
     subscription_plan?: string;
     subscription_status?: string;
+    organization_type?: 'school' | 'club';
     settings?: Record<string, any>;
     created_at?: string;
     updated_at?: string;
@@ -84,7 +85,8 @@ export const tenantService = {
         // Use the secure RPC to bypass RLS policies
         const { data: newTenantId, error: rpcError } = await supabase.rpc('create_own_tenant', {
             p_name: tenant.name,
-            p_slug: tenant.slug
+            p_slug: tenant.slug,
+            p_organization_type: tenant.organization_type || 'school'
         });
 
         if (rpcError) {

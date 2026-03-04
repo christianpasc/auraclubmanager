@@ -12,6 +12,8 @@ export interface StripePlan {
     currency: string;
     is_active: boolean;
     features: string[];
+    features_school: string[];
+    features_club: string[];
     sort_order: number;
     is_popular: boolean;
     max_users: number | null;
@@ -44,6 +46,8 @@ export const adminPlanService = {
             p_is_popular: plan.is_popular || false,
             p_max_users: plan.max_users ?? null,
             p_max_athletes: plan.max_athletes ?? null,
+            p_features_school: JSON.stringify(plan.features_school || []),
+            p_features_club: JSON.stringify(plan.features_club || []),
         });
         if (error) throw error;
         return data as StripePlan;
@@ -67,6 +71,8 @@ export const adminPlanService = {
         else params.p_max_users = -1;
         if (plan.max_athletes !== undefined) params.p_max_athletes = plan.max_athletes ?? null;
         else params.p_max_athletes = -1;
+        if (plan.features_school !== undefined) params.p_features_school = JSON.stringify(plan.features_school);
+        if (plan.features_club !== undefined) params.p_features_club = JSON.stringify(plan.features_club);
 
         const { data, error } = await supabase.rpc('admin_update_plan', params);
         if (error) throw error;

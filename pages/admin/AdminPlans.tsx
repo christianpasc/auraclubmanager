@@ -23,6 +23,8 @@ interface PlanFormData {
     currency: string;
     is_active: boolean;
     features: string[];
+    features_school: string[];
+    features_club: string[];
     sort_order: string;
     is_popular: boolean;
     max_users: string;
@@ -41,6 +43,8 @@ const emptyForm: PlanFormData = {
     currency: 'brl',
     is_active: true,
     features: [''],
+    features_school: [''],
+    features_club: [''],
     sort_order: '0',
     is_popular: false,
     max_users: '',
@@ -103,6 +107,14 @@ const AdminPlans: React.FC = () => {
                 const f = typeof plan.features === 'string' ? JSON.parse(plan.features) : (plan.features || []);
                 return Array.isArray(f) && f.length > 0 ? f : [''];
             })(),
+            features_school: (() => {
+                const f = typeof plan.features_school === 'string' ? JSON.parse(plan.features_school) : (plan.features_school || []);
+                return Array.isArray(f) && f.length > 0 ? f : [''];
+            })(),
+            features_club: (() => {
+                const f = typeof plan.features_club === 'string' ? JSON.parse(plan.features_club) : (plan.features_club || []);
+                return Array.isArray(f) && f.length > 0 ? f : [''];
+            })(),
             sort_order: (plan.sort_order || 0).toString(),
             is_popular: plan.is_popular || false,
             max_users: plan.max_users !== null && plan.max_users !== undefined ? plan.max_users.toString() : '',
@@ -129,6 +141,8 @@ const AdminPlans: React.FC = () => {
                 currency: form.currency,
                 is_active: form.is_active,
                 features: form.features.filter(f => f.trim() !== ''),
+                features_school: form.features_school.filter(f => f.trim() !== ''),
+                features_club: form.features_club.filter(f => f.trim() !== ''),
                 sort_order: parseInt(form.sort_order) || 0,
                 is_popular: form.is_popular,
                 max_users: form.unlimited_users ? null : (parseInt(form.max_users) || 1),
@@ -645,6 +659,87 @@ const AdminPlans: React.FC = () => {
                                 </button>
                             </div>
 
+                            {/* Features School */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    🎓 Funcionalidades Escolinha
+                                </label>
+                                <div className="space-y-2">
+                                    {form.features_school.map((feature, i) => (
+                                        <div key={i} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={feature}
+                                                onChange={(e) => {
+                                                    const arr = [...form.features_school];
+                                                    arr[i] = e.target.value;
+                                                    setForm(prev => ({ ...prev, features_school: arr }));
+                                                }}
+                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                placeholder={`Feature escolinha ${i + 1}...`}
+                                            />
+                                            {form.features_school.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setForm(prev => ({ ...prev, features_school: prev.features_school.filter((_, idx) => idx !== i) }))}
+                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, features_school: [...prev.features_school, ''] }))}
+                                    className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Adicionar feature escolinha
+                                </button>
+                            </div>
+
+                            {/* Features Club */}
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    🛡️ Funcionalidades Clube
+                                </label>
+                                <div className="space-y-2">
+                                    {form.features_club.map((feature, i) => (
+                                        <div key={i} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={feature}
+                                                onChange={(e) => {
+                                                    const arr = [...form.features_club];
+                                                    arr[i] = e.target.value;
+                                                    setForm(prev => ({ ...prev, features_club: arr }));
+                                                }}
+                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                placeholder={`Feature clube ${i + 1}...`}
+                                            />
+                                            {form.features_club.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setForm(prev => ({ ...prev, features_club: prev.features_club.filter((_, idx) => idx !== i) }))}
+                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setForm(prev => ({ ...prev, features_club: [...prev.features_club, ''] }))}
+                                    className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Adicionar feature clube
+                                </button>
+                            </div>
                             {/* Toggles */}
                             <div className="flex flex-wrap gap-6">
                                 <label className="flex items-center gap-2 cursor-pointer">

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { TenantProvider } from './contexts/TenantContext';
+import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
@@ -30,6 +30,7 @@ import AdminLayout from './components/layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
+import Onboarding from './pages/Onboarding';
 import { useAuth } from './contexts/AuthContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -133,6 +134,14 @@ const NotFoundPage: React.FC = () => {
   );
 };
 
+// Wrapper for routes that should only be accessible by school-type tenants
+const SchoolOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isSchool, loading } = useTenant();
+  if (loading) return null;
+  if (!isSchool) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 
 
 // Component that renders auth routes outside of tenant/subscription context
@@ -150,46 +159,64 @@ const AuthRoutes: React.FC = () => {
 const ProtectedRoutes: React.FC = () => {
   return (
     <TenantProvider>
-      <SubscriptionProvider>
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/admin" element={<ProtectedAdminLayout><AdminDashboard /></ProtectedAdminLayout>} />
-          <Route path="/admin/users" element={<ProtectedAdminLayout><AdminUsers /></ProtectedAdminLayout>} />
-          <Route path="/admin/plans" element={<ProtectedAdminLayout><AdminPlans /></ProtectedAdminLayout>} />
+      <OnboardingGate>
+        <SubscriptionProvider>
+          <Routes>
+            {/* Admin Routes */}
+            <Route path="/admin" element={<ProtectedAdminLayout><AdminDashboard /></ProtectedAdminLayout>} />
+            <Route path="/admin/users" element={<ProtectedAdminLayout><AdminUsers /></ProtectedAdminLayout>} />
+            <Route path="/admin/plans" element={<ProtectedAdminLayout><AdminPlans /></ProtectedAdminLayout>} />
 
-          {/* Plans route - accessible even with expired trial */}
-          <Route path="/plans" element={<ProtectedLayoutExpired><Plans /></ProtectedLayoutExpired>} />
-          <Route path="/settings" element={<ProtectedLayoutExpired><Settings /></ProtectedLayoutExpired>} />
+            {/* Plans route - accessible even with expired trial */}
+            <Route path="/plans" element={<ProtectedLayoutExpired><Plans /></ProtectedLayoutExpired>} />
+            <Route path="/settings" element={<ProtectedLayoutExpired><Settings /></ProtectedLayoutExpired>} />
 
-          {/* Protected Routes - require active trial or subscription */}
-          <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-          <Route path="/athletes" element={<ProtectedLayout><Athletes /></ProtectedLayout>} />
-          <Route path="/athletes/new" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
-          <Route path="/athletes/:id" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
-          <Route path="/enrollments" element={<ProtectedLayout><Enrollments /></ProtectedLayout>} />
-          <Route path="/enrollments/new" element={<ProtectedLayout><EnrollmentForm /></ProtectedLayout>} />
-          <Route path="/enrollments/:id" element={<ProtectedLayout><EnrollmentForm /></ProtectedLayout>} />
-          <Route path="/competitions" element={<ProtectedLayout><Competitions /></ProtectedLayout>} />
-          <Route path="/competitions/new" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
-          <Route path="/competitions/:id" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
-          <Route path="/games" element={<ProtectedLayout><Games /></ProtectedLayout>} />
-          <Route path="/games/new" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
-          <Route path="/games/:id" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
-          <Route path="/training" element={<ProtectedLayout><Training /></ProtectedLayout>} />
-          <Route path="/training/new" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
-          <Route path="/training/:id" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
-          <Route path="/finance" element={<ProtectedLayout><Finance /></ProtectedLayout>} />
-          <Route path="/finance/fees" element={<ProtectedLayout><MonthlyFees /></ProtectedLayout>} />
-          <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
-          <Route path="*" element={
-            <ProtectedLayout>
-              <NotFoundPage />
-            </ProtectedLayout>
-          } />
-        </Routes>
-      </SubscriptionProvider>
+            {/* Protected Routes - require active trial or subscription */}
+            <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+            <Route path="/athletes" element={<ProtectedLayout><Athletes /></ProtectedLayout>} />
+            <Route path="/athletes/new" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
+            <Route path="/athletes/:id" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
+            <Route path="/enrollments" element={<ProtectedLayout><SchoolOnlyRoute><Enrollments /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/enrollments/new" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/enrollments/:id" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/competitions" element={<ProtectedLayout><Competitions /></ProtectedLayout>} />
+            <Route path="/competitions/new" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
+            <Route path="/competitions/:id" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
+            <Route path="/games" element={<ProtectedLayout><Games /></ProtectedLayout>} />
+            <Route path="/games/new" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
+            <Route path="/games/:id" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
+            <Route path="/training" element={<ProtectedLayout><Training /></ProtectedLayout>} />
+            <Route path="/training/new" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
+            <Route path="/training/:id" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
+            <Route path="/finance" element={<ProtectedLayout><Finance /></ProtectedLayout>} />
+            <Route path="/finance/fees" element={<ProtectedLayout><SchoolOnlyRoute><MonthlyFees /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
+            <Route path="*" element={
+              <ProtectedLayout>
+                <NotFoundPage />
+              </ProtectedLayout>
+            } />
+          </Routes>
+        </SubscriptionProvider>
+      </OnboardingGate>
     </TenantProvider>
   );
+};
+
+// Renders Onboarding screen when user is logged in but has no tenant
+const OnboardingGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const { tenants, loading: tenantLoading } = useTenant();
+
+  // Still loading — don't flash onboarding
+  if (tenantLoading) return <>{children}</>;
+
+  // User is logged in and has NO tenant → show onboarding
+  if (user && tenants.length === 0) {
+    return <Onboarding />;
+  }
+
+  return <>{children}</>;
 };
 
 // Router wrapper that decides which route set to use

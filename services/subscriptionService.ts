@@ -53,24 +53,19 @@ export const subscriptionService = {
         const trialDaysRemaining = this.calculateTrialDaysRemaining(tenant.created_at);
         const isTrialExpired = trialDaysRemaining <= 0;
 
-        // Check for active subscription by plan dates
+        // Check for active subscription: only tenants with a real Stripe plan (subscription_plan_id)
+        // and a valid future expiration date are considered active.
+        // A plan of 'free' or 'EMPTY' with status 'active' is NOT an active subscription — it's just trial state.
         const now = new Date();
         const subscriptionEndsAt = tenant.subscription_ends_at
             ? new Date(tenant.subscription_ends_at)
             : null;
 
-        const hasActivePlanSubscription =
+        const hasActiveSubscription = !!(
             tenant.subscription_plan_id &&
             subscriptionEndsAt &&
-            subscriptionEndsAt > now;
-
-        // Also check legacy subscription fields
-        const hasLegacySubscription =
-            tenant.subscription_status === 'active' &&
-            !!tenant.subscription_plan &&
-            tenant.subscription_plan !== '';
-
-        const hasActiveSubscription = !!(hasActivePlanSubscription || hasLegacySubscription);
+            subscriptionEndsAt > now
+        );
 
         let subscriptionStatus: 'trial' | 'active' | 'expired';
         if (hasActiveSubscription) {

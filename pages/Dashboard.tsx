@@ -25,7 +25,7 @@ import { dashboardService, DashboardStats, UpcomingGame, FinancialFlowData } fro
 import { Training } from '../services/trainingService';
 
 const Dashboard: React.FC = () => {
-  const { currentTenant, loading: tenantLoading } = useTenant();
+  const { currentTenant, loading: tenantLoading, isSchool } = useTenant();
   const { t, language } = useLanguage();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [upcomingGames, setUpcomingGames] = useState<UpcomingGame[]>([]);
@@ -158,20 +158,24 @@ const Dashboard: React.FC = () => {
           icon={Users}
           iconColor="bg-blue-50 text-blue-600"
         />
-        <StatCard
-          label={t('dashboard.activeEnrollments')}
-          value={stats?.activeEnrollments.toLocaleString(language) || '0'}
-          subValue={`${enrollmentPercentage}% ${t('common.ofTotal')}`}
-          icon={CheckCircle}
-          iconColor="bg-green-50 text-green-600"
-        />
-        <StatCard
-          label={t('dashboard.pendingFees')}
-          value={(stats?.pendingFeesCount || 0) + (stats?.overdueFeesCount || 0)}
-          subValue={stats?.overdueFeesCount ? `${stats.overdueFeesCount} ${t('monthlyFees.overdue')}` : t('common.comingSoon')}
-          icon={AlertCircle}
-          iconColor="bg-amber-50 text-amber-600"
-        />
+        {isSchool && (
+          <StatCard
+            label={t('dashboard.activeEnrollments')}
+            value={stats?.activeEnrollments.toLocaleString(language) || '0'}
+            subValue={`${enrollmentPercentage}% ${t('common.ofTotal')}`}
+            icon={CheckCircle}
+            iconColor="bg-green-50 text-green-600"
+          />
+        )}
+        {isSchool && (
+          <StatCard
+            label={t('dashboard.pendingFees')}
+            value={(stats?.pendingFeesCount || 0) + (stats?.overdueFeesCount || 0)}
+            subValue={stats?.overdueFeesCount ? `${stats.overdueFeesCount} ${t('monthlyFees.overdue')}` : t('common.comingSoon')}
+            icon={AlertCircle}
+            iconColor="bg-amber-50 text-amber-600"
+          />
+        )}
         <StatCard
           label={t('dashboard.nextTraining')}
           value={nextTraining ? formatTrainingDate(nextTraining) : '—'}

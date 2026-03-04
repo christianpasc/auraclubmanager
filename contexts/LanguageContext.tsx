@@ -279,6 +279,11 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.unexpectedError': 'Ocorreu um erro inesperado. Tente novamente.',
         'auth.copyright': '© 2026 Aura Club. Todos os direitos reservados.',
 
+        // Organization Type
+        'auth.organizationType': 'Tipo de Organização',
+        'auth.footballSchool': 'Escolinha de Futebol',
+        'auth.footballClub': 'Clube de Futebol',
+
         // Page Titles
         'pages.dashboard': 'Dashboard',
         'pages.athletes': 'Gestão de Atletas',
@@ -558,6 +563,11 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.sending': 'Sending...',
         'auth.unexpectedError': 'An unexpected error occurred. Please try again.',
         'auth.copyright': '© 2026 Aura Club. All rights reserved.',
+
+        // Organization Type
+        'auth.organizationType': 'Organization Type',
+        'auth.footballSchool': 'Football School',
+        'auth.footballClub': 'Football Club',
 
         // Page Titles
         'pages.dashboard': 'Dashboard',
@@ -839,6 +849,11 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.unexpectedError': 'Ocurrió un error inesperado. Inténtalo de nuevo.',
         'auth.copyright': '© 2026 Aura Club. Todos los derechos reservados.',
 
+        // Organization Type
+        'auth.organizationType': 'Tipo de Organización',
+        'auth.footballSchool': 'Escuela de Fútbol',
+        'auth.footballClub': 'Club de Fútbol',
+
         // Page Titles
         'pages.dashboard': 'Panel de Control',
         'pages.athletes': 'Gestión de Atletas',
@@ -1117,6 +1132,11 @@ const translations: Record<Language, Record<string, string>> = {
         'language.fr-FR': 'Français',
         'language.pt-PT': 'Portugais (Portugal)',
 
+        // Organization Type
+        'auth.organizationType': 'Type d\'organisation',
+        'auth.footballSchool': 'École de football',
+        'auth.footballClub': 'Club de football',
+
         // Page Titles
         'pages.dashboard': 'Tableau de bord',
         'pages.athletes': 'Gestion des athlètes',
@@ -1394,6 +1414,11 @@ const translations: Record<Language, Record<string, string>> = {
         'language.en-US': 'English (US)',
         'language.es-ES': 'Espanhol',
         'language.fr-FR': 'Francês',
+
+        // Organization Type
+        'auth.organizationType': 'Tipo de Organização',
+        'auth.footballSchool': 'Escolinha de Futebol',
+        'auth.footballClub': 'Clube de Futebol',
 
         // Page Titles
         'pages.dashboard': 'Painel',

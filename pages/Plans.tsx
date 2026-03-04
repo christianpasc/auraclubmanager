@@ -8,11 +8,38 @@ import { subscriptionService } from '../services/subscriptionService';
 import { adminPlanService, StripePlan } from '../services/adminPlanService';
 import { stripeConfig, createCheckoutSession } from '../lib/stripe';
 
+type IntervalFilter = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'all';
+
 const INTERVAL_ICONS: Record<string, React.ReactNode> = {
     monthly: <Zap className="w-6 h-6" />,
     quarterly: <Crown className="w-6 h-6" />,
     yearly: <Building2 className="w-6 h-6" />,
     lifetime: <Infinity className="w-6 h-6" />,
+};
+
+/** Format a price according to its currency code */
+const formatPrice = (price: number, currency: string, locale: string): string => {
+    const currencyMap: Record<string, string> = {
+        brl: 'BRL',
+        usd: 'USD',
+        eur: 'EUR',
+    };
+    const resolvedCurrency = currencyMap[(currency || 'brl').toLowerCase()] || 'BRL';
+
+    const localeMap: Record<string, string> = {
+        'pt-BR': 'pt-BR',
+        'pt-PT': 'pt-PT',
+        'en-US': 'en-US',
+        'es-ES': 'es-ES',
+        'fr-FR': 'fr-FR',
+    };
+    const resolvedLocale = localeMap[locale] || 'pt-BR';
+
+    return new Intl.NumberFormat(resolvedLocale, {
+        style: 'currency',
+        currency: resolvedCurrency,
+        minimumFractionDigits: 2,
+    }).format(price);
 };
 
 const Plans: React.FC = () => {
@@ -24,19 +51,38 @@ const Plans: React.FC = () => {
     const [subscribing, setSubscribing] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [intervalFilter, setIntervalFilter] = useState<IntervalFilter>('monthly');
 
-    const getText = (pt: string, en: string, es: string) => {
-        return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
+    const getText = (pt: string, en: string, es: string, fr?: string) => {
+        if (language === 'en-US') return en;
+        if (language === 'es-ES') return es;
+        if (language === 'fr-FR') return fr || pt;
+        return pt; // pt-BR and pt-PT
     };
 
     const getIntervalLabel = (interval: string) => {
         const labels: Record<string, string> = {
-            monthly: getText('/mês', '/month', '/mes'),
-            quarterly: getText('/trimestre', '/quarter', '/trimestre'),
-            yearly: getText('/ano', '/year', '/año'),
-            lifetime: getText(' (único)', ' (one-time)', ' (único)'),
+            monthly: getText('/mês', '/month', '/mes', '/mois'),
+            quarterly: getText('/trimestre', '/quarter', '/trimestre', '/trimestre'),
+            yearly: getText('/ano', '/year', '/año', '/an'),
+            lifetime: getText(' (único)', ' (one-time)', ' (único)', ' (unique)'),
         };
         return labels[interval] || '';
+    };
+
+    // Interval filter labels translated
+    const intervalLabels: Record<IntervalFilter, string> = {
+        all: getText('Todos', 'All', 'Todos', 'Tous'),
+        monthly: getText('Mensal', 'Monthly', 'Mensual', 'Mensuel'),
+        quarterly: getText('Trimestral', 'Quarterly', 'Trimestral', 'Trimestriel'),
+        yearly: getText('Anual', 'Annual', 'Anual', 'Annuel'),
+        lifetime: getText('Vitalício', 'Lifetime', 'Vitalicio', 'À vie'),
+    };
+
+    // Discount badges for quarterly and yearly
+    const intervalDiscount: Partial<Record<IntervalFilter, string>> = {
+        quarterly: getText('10% de desconto', '10% off', '10% de descuento', '10% de réduction'),
+        yearly: getText('20% de desconto', '20% off', '20% de descuento', '20% de réduction'),
     };
 
     // Check for success/cancel URL params (from Stripe redirect)
@@ -49,7 +95,6 @@ const Plans: React.FC = () => {
                 '¡Pago realizado con éxito! Su suscripción ha sido activada.'
             ));
             refreshSubscription();
-            // Clean URL
             window.location.hash = '#/plans';
         } else if (hash.includes('canceled=true')) {
             setErrorMessage(getText(
@@ -66,6 +111,15 @@ const Plans: React.FC = () => {
             try {
                 const data = await adminPlanService.getActivePlans();
                 setPlans(data);
+
+                // Auto-select the first interval that has plans
+                const intervals: IntervalFilter[] = ['monthly', 'quarterly', 'yearly', 'lifetime'];
+                for (const iv of intervals) {
+                    if (data.some((p) => p.interval === iv)) {
+                        setIntervalFilter(iv);
+                        break;
+                    }
+                }
             } catch (err) {
                 console.error('Error loading plans:', err);
             } finally {
@@ -84,14 +138,9 @@ const Plans: React.FC = () => {
         const priceId = stripeConfig.getPriceId(plan);
 
         if (!priceId) {
-            // No Stripe Price ID configured — simulate activation for testing
             try {
                 setSubscribing(plan.id!);
-                await subscriptionService.activateSubscription(
-                    currentTenant.id,
-                    plan.id!,
-                    plan.interval
-                );
+                await subscriptionService.activateSubscription(currentTenant.id, plan.id!, plan.interval);
                 await refreshSubscription();
                 setSuccessMessage(getText(
                     'Plano ativado com sucesso! (Simulação - sem Stripe Price ID configurado)',
@@ -99,7 +148,6 @@ const Plans: React.FC = () => {
                     '¡Plan activado con éxito! (Simulación - sin Stripe Price ID configurado)'
                 ));
             } catch (error: any) {
-                console.error('Error subscribing:', error);
                 setErrorMessage(error.message || getText('Erro ao ativar plano', 'Error activating plan', 'Error al activar plan'));
             } finally {
                 setSubscribing(null);
@@ -107,31 +155,31 @@ const Plans: React.FC = () => {
             return;
         }
 
-        // Redirect to Stripe Checkout
         try {
             setSubscribing(plan.id!);
             setErrorMessage(null);
-
             const result = await createCheckoutSession(plan.id!, currentTenant.id);
-
             if (result?.url) {
-                // Redirect to Stripe Checkout
                 window.location.href = result.url;
             } else {
                 throw new Error('No checkout URL returned');
             }
         } catch (error: any) {
-            console.error('Error creating checkout:', error);
-            setErrorMessage(
-                error.message || getText(
-                    'Erro ao criar sessão de pagamento. Tente novamente.',
-                    'Error creating payment session. Please try again.',
-                    'Error al crear la sesión de pago. Inténtelo de nuevo.'
-                )
-            );
+            setErrorMessage(error.message || getText(
+                'Erro ao criar sessão de pagamento. Tente novamente.',
+                'Error creating payment session. Please try again.',
+                'Error al crear la sesión de pago. Inténtelo de nuevo.'
+            ));
             setSubscribing(null);
         }
     };
+
+    // Determine which interval tabs to show (only those that have at least one plan)
+    const availableIntervals = (['monthly', 'quarterly', 'yearly', 'lifetime'] as IntervalFilter[]).filter(
+        (iv) => plans.some((p) => p.interval === iv)
+    );
+
+    const filteredPlans = plans.filter((p) => p.interval === intervalFilter);
 
     const isTrialExpired = subscriptionInfo?.subscriptionStatus === 'expired';
 
@@ -152,9 +200,7 @@ const Plans: React.FC = () => {
                         <CheckCircle2 className="w-6 h-6 text-green-600" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="font-bold text-green-800 text-lg">
-                            {getText('Sucesso!', 'Success!', '¡Éxito!')}
-                        </h3>
+                        <h3 className="font-bold text-green-800 text-lg">{getText('Sucesso!', 'Success!', '¡Éxito!')}</h3>
                         <p className="text-green-700 mt-1">{successMessage}</p>
                     </div>
                     <button onClick={() => setSuccessMessage(null)} className="text-green-400 hover:text-green-600">
@@ -186,11 +232,7 @@ const Plans: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="font-bold text-amber-800 text-lg">
-                            {getText(
-                                'Seu período de teste expirou',
-                                'Your trial period has expired',
-                                'Su período de prueba ha expirado'
-                            )}
+                            {getText('Seu período de teste expirou', 'Your trial period has expired', 'Su período de prueba ha expirado')}
                         </h3>
                         <p className="text-amber-700 mt-1">
                             {getText(
@@ -204,11 +246,11 @@ const Plans: React.FC = () => {
             )}
 
             {/* Header */}
-            <div className="text-center mb-12">
-                <h1 className="text-3xl font-bold text-slate-800 mb-4">
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-slate-800 mb-3">
                     {getText('Escolha seu plano', 'Choose your plan', 'Elija su plan')}
                 </h1>
-                <p className="text-slate-500 max-w-2xl mx-auto">
+                <p className="text-slate-500 max-w-2xl mx-auto mb-4">
                     {getText(
                         'Selecione o plano ideal para o seu clube e desbloqueie todo o potencial do Aura Club Manager.',
                         'Select the ideal plan for your club and unlock the full potential of Aura Club Manager.',
@@ -216,26 +258,63 @@ const Plans: React.FC = () => {
                     )}
                 </p>
                 {!stripeConfig.isProduction && (
-                    <span className="inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                        🟡 Modo Teste
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                        🟡 {getText('Modo Teste', 'Test Mode', 'Modo de Prueba')}
                     </span>
                 )}
             </div>
 
+            {/* Interval Filter Tabs */}
+            {availableIntervals.length > 1 && (
+                <div className="flex justify-center mb-10">
+                    <div className="inline-flex items-center bg-slate-100 rounded-2xl p-1.5 gap-1 shadow-inner">
+                        {availableIntervals.map((iv) => {
+                            const isActive = intervalFilter === iv;
+                            const discount = intervalDiscount[iv];
+                            return (
+                                <button
+                                    key={iv}
+                                    onClick={() => setIntervalFilter(iv)}
+                                    className={`relative flex flex-col items-center px-5 rounded-xl text-sm font-semibold transition-all duration-200 ${discount ? 'pt-2.5 pb-3' : 'py-2.5'
+                                        } ${isActive
+                                            ? 'bg-white text-primary shadow-md shadow-slate-200 scale-[1.02]'
+                                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                                        }`}
+                                >
+                                    <span>{intervalLabels[iv]}</span>
+                                    {discount && (
+                                        <span className={`text-[10px] font-bold mt-0.5 px-1.5 py-0.5 rounded-full ${isActive
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-green-50 text-green-600'
+                                            }`}>
+                                            {discount}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Plans Grid */}
-            {plans.length === 0 ? (
+            {filteredPlans.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-slate-400">
                         {getText(
-                            'Nenhum plano disponível no momento.',
-                            'No plans available at this time.',
-                            'Ningún plan disponible en este momento.'
+                            'Nenhum plano disponível para este período.',
+                            'No plans available for this period.',
+                            'Ningún plan disponible para este período.'
                         )}
                     </p>
                 </div>
             ) : (
-                <div className={`grid grid-cols-1 ${plans.length === 1 ? 'max-w-md mx-auto' : plans.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : plans.length >= 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'} gap-8`}>
-                    {plans.map((plan) => (
+                <div className={`grid grid-cols-1 ${filteredPlans.length === 1 ? 'max-w-md mx-auto' :
+                    filteredPlans.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' :
+                        filteredPlans.length >= 4 ? 'md:grid-cols-2 lg:grid-cols-4' :
+                            'md:grid-cols-3'
+                    } gap-8`}>
+                    {filteredPlans.map((plan) => (
                         <div
                             key={plan.id}
                             className={`relative bg-white rounded-2xl border-2 p-8 transition-all hover:shadow-xl ${plan.is_popular
@@ -249,8 +328,7 @@ const Plans: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className={`inline-flex p-3 rounded-xl mb-4 ${plan.is_popular ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-600'
-                                }`}>
+                            <div className={`inline-flex p-3 rounded-xl mb-4 ${plan.is_popular ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-600'}`}>
                                 {INTERVAL_ICONS[plan.interval] || <Zap className="w-6 h-6" />}
                             </div>
 
@@ -258,21 +336,30 @@ const Plans: React.FC = () => {
                             {plan.description && (
                                 <p className="text-sm text-slate-500 mb-3">{plan.description}</p>
                             )}
+
+                            {/* Price with dynamic currency */}
                             <div className="flex items-baseline gap-1 mb-6">
                                 <span className="text-3xl font-bold text-slate-800">
-                                    R$ {Number(plan.price).toFixed(2).replace('.', ',')}
+                                    {formatPrice(Number(plan.price), (plan as any).currency || 'brl', language)}
                                 </span>
-                                <span className="text-slate-500">{getIntervalLabel(plan.interval)}</span>
+                                <span className="text-slate-500 text-sm">{getIntervalLabel(plan.interval)}</span>
                             </div>
 
+                            {/* Features */}
                             <ul className="space-y-3 mb-4">
-                                {(typeof plan.features === 'string' ? JSON.parse(plan.features) : (plan.features || [])).map((feature: string, i: number) => (
-                                    <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                                        <Check className={`w-5 h-5 flex-shrink-0 ${plan.is_popular ? 'text-primary' : 'text-green-500'
-                                            }`} />
-                                        {feature}
-                                    </li>
-                                ))}
+                                {(() => {
+                                    const orgType = currentTenant?.organization_type || 'school';
+                                    const parseFeatures = (f: any) => typeof f === 'string' ? JSON.parse(f) : (f || []);
+                                    const typeFeatures = orgType === 'club' ? parseFeatures(plan.features_club) : parseFeatures(plan.features_school);
+                                    const genericFeatures = parseFeatures(plan.features);
+                                    const displayFeatures = typeFeatures.length > 0 ? typeFeatures : genericFeatures;
+                                    return displayFeatures.map((feature: string, i: number) => (
+                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
+                                            <Check className={`w-5 h-5 flex-shrink-0 ${plan.is_popular ? 'text-primary' : 'text-green-500'}`} />
+                                            {feature}
+                                        </li>
+                                    ));
+                                })()}
                             </ul>
 
                             {/* Plan Limits */}
@@ -313,7 +400,7 @@ const Plans: React.FC = () => {
                 </div>
             )}
 
-            {/* FAQ Section */}
+            {/* Footer */}
             <div className="mt-16 text-center">
                 <p className="text-slate-500">
                     {getText(

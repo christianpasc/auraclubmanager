@@ -12,9 +12,10 @@ interface TenantContextType {
     currentTenant: Tenant | null;
     tenants: Tenant[];
     loading: boolean;
+    isSchool: boolean;
     setCurrentTenant: (tenant: Tenant) => Promise<void>;
     refreshTenants: () => Promise<void>;
-    createTenant: (name: string) => Promise<Tenant>;
+    createTenant: (name: string, organizationType?: 'school' | 'club') => Promise<Tenant>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -108,12 +109,14 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         await loadTenants();
     };
 
-    const createTenant = async (name: string) => {
+    const createTenant = async (name: string, organizationType?: 'school' | 'club') => {
         const slug = tenantService.generateSlug(name);
-        const newTenant = await tenantService.create({ name, slug });
+        const newTenant = await tenantService.create({ name, slug, organization_type: organizationType || 'school' });
         await loadTenants();
         return newTenant;
     };
+
+    const isSchool = currentTenant?.organization_type !== 'club';
 
     return (
         <TenantContext.Provider
@@ -121,6 +124,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
                 currentTenant,
                 tenants,
                 loading,
+                isSchool,
                 setCurrentTenant,
                 refreshTenants,
                 createTenant,

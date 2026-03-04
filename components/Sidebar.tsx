@@ -35,14 +35,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { t, language } = useLanguage();
-  const { currentTenant } = useTenant();
+  const { currentTenant, isSchool } = useTenant();
   const { subscriptionInfo } = useSubscription();
   const [financeOpen, setFinanceOpen] = useState(location.pathname.startsWith('/finance'));
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
     { icon: Users, label: t('nav.athletes'), path: '/athletes' },
-    { icon: FileText, label: t('nav.enrollments'), path: '/enrollments' },
+    ...(isSchool ? [{ icon: FileText, label: t('nav.enrollments'), path: '/enrollments' }] : []),
     { icon: Trophy, label: t('nav.competitions'), path: '/competitions' },
     { icon: Calendar, label: t('nav.games'), path: '/games' },
     { icon: Dumbbell, label: t('nav.training'), path: '/training' },
@@ -216,16 +216,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <PieChart className="w-3.5 h-3.5" />
                 {getOverviewLabel()}
               </NavLink>
-              <NavLink
-                to="/finance/fees"
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
-                  }`
-                }
-              >
-                <DollarSign className="w-3.5 h-3.5" />
-                {getMonthlyFeesLabel()}
-              </NavLink>
+              {isSchool && (
+                <NavLink
+                  to="/finance/fees"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
+                    }`
+                  }
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  {getMonthlyFeesLabel()}
+                </NavLink>
+              )}
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle } from 'lucide-react';
+import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, GraduationCap } from 'lucide-react';
 import { useLanguage, AVAILABLE_LANGUAGES } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
@@ -68,11 +68,15 @@ const Settings: React.FC = () => {
   // Language state
   const [selectedLanguage, setSelectedLanguage] = useState(language);
 
+  // Organization type state
+  const [organizationType, setOrganizationType] = useState<'school' | 'club'>(currentTenant?.organization_type || 'school');
+
   // Load data on mount
   useEffect(() => {
     if (currentTenant) {
       setClubName(currentTenant.name || '');
       setClubLogo(currentTenant.logo_url || null);
+      setOrganizationType(currentTenant.organization_type || 'school');
       const settings = currentTenant.settings as any;
       if (settings) {
         setCnpj(settings.cnpj || '');
@@ -210,6 +214,7 @@ const Settings: React.FC = () => {
       await tenantService.update(currentTenant.id, {
         name: clubName,
         logo_url: logoUrl || undefined,
+        organization_type: organizationType,
         settings: {
           ...(currentTenant.settings as any),
           cnpj,
@@ -462,6 +467,40 @@ const Settings: React.FC = () => {
                   <option value="CE">Ceará</option>
                 </select>
               </div>
+            </div>
+
+            {/* Organization Type */}
+            <div className="pt-6 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-700 mb-3">{getText('Tipo de Organização', 'Organization Type', 'Tipo de Organización')}</h3>
+              <div className="grid grid-cols-2 gap-4 max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setOrganizationType('school')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school'
+                      ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
+                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                    }`}
+                >
+                  <GraduationCap className="w-6 h-6" />
+                  <span className="text-xs font-bold text-center">{getText('Escolinha de Futebol', 'Football School', 'Escuela de Fútbol')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrganizationType('club')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club'
+                      ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
+                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                    }`}
+                >
+                  <Shield className="w-6 h-6" />
+                  <span className="text-xs font-bold text-center">{getText('Clube de Futebol', 'Football Club', 'Club de Fútbol')}</span>
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mt-2">{getText(
+                'Escolinhas possuem matrículas e mensalidades. Clubes ocultam essas funcionalidades.',
+                'Schools have enrollments and monthly fees. Clubs hide these features.',
+                'Las escuelas tienen matrículas y mensualidades. Los clubes ocultan estas funcionalidades.'
+              )}</p>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
