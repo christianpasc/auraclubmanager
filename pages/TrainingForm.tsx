@@ -11,6 +11,7 @@ import {
     trainingStatuses, trainingIntensities, trainingPhases
 } from '../services/trainingService';
 import { athleteService, Athlete } from '../services/athleteService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type TabType = 'general' | 'athletes' | 'activities';
 
@@ -18,6 +19,7 @@ const TrainingForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditing = !!id;
+    const { t } = useLanguage();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ const TrainingForm: React.FC = () => {
                 setActivities(activitiesData);
             }
         } catch (err) {
-            setError('Erro ao carregar dados');
+            setError(t('trainingForm.error.loading'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -132,7 +134,7 @@ const TrainingForm: React.FC = () => {
 
     const handleSave = async () => {
         if (!training.training_date) {
-            setError('Selecione uma data para o treino');
+            setError(t('trainingForm.error.selectDate'));
             return;
         }
 
@@ -174,7 +176,7 @@ const TrainingForm: React.FC = () => {
 
             navigate('/training');
         } catch (err) {
-            setError('Erro ao salvar treino');
+            setError(t('trainingForm.error.saving'));
             console.error(err);
         } finally {
             setSaving(false);
@@ -192,13 +194,14 @@ const TrainingForm: React.FC = () => {
     }
 
     const tabs = [
-        { id: 'general' as TabType, label: 'Geral', icon: Calendar },
-        { id: 'athletes' as TabType, label: 'Atletas', icon: Users },
-        { id: 'activities' as TabType, label: 'Atividades', icon: ListChecks },
+        { id: 'general' as TabType, label: t('trainingForm.tab.general'), icon: Calendar },
+        { id: 'athletes' as TabType, label: t('trainingForm.tab.athletes'), icon: Users },
+        { id: 'activities' as TabType, label: t('trainingForm.tab.activities'), icon: ListChecks },
     ];
 
     const getPhaseLabel = (phase?: string) => {
-        return trainingPhases.find(p => p.value === phase)?.label || phase;
+        const phaseKeyMap: Record<string, string> = { warmup: 'training.phase.warmup', main: 'training.phase.main', cooldown: 'training.phase.cooldown', tactical: 'training.phase.tactical', physical: 'training.phase.physical', technical: 'training.phase.technical' };
+        return phase && phaseKeyMap[phase] ? t(phaseKeyMap[phase]) : phase;
     };
 
     const getPhaseColor = (phase?: string) => {
@@ -222,13 +225,13 @@ const TrainingForm: React.FC = () => {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">{isEditing ? 'Editar Treino' : 'Novo Treino'}</h1>
-                        <p className="text-sm text-slate-500">{isEditing ? 'Atualize os dados do treino' : 'Preencha os dados e adicione atletas e atividades'}</p>
+                        <h1 className="text-2xl font-bold text-slate-800">{isEditing ? t('trainingForm.editTitle') : t('trainingForm.newTitle')}</h1>
+                        <p className="text-sm text-slate-500">{isEditing ? t('trainingForm.editSubtitle') : t('trainingForm.newSubtitle')}</p>
                     </div>
                 </div>
                 <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50">
                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Salvar
+                    {t('common.save')}
                 </button>
             </div>
 
@@ -267,25 +270,25 @@ const TrainingForm: React.FC = () => {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-primary" />
-                            Data e Horário
+                            {t('trainingForm.section.dateTime')}
                         </h3>
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Data *</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.date')} *</label>
                                     <input type="date" value={training.training_date || ''} onChange={(e) => updateTraining('training_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Hora Início</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.startTime')}</label>
                                     <input type="time" value={training.training_time || ''} onChange={(e) => updateTraining('training_time', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Hora Fim</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.endTime')}</label>
                                     <input type="time" value={training.end_time || ''} onChange={(e) => updateTraining('end_time', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Local</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.location')}</label>
                                 <div className="relative">
                                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                                     <input type="text" value={training.location || ''} onChange={(e) => updateTraining('location', e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Campo A, Academia, etc." />
@@ -297,39 +300,39 @@ const TrainingForm: React.FC = () => {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                             <Dumbbell className="w-5 h-5 text-primary" />
-                            Detalhes do Treino
+                            {t('trainingForm.section.details')}
                         </h3>
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Categoria</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.category')}</label>
                                     <select value={training.category || ''} onChange={(e) => updateTraining('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                        <option value="">Selecione</option>
+                                        <option value="">{t('trainingForm.field.select')}</option>
                                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Intensidade</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.intensity')}</label>
                                     <select value={training.intensity || 'medium'} onChange={(e) => updateTraining('intensity', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                        {trainingIntensities.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+                                        {trainingIntensities.map(i => { const intensityKey: Record<string,string> = { low: 'training.intensity.low', medium: 'training.intensity.medium', high: 'training.intensity.high', recovery: 'training.intensity.recovery' }; return <option key={i.value} value={i.value}>{t(intensityKey[i.value]) || i.label}</option>; })}
                                     </select>
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Foco Principal</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.focus')}</label>
                                 <input type="text" value={training.focus || ''} onChange={(e) => updateTraining('focus', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: Tático, Físico, Finalização" />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.status')}</label>
                                 <select value={training.status || 'scheduled'} onChange={(e) => updateTraining('status', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    {trainingStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                    {trainingStatuses.map(s => { const statusKey: Record<string,string> = { scheduled: 'training.status.scheduled', in_progress: 'training.status.inProgress', completed: 'training.status.completed', cancelled: 'training.status.cancelled' }; return <option key={s.value} value={s.value}>{t(statusKey[s.value]) || s.label}</option>; })}
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">Descrição e Observações</h3>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">{t('trainingForm.section.description')}</h3>
                         <textarea value={training.description || ''} onChange={(e) => updateTraining('description', e.target.value)} rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" placeholder="Descreva os objetivos e observações do treino..." />
                     </div>
                 </div>
@@ -343,25 +346,25 @@ const TrainingForm: React.FC = () => {
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <UserPlus className="w-5 h-5 text-primary" />
-                                Adicionar Atletas
+                                {t('trainingForm.athletes.add')}
                             </h3>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
                             <div className="flex items-center gap-2">
                                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                                    <option value="">Selecione uma categoria</option>
+                                    <option value="">{t('trainingForm.athletes.selectCategory')}</option>
                                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <button onClick={() => selectedCategory && addParticipantsByCategory(selectedCategory)} disabled={!selectedCategory} className="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Adicionar Categoria
+                                    {t('trainingForm.athletes.addCategory')}
                                 </button>
                             </div>
 
                             <div className="h-8 w-px bg-slate-200" />
 
                             <button onClick={() => setShowAthleteSelector(!showAthleteSelector)} className="px-4 py-2 bg-slate-100 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-200">
-                                {showAthleteSelector ? 'Fechar' : 'Adicionar Individual'}
+                                {showAthleteSelector ? t('common.close') || 'Fechar' : t('trainingForm.athletes.addIndividual')}
                             </button>
                         </div>
 
@@ -389,7 +392,7 @@ const TrainingForm: React.FC = () => {
                                     ))}
                                 </div>
                                 {availableAthletes.length === 0 && (
-                                    <p className="text-center text-slate-400 py-4">Todos os atletas já foram adicionados</p>
+                                    <p className="text-center text-slate-400 py-4">{t('trainingForm.athletes.allAdded')}</p>
                                 )}
                             </div>
                         )}
@@ -398,25 +401,25 @@ const TrainingForm: React.FC = () => {
                     {/* Participants List */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="p-4 border-b border-slate-100">
-                            <h3 className="font-bold text-slate-800">Lista de Presença ({participants.length})</h3>
+                            <h3 className="font-bold text-slate-800">{t('trainingForm.athletes.attendanceList')} ({participants.length})</h3>
                         </div>
 
                         {participants.length === 0 ? (
                             <div className="p-12 text-center text-slate-400">
                                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p className="font-medium">Nenhum atleta adicionado</p>
-                                <p className="text-sm">Adicione atletas usando as opções acima</p>
+                                <p className="font-medium">{t('trainingForm.athletes.noAdded')}</p>
+                                <p className="text-sm">{t('trainingForm.athletes.useOptions')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-slate-50 text-slate-500 text-xs uppercase">
-                                            <th className="px-4 py-3 text-left font-bold">Atleta</th>
-                                            <th className="px-3 py-3 text-center font-bold w-20">Presente</th>
-                                            <th className="px-3 py-3 text-center font-bold w-32">Desempenho</th>
-                                            <th className="px-3 py-3 text-center font-bold w-32">Esforço</th>
-                                            <th className="px-3 py-3 text-left font-bold w-48">Observações</th>
+                                            <th className="px-4 py-3 text-left font-bold">{t('athletes.athlete')}</th>
+                                            <th className="px-3 py-3 text-center font-bold w-20">{t('trainingForm.athletes.col.present')}</th>
+                                            <th className="px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.performance')}</th>
+                                            <th className="px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.effort')}</th>
+                                            <th className="px-3 py-3 text-left font-bold w-48">{t('athleteForm.wardrobe.notes')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-12"></th>
                                         </tr>
                                     </thead>
@@ -472,7 +475,7 @@ const TrainingForm: React.FC = () => {
                                                         value={participant.notes || ''}
                                                         onChange={(e) => updateParticipant(index, 'notes', e.target.value)}
                                                         className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm"
-                                                        placeholder="Observações..."
+                                                        placeholder={t('trainingForm.athletes.observationsPlaceholder')}
                                                     />
                                                 </td>
                                                 <td className="px-3 py-3 text-center">
@@ -497,21 +500,21 @@ const TrainingForm: React.FC = () => {
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <ListChecks className="w-5 h-5 text-primary" />
-                                Atividades do Treino
+                                {t('trainingForm.activities.title')}
                             </h3>
                             <button onClick={addActivity} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark">
                                 <Plus className="w-4 h-4" />
-                                Adicionar Atividade
+                                {t('trainingForm.activities.add')}
                             </button>
                         </div>
 
                         {activities.length === 0 ? (
                             <div className="p-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
                                 <ListChecks className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p className="font-medium">Nenhuma atividade cadastrada</p>
-                                <p className="text-sm mb-4">Adicione atividades para montar o plano do treino</p>
+                                <p className="font-medium">{t('trainingForm.activities.none')}</p>
+                                <p className="text-sm mb-4">{t('trainingForm.activities.noneDesc')}</p>
                                 <button onClick={addActivity} className="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark">
-                                    Adicionar Primeira Atividade
+                                    {t('trainingForm.activities.addFirst')}
                                 </button>
                             </div>
                         ) : (
@@ -531,17 +534,17 @@ const TrainingForm: React.FC = () => {
                                         </div>
                                         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Fase</label>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('trainingForm.activities.field.phase')}</label>
                                                 <select
                                                     value={activity.phase || 'main'}
                                                     onChange={(e) => updateActivity(index, 'phase', e.target.value)}
                                                     className={`w-full px-3 py-2 rounded-lg text-sm font-semibold ${getPhaseColor(activity.phase)}`}
                                                 >
-                                                    {trainingPhases.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                                    {trainingPhases.map(p => { const phaseKey2: Record<string,string> = { warmup: 'training.phase.warmup', main: 'training.phase.main', cooldown: 'training.phase.cooldown', tactical: 'training.phase.tactical', physical: 'training.phase.physical', technical: 'training.phase.technical' }; return <option key={p.value} value={p.value}>{t(phaseKey2[p.value]) || p.label}</option>; })}
                                                 </select>
                                             </div>
                                             <div className="md:col-span-2">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Nome da Atividade</label>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('trainingForm.activities.field.name')}</label>
                                                 <input
                                                     type="text"
                                                     value={activity.activity_name || ''}
@@ -551,7 +554,7 @@ const TrainingForm: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Duração (min)</label>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('trainingForm.activities.field.duration')}</label>
                                                 <input
                                                     type="number"
                                                     min="1"
@@ -562,7 +565,7 @@ const TrainingForm: React.FC = () => {
                                                 />
                                             </div>
                                             <div className="md:col-span-4">
-                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Descrição (opcional)</label>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">{t('trainingForm.activities.field.description')}</label>
                                                 <input
                                                     type="text"
                                                     value={activity.description || ''}
@@ -585,7 +588,7 @@ const TrainingForm: React.FC = () => {
                         {activities.length > 0 && (
                             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                                 <p className="text-sm text-blue-700">
-                                    <strong>Tempo Total:</strong> {activities.reduce((sum, a) => sum + (a.duration_minutes || 0), 0)} minutos
+                                    <strong>{t('trainingForm.activities.totalTime')}:</strong> {activities.reduce((sum, a) => sum + (a.duration_minutes || 0), 0)} {t('trainingForm.activities.minutes')}
                                 </p>
                             </div>
                         )}

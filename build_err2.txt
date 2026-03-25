@@ -1,0 +1,1179 @@
+﻿contexts/LanguageContext.tsx(1,1): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,33): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,48): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,49): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,83): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,102): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,103): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,138): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,159): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,160): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,197): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,244): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,245): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,283): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,318): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,319): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,360): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,380): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,381): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,425): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,448): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,449): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,487): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,509): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,510): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,552): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,565): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,566): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,608): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,651): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,652): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,696): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,720): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,721): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,766): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,794): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,795): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,841): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,863): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,864): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,905): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,924): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,925): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,963): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,974): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,975): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1015): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1033): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1034): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1076): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1092): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1093): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1135): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1156): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1157): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1202): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1225): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1226): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1272): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1294): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1295): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1339): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1362): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1363): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1403): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1416): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1417): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1456): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1466): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1467): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1509): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1523): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1524): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1564): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1577): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1578): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1617): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1648): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1649): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1687): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1717): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1718): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1753): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1773): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1774): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1810): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1832): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1833): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1871): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1913): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1914): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,1953): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,1989): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,1990): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2029): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2059): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2060): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2102): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2122): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2123): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2163): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2173): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2174): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2211): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2220): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2221): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2258): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2267): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2268): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2309): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2323): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2324): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2363): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2377): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2378): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2420): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2431): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2432): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2472): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2480): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2481): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2520): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2531): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2532): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2574): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2590): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2591): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2635): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2649): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2650): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2696): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2720): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2721): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2764): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2785): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2786): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2824): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2841): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2842): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2879): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2892): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2893): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2931): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2943): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2944): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,2983): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,2996): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,2997): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3038): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3057): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3058): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3103): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3122): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3123): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3158): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3177): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3178): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3215): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3241): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3242): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3283): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3327): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3328): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3365): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3377): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3378): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3415): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3427): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3428): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3465): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3479): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3480): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3520): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3552): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3553): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3592): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3623): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3624): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3669): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3708): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3709): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3740): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3757): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3758): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3792): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3817): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3818): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3853): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3878): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3879): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3916): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3948): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,3956): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3959): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,3963): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3964): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3979): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,3980): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4018): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4039): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4063): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4093): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4097): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4105): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4109): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4110): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4121): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4122): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4166): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4181): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4205): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4232): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4236): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4247): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4250): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4271): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4302): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4306): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4326): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4357): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4361): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4379): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,4387): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4400): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4433): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4437): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4441): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4444): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4468): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4502): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4506): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4516): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4519): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4543): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4578): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4582): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4588): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4589): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4604): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4605): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4646): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4664): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4665): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4703): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4714): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4715): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4755): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4772): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4773): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4815): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4830): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4831): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4873): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4894): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4895): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,4940): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,4961): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,4962): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5008): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5026): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5027): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5071): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5093): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5094): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5134): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5149): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5150): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5189): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5200): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5201): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5243): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5255): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5256): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5296): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5308): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5309): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5348): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5373): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5374): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5412): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5437): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5438): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5473): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5498): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5499): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5535): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5560): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5561): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5599): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5648): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5649): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5688): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5721): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5722): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5761): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5797): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5798): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5840): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5859): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5860): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5900): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5911): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5912): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5949): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,5957): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,5958): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,5995): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6004): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6005): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6046): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6060): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6061): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6100): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6111): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6112): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6154): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6164): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6165): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6205): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6213): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6214): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6253): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6264): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6265): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6307): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6324): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6325): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6369): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6385): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6386): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6432): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6452): error TS1127: Invalid character.
+contexts/LanguageContext.tsx(1,6453): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6496): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6510): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6530): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6557): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6561): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6586): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6612): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6616): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6638): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6665): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6669): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6686): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6714): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6718): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6739): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6769): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6773): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6778): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6795): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6829): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6833): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6838): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6857): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6881): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6885): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6893): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,6896): error TS1435: Unknown keyword or identifier. Did you mean 'catch'?
+contexts/LanguageContext.tsx(1,6914): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6940): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6944): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6950): error TS1435: Unknown keyword or identifier. Did you mean 'catch'?
+contexts/LanguageContext.tsx(1,6968): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,6998): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7002): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7010): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7015): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7023): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7026): error TS1435: Unknown keyword or identifier. Did you mean 'catch'?
+contexts/LanguageContext.tsx(1,7044): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7070): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7074): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7086): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7099): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7125): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7129): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7139): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7152): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7178): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7182): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7200): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7229): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7233): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7240): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7243): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7266): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7294): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7298): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7305): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7308): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7331): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7365): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7369): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7372): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7376): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7380): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7404): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7424): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7428): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7451): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7474): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7478): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7484): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7506): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7530): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7534): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7541): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7563): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7589): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7593): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7599): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7603): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7609): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7613): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7620): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7622): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7625): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7628): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7650): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7677): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7681): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7691): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7695): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7701): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7704): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7707): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7729): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7759): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7763): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7769): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7773): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7792): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7825): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7829): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7835): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7838): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7841): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7863): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7890): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7894): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7899): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7901): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,7918): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7949): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7953): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,7974): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8005): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8009): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8027): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,8035): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,8038): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,8043): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8056): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8089): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8093): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8100): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8104): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8128): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8162): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8166): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8175): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8179): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8203): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8238): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8242): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8248): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8251): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8273): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8303): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8307): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8313): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8316): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8335): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8362): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8366): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8385): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8414): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8418): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8423): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8426): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8443): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8474): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8478): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8502): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8533): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8537): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8541): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8544): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8561): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8595): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8599): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8606): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8609): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8626): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8661): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8665): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8674): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8694): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8727): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8731): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8737): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8740): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,8758): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8787): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8791): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8813): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8841): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8845): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8864): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8895): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8899): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8921): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8950): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8954): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,8975): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9003): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9007): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9013): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9016): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9023): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9026): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9048): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9075): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9079): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9085): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9088): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9096): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9099): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9121): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9145): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9149): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9155): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9179): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9204): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9208): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9215): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9239): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9266): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9270): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9276): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9280): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9286): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9288): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9294): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9298): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9317): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9345): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9349): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9359): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9363): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9369): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9372): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9375): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9399): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9427): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9431): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9443): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9446): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9449): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,9473): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9504): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9508): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9518): error TS1435: Unknown keyword or identifier. Did you mean 'finally'?
+contexts/LanguageContext.tsx(1,9536): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9565): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9569): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9588): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9614): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9618): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9637): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9663): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9667): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9684): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9714): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9718): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9740): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9768): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9772): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9794): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9825): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9829): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9848): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9877): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9881): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9897): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9925): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9929): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9948): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9979): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,9983): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10007): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10040): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10044): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10068): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10103): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10107): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10116): error TS1435: Unknown keyword or identifier. Did you mean 'finally'?
+contexts/LanguageContext.tsx(1,10134): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10166): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10170): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10176): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10179): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10199): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10226): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10230): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10255): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10281): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10285): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10307): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10334): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10338): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10358): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10386): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10390): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10411): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10441): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10445): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10451): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10453): error TS1435: Unknown keyword or identifier. Did you mean 'for'?
+contexts/LanguageContext.tsx(1,10471): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10505): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10509): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10515): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10518): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10537): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10561): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10565): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10572): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10590): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10616): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10620): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10627): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10633): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10656): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10686): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10690): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10695): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10700): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10718): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10723): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10744): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10770): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10774): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10792): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10818): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10822): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10840): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10866): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10870): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10891): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10920): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10924): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10930): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10933): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10940): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10943): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,10967): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10995): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,10999): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11005): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11008): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11016): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11019): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11043): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11077): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11081): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11084): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11091): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11094): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11097): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11109): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11112): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11136): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11156): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11160): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11184): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11207): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11211): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11215): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11238): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11262): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11266): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11271): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11294): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11320): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11324): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11336): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11344): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11348): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11359): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11379): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11406): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11410): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11417): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11428): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11448): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11478): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11482): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11490): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11507): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11540): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11544): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11555): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11572): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11599): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11603): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11608): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11612): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11632): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11663): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11667): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11688): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11719): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11723): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11733): error TS1135: Argument expression expected.
+contexts/LanguageContext.tsx(1,11737): error TS1005: '(' expected.
+contexts/LanguageContext.tsx(1,11743): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11757): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11790): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11794): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11803): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11820): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11854): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11858): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11867): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11885): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11920): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11924): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11935): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,11952): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11982): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11986): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,11992): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12009): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12036): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12040): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12059): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12088): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12092): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12097): error TS1435: Unknown keyword or identifier. Did you mean 'type'?
+contexts/LanguageContext.tsx(1,12114): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12145): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12149): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12157): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12173): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12204): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12208): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12216): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12232): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12266): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12270): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12278): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12297): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12332): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12336): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12345): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12364): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12397): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12401): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12411): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12428): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12457): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12461): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12481): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12509): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12513): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12532): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12563): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12567): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12589): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12618): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12622): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12642): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12670): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12674): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12680): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12688): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12711): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12738): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12742): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12748): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12755): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12778): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12802): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12806): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12810): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12834): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12859): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12863): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12868): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12892): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12919): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12923): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12939): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12943): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12947): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,12965): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12993): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,12997): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13004): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13016): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13036): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13064): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13068): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13080): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13104): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13135): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13139): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13145): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13165): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13194): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13198): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13216): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13242): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13246): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13263): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13289): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13293): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13310): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13340): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13344): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13365): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13393): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13397): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13416): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13447): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13451): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13457): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13474): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13503): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13507): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13511): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13528): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13556): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13560): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13579): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13610): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13614): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13636): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13669): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13673): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13697): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13732): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13736): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13742): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13763): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13795): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13799): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13805): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,13823): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13850): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13854): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13877): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13903): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13907): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13924): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13951): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13955): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,13973): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14001): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14005): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14024): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14054): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14058): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14064): error TS1435: Unknown keyword or identifier. Did you mean 'for'?
+contexts/LanguageContext.tsx(1,14080): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14114): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14118): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14124): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14144): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14168): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14172): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14176): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14193): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14219): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14223): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14226): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14232): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14255): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14285): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14289): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14306): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14309): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14327): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14353): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14357): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14375): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14401): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14405): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14423): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14449): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14453): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14471): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14500): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14504): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14510): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14518): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14542): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14570): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14574): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14580): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14587): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14611): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14645): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14649): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14661): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14666): error TS1228: A type predicate is only allowed in return type position for functions and methods.
+contexts/LanguageContext.tsx(1,14669): error TS1435: Unknown keyword or identifier. Did you mean 'require'?
+contexts/LanguageContext.tsx(1,14690): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14710): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14714): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14737): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14760): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14764): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14769): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14791): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14815): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14819): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14826): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14848): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14874): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14878): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14887): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14890): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14899): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14906): error TS1005: 'while' expected.
+contexts/LanguageContext.tsx(1,14908): error TS1005: ')' expected.
+contexts/LanguageContext.tsx(1,14911): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14933): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14960): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14964): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,14973): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14976): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14982): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,14985): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15007): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15037): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15041): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15050): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15056): error TS1005: 'while' expected.
+contexts/LanguageContext.tsx(1,15069): error TS1005: ')' expected.
+contexts/LanguageContext.tsx(1,15102): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15106): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15112): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15115): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15137): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15164): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15168): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15174): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15176): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15198): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15229): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15233): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15254): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15285): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15289): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15307): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,15315): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,15318): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1,15324): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15337): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15370): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15374): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15382): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15393): error TS1005: 'while' expected.
+contexts/LanguageContext.tsx(1,15406): error TS1005: ')' expected.
+contexts/LanguageContext.tsx(1,15440): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15444): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15456): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15467): error TS1005: 'while' expected.
+contexts/LanguageContext.tsx(1,15480): error TS1005: ')' expected.
+contexts/LanguageContext.tsx(1,15515): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15519): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15524): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15527): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15549): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15579): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15583): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15588): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15591): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15610): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15637): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15641): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15660): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15689): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15693): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15698): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15701): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15719): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15750): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15754): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15778): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15809): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15813): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15817): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15820): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15843): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15877): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15881): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15887): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15890): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15912): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15947): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15951): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,15960): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,15981): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16014): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16018): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16023): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16026): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16049): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16078): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16082): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16103): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16131): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16135): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16153): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16184): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16188): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16210): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16239): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16243): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16264): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16292): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16296): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16301): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16304): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16313): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16335): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16362): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16366): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16371): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16374): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16381): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16403): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16427): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16431): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16436): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16459): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16484): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16488): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16495): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16518): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16545): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16549): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16558): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16561): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16567): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16569): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16578): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16581): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16599): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16627): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16631): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16640): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16643): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16649): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16652): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16675): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16703): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16707): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16719): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16722): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,16745): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16776): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16780): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16790): error TS1435: Unknown keyword or identifier. Did you mean 'finally'?
+contexts/LanguageContext.tsx(1,16808): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16837): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16841): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16859): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16885): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16889): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16906): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16932): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16936): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16953): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16983): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,16987): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17009): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17037): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17041): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17063): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17094): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17098): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17117): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17146): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17150): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17166): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17194): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17198): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17217): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17248): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17252): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17276): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17309): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17313): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17335): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17370): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17374): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17384): error TS1435: Unknown keyword or identifier. Did you mean 'finally'?
+contexts/LanguageContext.tsx(1,17402): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17434): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17438): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17444): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17447): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17467): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17494): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17498): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17523): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17549): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17553): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17574): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17601): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17605): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17625): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17653): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17657): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17678): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17708): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17712): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17717): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17733): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17767): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17771): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17776): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17795): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17819): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17823): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17833): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17850): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17876): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17880): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17887): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17892): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17915): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17945): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17949): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17956): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,17976): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,17981): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18001): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18027): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18031): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18050): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18076): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18080): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18098): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18124): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18128): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18147): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18176): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18180): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18185): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18188): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18197): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18220): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18248): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18252): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18257): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18260): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18267): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18290): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18324): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18328): error TS1005: ';' expected.
+contexts/LanguageContext.tsx(1,18330): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18335): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18338): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18349): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18351): error TS1434: Unexpected keyword or identifier.
+contexts/LanguageContext.tsx(1,18364): error TS1002: Unterminated string literal.
+scripts/add_enrollment_competition_keys.cjs(336,23): error TS1127: Invalid character.
+scripts/add_enrollment_competition_keys.cjs(361,1): error TS1160: Unterminated template literal.
+scripts/inject_keys_from_json.cjs(13,23): error TS1127: Invalid character.
+scripts/inject_keys_from_json.cjs(44,1): error TS1160: Unterminated template literal.
+

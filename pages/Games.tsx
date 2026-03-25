@@ -69,8 +69,14 @@ const Games: React.FC = () => {
     };
 
     const getStatusLabel = (status?: string) => {
-        const found = gameStatuses.find(s => s.value === status);
-        return found?.label || status || 'N/A';
+        const statusKeyMap: Record<string, string> = {
+            scheduled: 'game.status.scheduled',
+            in_progress: 'game.status.inProgress',
+            finished: 'game.status.finished',
+            postponed: 'game.status.postponed',
+            cancelled: 'game.status.cancelled',
+        };
+        return status && statusKeyMap[status] ? t(statusKeyMap[status]) : status || 'N/A';
     };
 
     const formatDate = (dateStr?: string) => {
@@ -146,7 +152,7 @@ const Games: React.FC = () => {
                             <div className="relative">
                                 <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8">
                                     <option value="">{t('athletes.allStatuses')}</option>
-                                    {gameStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                    {gameStatuses.map(s => { const statusKeyMap: Record<string,string> = { scheduled: 'game.status.scheduled', in_progress: 'game.status.inProgress', finished: 'game.status.finished', postponed: 'game.status.postponed', cancelled: 'game.status.cancelled' }; return <option key={s.value} value={s.value}>{t(statusKeyMap[s.value]) || s.label}</option>; })}
                                 </select>
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>

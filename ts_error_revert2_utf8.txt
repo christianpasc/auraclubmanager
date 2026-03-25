@@ -1,0 +1,4 @@
+﻿scripts/add_enrollment_competition_keys.cjs(336,23): error TS1127: Invalid character.
+scripts/add_enrollment_competition_keys.cjs(361,1): error TS1160: Unterminated template literal.
+scripts/inject_keys_from_json.cjs(13,23): error TS1127: Invalid character.
+scripts/inject_keys_from_json.cjs(44,1): error TS1160: Unterminated template literal.

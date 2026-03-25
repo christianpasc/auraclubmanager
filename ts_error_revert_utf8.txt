@@ -1,0 +1,23 @@
+﻿contexts/LanguageContext.tsx(1436,2): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1438,7): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1438,82): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1440,14): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1446,2): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1449,7): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1449,21): error TS1005: ',' expected.
+contexts/LanguageContext.tsx(1449,48): error TS1005: '(' expected.
+contexts/LanguageContext.tsx(1449,50): error TS1136: Property assignment expected.
+contexts/LanguageContext.tsx(1450,11): error TS1003: Identifier expected.
+contexts/LanguageContext.tsx(1450,18): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1451,14): error TS1003: Identifier expected.
+contexts/LanguageContext.tsx(1451,21): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1452,11): error TS1003: Identifier expected.
+contexts/LanguageContext.tsx(1452,18): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1453,11): error TS1003: Identifier expected.
+contexts/LanguageContext.tsx(1453,18): error TS1005: ':' expected.
+contexts/LanguageContext.tsx(1454,11): error TS1003: Identifier expected.
+contexts/LanguageContext.tsx(1454,18): error TS1005: ':' expected.
+scripts/add_enrollment_competition_keys.cjs(336,23): error TS1127: Invalid character.
+scripts/add_enrollment_competition_keys.cjs(361,1): error TS1160: Unterminated template literal.
+scripts/inject_keys_from_json.cjs(13,23): error TS1127: Invalid character.
+scripts/inject_keys_from_json.cjs(44,1): error TS1160: Unterminated template literal.

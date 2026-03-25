@@ -1,0 +1,63 @@
+﻿node : C:\Users\chris\D
+ocuments\Aura\aura-club
+-manager\auraclubmanage
+r\scripts\add_keys.cjs:
+198
+No linha:1 caractere:1
++ node add_keys.cjs 
+2>&1 | Out-File 
+-Encoding utf8 err.txt
++ 
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (C:\Users\chri   
+ s\...dd_keys.cjs:1    
+98:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+        'enrollmentForm
+.newSubtitle': 
+'Saisissez les 
+donn├®es de 
+l\\'athl├¿te et de 
+l\\'inscription',
+                       
+                       
+                      
+^^^^^^^
+
+SyntaxError: 
+Unexpected identifier 
+'athl├¿te'
+    at wrapSafe (node:i
+nternal/modules/cjs/loa
+der:1743:18)
+    at Module._compile 
+(node:internal/modules/
+cjs/loader:1786:20)
+    at Object..js (node
+:internal/modules/cjs/l
+oader:1943:10)
+    at Module.load (nod
+e:internal/modules/cjs/
+loader:1533:32)
+    at Module._load (no
+de:internal/modules/cjs
+/loader:1335:12)
+    at wrapModuleLoad (
+node:internal/modules/c
+js/loader:255:19)
+    at Module.executeUs
+erEntryPoint [as 
+runMain] (node:internal
+/modules/run_main:154:5
+)
+    at node:internal/ma
+in/run_main_module:33:4
+7
+
+Node.js v24.14.0

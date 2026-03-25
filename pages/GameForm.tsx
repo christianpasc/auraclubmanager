@@ -9,6 +9,7 @@ import {
     gameStatuses
 } from '../services/competitionService';
 import { athleteService, Athlete } from '../services/athleteService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type TabType = 'general' | 'lineup';
 
@@ -16,6 +17,7 @@ const GameForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditing = !!id;
+    const { t } = useLanguage();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(false);
@@ -59,7 +61,7 @@ const GameForm: React.FC = () => {
                 setPlayers(playersData);
             }
         } catch (err) {
-            setError('Erro ao carregar dados');
+            setError(t('gameForm.error.loading'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -107,7 +109,7 @@ const GameForm: React.FC = () => {
 
     const handleSave = async () => {
         if (!game.competition_id) {
-            setError('Selecione uma competição');
+            setError(t('gameForm.error.selectCompetition'));
             return;
         }
 
@@ -142,7 +144,7 @@ const GameForm: React.FC = () => {
 
             navigate('/games');
         } catch (err) {
-            setError('Erro ao salvar jogo');
+            setError(t('gameForm.error.saving'));
             console.error(err);
         } finally {
             setSaving(false);
@@ -160,8 +162,8 @@ const GameForm: React.FC = () => {
     }
 
     const tabs = [
-        { id: 'general' as TabType, label: 'Geral', icon: Calendar },
-        { id: 'lineup' as TabType, label: 'Relacionados', icon: Users },
+        { id: 'general' as TabType, label: t('gameForm.tab.general'), icon: Calendar },
+        { id: 'lineup' as TabType, label: t('gameForm.tab.lineup'), icon: Users },
     ];
 
     return (
@@ -173,13 +175,13 @@ const GameForm: React.FC = () => {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800">{isEditing ? 'Editar Jogo' : 'Novo Jogo'}</h1>
-                        <p className="text-sm text-slate-500">{isEditing ? 'Atualize os dados do jogo' : 'Preencha os dados e adicione os relacionados'}</p>
+                        <h1 className="text-2xl font-bold text-slate-800">{isEditing ? t('gameForm.editTitle') : t('gameForm.newTitle')}</h1>
+                        <p className="text-sm text-slate-500">{isEditing ? t('gameForm.editSubtitle') : t('gameForm.newSubtitle')}</p>
                     </div>
                 </div>
                 <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50">
                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Salvar
+                    {t('common.save')}
                 </button>
             </div>
 
@@ -215,24 +217,24 @@ const GameForm: React.FC = () => {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                             <Trophy className="w-5 h-5 text-primary" />
-                            Competição e Rodada
+                            {t('gameForm.section.competition')}
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Competição *</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.competition')} *</label>
                                 <select value={game.competition_id || ''} onChange={(e) => updateGame('competition_id', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    <option value="">Selecione</option>
+                                    <option value="">{t('gameForm.field.select')}</option>
                                     {competitions.map(c => <option key={c.id} value={c.id}>{c.name} {c.season ? `(${c.season})` : ''}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Rodada / Fase</label>
-                                <input type="text" value={game.round || ''} onChange={(e) => updateGame('round', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: Rodada 1, Quartas de Final" />
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.round')}</label>
+                                <input type="text" value={game.round || ''} onChange={(e) => updateGame('round', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder={t('gameForm.field.round')} />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.status')}</label>
                                 <select value={game.status || 'scheduled'} onChange={(e) => updateGame('status', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    {gameStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                    {gameStatuses.map(s => { const statusKey: Record<string,string> = { scheduled: 'game.status.scheduled', in_progress: 'game.status.inProgress', finished: 'game.status.finished', postponed: 'game.status.postponed', cancelled: 'game.status.cancelled' }; return <option key={s.value} value={s.value}>{t(statusKey[s.value]) || s.label}</option>; })}
                                 </select>
                             </div>
                         </div>
@@ -241,35 +243,35 @@ const GameForm: React.FC = () => {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-primary" />
-                            Data e Horário
+                            {t('trainingForm.section.dateTime')}
                         </h3>
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Data</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.date')}</label>
                                     <input type="date" value={game.game_date || ''} onChange={(e) => updateGame('game_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Horário</label>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.time')}</label>
                                     <input type="time" value={game.game_time || ''} onChange={(e) => updateGame('game_time', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Local</label>
-                                <input type="text" value={game.venue || ''} onChange={(e) => updateGame('venue', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Estádio / Campo" />
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.venue')}</label>
+                                <input type="text" value={game.venue || ''} onChange={(e) => updateGame('venue', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder={t('gameForm.field.venue')} />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Endereço</label>
-                                <input type="text" value={game.address || ''} onChange={(e) => updateGame('address', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Endereço completo" />
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.address')}</label>
+                                <input type="text" value={game.address || ''} onChange={(e) => updateGame('address', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder={t('gameForm.field.address')} />
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                        <h3 className="text-lg font-bold text-slate-800 mb-6">Confronto</h3>
+                        <h3 className="text-lg font-bold text-slate-800 mb-6">{t('gameForm.section.matchup')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Mandante</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.homeTeam')}</label>
                                 <input type="text" value={game.home_team || ''} onChange={(e) => updateGame('home_team', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Aura FC" />
                             </div>
                             <div className="flex items-center justify-center">
@@ -280,14 +282,14 @@ const GameForm: React.FC = () => {
                                 </div>
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Visitante</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.awayTeam')}</label>
                                 <input type="text" value={game.away_team || ''} onChange={(e) => updateGame('away_team', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Adversário" />
                             </div>
                         </div>
                         <div className="mt-4">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" checked={game.is_home_game ?? true} onChange={(e) => updateGame('is_home_game', e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
-                                <span className="text-sm text-slate-600">Jogo em casa (somos o mandante)</span>
+                                <span className="text-sm text-slate-600">{t('gameForm.field.homeGame')}</span>
                             </label>
                         </div>
                     </div>
@@ -302,25 +304,25 @@ const GameForm: React.FC = () => {
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <UserPlus className="w-5 h-5 text-primary" />
-                                Adicionar Jogadores
+                                {t('gameForm.lineup.addPlayers')}
                             </h3>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
                             <div className="flex items-center gap-2">
                                 <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                                    <option value="">Selecione uma categoria</option>
+                                    <option value="">{t('gameForm.lineup.selectCategory')}</option>
                                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                                 <button onClick={() => selectedCategory && addPlayersByCategory(selectedCategory)} disabled={!selectedCategory} className="px-4 py-2 bg-primary text-white font-semibold text-sm rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed">
-                                    Adicionar Categoria
+                                    {t('gameForm.lineup.addCategory')}
                                 </button>
                             </div>
 
                             <div className="h-8 w-px bg-slate-200" />
 
                             <button onClick={() => setShowAthleteSelector(!showAthleteSelector)} className="px-4 py-2 bg-slate-100 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-200">
-                                {showAthleteSelector ? 'Fechar' : 'Adicionar Individual'}
+                                {showAthleteSelector ? t('common.close') || 'Fechar' : t('gameForm.lineup.addIndividual')}
                             </button>
                         </div>
 
@@ -348,7 +350,7 @@ const GameForm: React.FC = () => {
                                     ))}
                                 </div>
                                 {availableAthletes.length === 0 && (
-                                    <p className="text-center text-slate-400 py-4">Todos os atletas já foram adicionados</p>
+                                    <p className="text-center text-slate-400 py-4">{t('gameForm.lineup.allAdded')}</p>
                                 )}
                             </div>
                         )}
@@ -357,24 +359,24 @@ const GameForm: React.FC = () => {
                     {/* Players List */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="p-4 border-b border-slate-100">
-                            <h3 className="font-bold text-slate-800">Relacionados ({players.length})</h3>
+                            <h3 className="font-bold text-slate-800">{t('gameForm.lineup.related')} ({players.length})</h3>
                         </div>
 
                         {players.length === 0 ? (
                             <div className="p-12 text-center text-slate-400">
                                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p className="font-medium">Nenhum jogador relacionado</p>
-                                <p className="text-sm">Adicione jogadores usando as opções acima</p>
+                                <p className="font-medium">{t('gameForm.lineup.noPlayers')}</p>
+                                <p className="text-sm">{t('gameForm.lineup.useOptions')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="bg-slate-50 text-slate-500 text-xs uppercase">
-                                            <th className="px-4 py-3 text-left font-bold">Jogador</th>
-                                            <th className="px-3 py-3 text-left font-bold w-36">Posição</th>
-                                            <th className="px-3 py-3 text-center font-bold w-16">Titular</th>
-                                            <th className="px-3 py-3 text-center font-bold w-20">Min</th>
+                                            <th className="px-4 py-3 text-left font-bold">{t('gameForm.lineup.col.player')}</th>
+                                            <th className="px-3 py-3 text-left font-bold w-36">{t('gameForm.lineup.col.position')}</th>
+                                            <th className="px-3 py-3 text-center font-bold w-16">{t('gameForm.lineup.col.starter')}</th>
+                                            <th className="px-3 py-3 text-center font-bold w-20">{t('gameForm.lineup.col.minutes')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-16">⚽</th>
                                             <th className="px-3 py-3 text-center font-bold w-16">🅰️</th>
                                             <th className="px-3 py-3 text-center font-bold w-16">🟨</th>
@@ -406,7 +408,7 @@ const GameForm: React.FC = () => {
                                                         onChange={(e) => updatePlayer(index, 'position', e.target.value)}
                                                         className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm"
                                                     >
-                                                        <option value="">Selecione</option>
+                                                        <option value="">{t('gameForm.field.select')}</option>
                                                         {positions.map(p => <option key={p} value={p}>{p}</option>)}
                                                     </select>
                                                 </td>
