@@ -19,6 +19,7 @@ interface Filters {
 const Athletes: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+
   const { currentTenant } = useTenant();
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,13 +35,39 @@ const Athletes: React.FC = () => {
   });
 
   const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
-  const positions = ['Goleiro', 'Zagueiro', 'Lateral Direito', 'Lateral Esquerdo', 'Volante', 'Meio-Campo', 'Meia Atacante', 'Ponta Direita', 'Ponta Esquerda', 'Centroavante'];
+
+  const positionOptions: { value: string; key: string }[] = [
+    { value: 'Goleiro',          key: 'athlete.position.goalkeeper'  },
+    { value: 'Zagueiro',         key: 'athlete.position.centerBack'  },
+    { value: 'Lateral Direito',  key: 'athlete.position.rightBack'   },
+    { value: 'Lateral Esquerdo', key: 'athlete.position.leftBack'    },
+    { value: 'Volante',          key: 'athlete.position.defensiveMid'},
+    { value: 'Meio-Campo',       key: 'athlete.position.midfielder'  },
+    { value: 'Meia Atacante',    key: 'athlete.position.attackingMid'},
+    { value: 'Ponta Direita',    key: 'athlete.position.rightWing'   },
+    { value: 'Ponta Esquerda',   key: 'athlete.position.leftWing'    },
+    { value: 'Centroavante',     key: 'athlete.position.striker'     },
+  ];
+
+  const getPositionLabel = (value?: string) => {
+    if (!value) return '-';
+    const found = positionOptions.find(p => p.value === value);
+    return found ? t(found.key) : value;
+  };
+
+  const getCategoryLabel = (value?: string) => {
+    if (!value) return '-';
+    if (value === 'Profissional') return t('athlete.category.professional');
+    return value; // Sub-X categories are universal
+  };
+
   const statuses = [
-    { value: 'active', label: t('athletes.status.active') },
-    { value: 'inactive', label: t('athletes.status.inactive') },
-    { value: 'injured', label: t('athletes.status.injured') },
+    { value: 'active',    label: t('athletes.status.active')    },
+    { value: 'inactive',  label: t('athletes.status.inactive')  },
+    { value: 'injured',   label: t('athletes.status.injured')   },
     { value: 'suspended', label: t('athletes.status.suspended') },
   ];
+
 
   useEffect(() => {
     loadAthletes();
@@ -193,7 +220,7 @@ const Athletes: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
                 >
                   <option value="">{t('athletes.allCategories')}</option>
-                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {categories.map(cat => <option key={cat} value={cat}>{getCategoryLabel(cat)}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -207,7 +234,7 @@ const Athletes: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
                 >
                   <option value="">{t('athletes.allPositions')}</option>
-                  {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                  {positionOptions.map(p => <option key={p.value} value={p.value}>{t(p.key)}</option>)}
                 </select>
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -236,13 +263,13 @@ const Athletes: React.FC = () => {
           <span className="text-xs text-slate-500">{t('athletes.activeFilters')}:</span>
           {filters.category && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-              {filters.category}
+              {getCategoryLabel(filters.category)}
               <button onClick={() => setFilters({ ...filters, category: '' })} className="hover:text-primary-dark"><X className="w-3 h-3" /></button>
             </span>
           )}
           {filters.position && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-              {filters.position}
+              {getPositionLabel(filters.position)}
               <button onClick={() => setFilters({ ...filters, position: '' })} className="hover:text-primary-dark"><X className="w-3 h-3" /></button>
             </span>
           )}
@@ -312,12 +339,12 @@ const Athletes: React.FC = () => {
                       <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-600">{athlete.cpf || '-'}</td>
                       <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4">
                         {athlete.category ? (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">{athlete.category}</span>
+                          <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">{getCategoryLabel(athlete.category)}</span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="hidden lg:table-cell px-6 py-4 text-sm text-slate-600">{athlete.position || '-'}</td>
+                      <td className="hidden lg:table-cell px-6 py-4 text-sm text-slate-600">{getPositionLabel(athlete.position)}</td>
                       <td className="px-3 md:px-6 py-3 md:py-4 text-center">
                         <StatusBadge status={getStatusLabel(athlete.status)} variant={getStatusVariant(athlete.status)} />
                       </td>
@@ -357,9 +384,9 @@ const Athletes: React.FC = () => {
                 )}
                 <h3 className="text-base font-bold text-slate-800 mb-1">{athlete.full_name}</h3>
                 {athlete.category && (
-                  <span className="px-3 py-1 bg-blue-50 text-primary text-[11px] font-bold rounded-full uppercase tracking-wider mb-2">{athlete.category}</span>
+                  <span className="px-3 py-1 bg-blue-50 text-primary text-[11px] font-bold rounded-full uppercase tracking-wider mb-2">{getCategoryLabel(athlete.category)}</span>
                 )}
-                <p className="text-sm text-slate-500">{athlete.position || t('common.noPosition')}</p>
+                <p className="text-sm text-slate-500">{getPositionLabel(athlete.position) !== '-' ? getPositionLabel(athlete.position) : t('common.noPosition')}</p>
               </div>
               <div className="mt-5 pt-4 border-t border-slate-50 flex justify-between items-center text-xs text-slate-400">
                 <span>{athlete.join_date ? new Date(athlete.join_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '-'}</span>

@@ -11,6 +11,7 @@ import {
 } from '../services/athleteService';
 import { storageService } from '../services/storageService';
 import { useLanguage } from '../contexts/LanguageContext';
+import AthleteHistoryDashboard from '../components/AthleteHistoryDashboard';
 
 type TabType = 'general' | 'wardrobe' | 'history' | 'physiology';
 
@@ -18,7 +19,7 @@ const AthleteForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditing = !!id;
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(false);
@@ -167,7 +168,7 @@ const AthleteForm: React.FC = () => {
                 <div className="p-6">
                     {activeTab === 'general' && <GeneralTab t={t} athlete={athlete} setAthlete={setAthlete} onPhotoUpload={handlePhotoUpload} uploadingPhoto={uploadingPhoto} />}
                     {activeTab === 'wardrobe' && <WardrobeTab t={t} wardrobe={wardrobe} setWardrobe={setWardrobe} />}
-                    {activeTab === 'history' && <HistoryTab t={t} history={trainingHistory} />}
+                    {activeTab === 'history' && id && <AthleteHistoryDashboard athleteId={id} t={t} language={language} />}
                     {activeTab === 'physiology' && <PhysiologyTab t={t} physiology={physiology} setPhysiology={setPhysiology} />}
                 </div>
             </div>
@@ -276,14 +277,28 @@ const GeneralTab: React.FC<{
                         <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.category')}</label>
                         <select value={athlete.category || ''} onChange={(e) => updateField('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                             <option value="">{t('trainingForm.field.select')}</option>
-                            <option value="Sub-7">Sub-7</option><option value="Sub-9">Sub-9</option><option value="Sub-11">Sub-11</option><option value="Sub-13">Sub-13</option><option value="Sub-15">Sub-15</option><option value="Sub-17">Sub-17</option><option value="Sub-20">Sub-20</option><option value="Profissional">Profissional</option>
+                            {['Sub-7','Sub-9','Sub-11','Sub-13','Sub-15','Sub-17','Sub-20'].map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                            <option value="Profissional">{t('athlete.category.professional')}</option>
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.position')}</label>
                         <select value={athlete.position || ''} onChange={(e) => updateField('position', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                             <option value="">{t('trainingForm.field.select')}</option>
-                            <option value="Goleiro">Goleiro</option><option value="Zagueiro">Zagueiro</option><option value="Lateral Direito">Lateral Direito</option><option value="Lateral Esquerdo">Lateral Esquerdo</option><option value="Volante">Volante</option><option value="Meio-Campo">Meio-Campo</option><option value="Meia Atacante">Meia Atacante</option><option value="Ponta Direita">Ponta Direita</option><option value="Ponta Esquerda">Ponta Esquerda</option><option value="Centroavante">Centroavante</option>
+                            {[
+                                { value: 'Goleiro',         key: 'athlete.position.goalkeeper' },
+                                { value: 'Zagueiro',        key: 'athlete.position.centerBack' },
+                                { value: 'Lateral Direito', key: 'athlete.position.rightBack' },
+                                { value: 'Lateral Esquerdo',key: 'athlete.position.leftBack' },
+                                { value: 'Volante',         key: 'athlete.position.defensiveMid' },
+                                { value: 'Meio-Campo',      key: 'athlete.position.midfielder' },
+                                { value: 'Meia Atacante',   key: 'athlete.position.attackingMid' },
+                                { value: 'Ponta Direita',   key: 'athlete.position.rightWing' },
+                                { value: 'Ponta Esquerda',  key: 'athlete.position.leftWing' },
+                                { value: 'Centroavante',    key: 'athlete.position.striker' },
+                            ].map(p => <option key={p.value} value={p.value}>{t(p.key)}</option>)}
                         </select>
                     </div>
                     <div>

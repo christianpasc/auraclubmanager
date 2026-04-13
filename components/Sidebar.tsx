@@ -53,41 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { icon: Settings, label: t('nav.settings'), path: '/settings' },
   ];
 
-  const getFinanceLabel = () => {
-    switch (language) {
-      case 'en-US': return 'Finance';
-      case 'es-ES': return 'Finanzas';
-      default: return 'Financeiro';
-    }
-  };
-
-  const getOverviewLabel = () => {
-    switch (language) {
-      case 'en-US': return 'Overview';
-      case 'es-ES': return 'Resumen';
-      default: return 'Visão Geral';
-    }
-  };
-
-  const getMonthlyFeesLabel = () => {
-    switch (language) {
-      case 'en-US': return 'Monthly Fees';
-      case 'es-ES': return 'Mensualidades';
-      default: return 'Mensalidades';
-    }
-  };
-
-  const getText = (pt: string, en: string, es: string) => {
-    return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
-  };
-
-  const getLogoutLabel = () => {
-    switch (language) {
-      case 'en-US': return 'Logout';
-      case 'es-ES': return 'Cerrar sesión';
-      default: return 'Sair';
-    }
-  };
 
   // Render subscription/trial info box
   const renderSubscriptionBox = () => {
@@ -96,39 +61,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const { subscriptionStatus, trialDaysRemaining, hasActiveSubscription } = subscriptionInfo;
 
     if (hasActiveSubscription) {
-      // Show active plan
       return (
         <div className="bg-green-500/20 rounded-lg p-4 mb-4">
           <p className="text-xs font-semibold text-white uppercase tracking-wider">
-            {getText('Plano Ativo', 'Active Plan', 'Plan Activo')}
+            {t('sidebar.activePlan')}
           </p>
           <p className="text-[11px] text-white/70 mt-1">
-            {getText('Acesso completo', 'Full access', 'Acceso completo')}
+            {t('sidebar.fullAccess')}
           </p>
         </div>
       );
     }
 
     if (subscriptionStatus === 'expired') {
-      // Show expired trial warning
       return (
         <NavLink to="/plans" className="block">
           <div className="bg-red-500/30 rounded-lg p-4 mb-4 hover:bg-red-500/40 transition-colors cursor-pointer">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-300" />
               <p className="text-xs font-semibold text-white uppercase tracking-wider">
-                {getText('Trial Expirado', 'Trial Expired', 'Prueba Expirada')}
+                {t('sidebar.trialExpired')}
               </p>
             </div>
             <p className="text-[11px] text-white/70 mt-1">
-              {getText('Clique para escolher um plano', 'Click to choose a plan', 'Haga clic para elegir un plan')}
+              {t('sidebar.clickToPlan')}
             </p>
           </div>
         </NavLink>
       );
     }
 
-    // Show trial days remaining
     const badgeColor = trialDaysRemaining <= 2 ? 'bg-amber-500/30' : 'bg-blue-600/20';
 
     return (
@@ -137,13 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-white/80" />
             <p className="text-xs font-semibold text-white uppercase tracking-wider">
-              {getText('Período de Teste', 'Trial Period', 'Período de Prueba')}
+              {t('sidebar.trialPeriod')}
             </p>
           </div>
           <p className="text-[11px] text-white/70 mt-1">
             {trialDaysRemaining === 1
-              ? getText('1 dia restante', '1 day left', '1 día restante')
-              : getText(`${trialDaysRemaining} dias restantes`, `${trialDaysRemaining} days left`, `${trialDaysRemaining} días restantes`)
+              ? t('sidebar.oneDayLeft')
+              : t('sidebar.daysLeft').replace('{n}', String(trialDaysRemaining))
             }
           </p>
         </div>
@@ -198,7 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           >
             <div className="flex items-center gap-3">
               <Wallet className="w-5 h-5" />
-              <span className="text-sm">{getFinanceLabel()}</span>
+              <span className="text-sm">{t('sidebar.finance')}</span>
             </div>
             {financeOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -214,7 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 }
               >
                 <PieChart className="w-3.5 h-3.5" />
-                {getOverviewLabel()}
+                {t('sidebar.overview')}
               </NavLink>
               {isSchool && (
                 <NavLink
@@ -225,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   }
                 >
                   <DollarSign className="w-3.5 h-3.5" />
-                  {getMonthlyFeesLabel()}
+                   {t('sidebar.monthlyFees')}
                 </NavLink>
               )}
             </div>
@@ -248,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           className="flex items-center gap-3 w-full px-4 py-3 text-white/70 hover:text-white transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          <span className="text-sm">{getLogoutLabel()}</span>
+          <span className="text-sm">{t('sidebar.logout')}</span>
         </button>
       </div>
     </aside>

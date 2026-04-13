@@ -16,13 +16,10 @@ import { subscriptionService, PlanLimits } from '../services/subscriptionService
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
   const { language, setLanguage, t } = useLanguage();
-  const { currentTenant } = useTenant();
+  const { currentTenant, refreshTenants } = useTenant();
+
   const { user } = useAuth();
   const { isAdmin, isOwner } = usePermissions();
-
-  const getText = (pt: string, en: string, es: string) => {
-    return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
-  };
 
   // Common states
   const [saving, setSaving] = useState(false);
@@ -33,9 +30,8 @@ const Settings: React.FC = () => {
   const [clubName, setClubName] = useState('');
   const [clubLogo, setClubLogo] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [cnpj, setCnpj] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('SP');
+  const [address, setAddress] = useState('');
+  const [country, setCountry] = useState('Brazil');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile state
@@ -79,9 +75,8 @@ const Settings: React.FC = () => {
       setOrganizationType(currentTenant.organization_type || 'school');
       const settings = currentTenant.settings as any;
       if (settings) {
-        setCnpj(settings.cnpj || '');
-        setCity(settings.city || '');
-        setState(settings.state || 'SP');
+        setAddress(settings.address || '');
+        setCountry(settings.country || 'Brazil');
       }
     }
   }, [currentTenant]);
@@ -124,7 +119,6 @@ const Settings: React.FC = () => {
     if (!currentTenant?.id || !user?.id) return;
     setUsersLoading(true);
     try {
-      // First, check if current user exists in tenant_users
       const { data: existingUser, error: checkError } = await supabase
         .from('tenant_users')
         .select('*')
@@ -132,38 +126,23 @@ const Settings: React.FC = () => {
         .eq('user_id', user.id)
         .single();
 
-      // If user doesn't exist in tenant_users, create the record as owner
       if (checkError && checkError.code === 'PGRST116') {
-        console.log('Owner not found in tenant_users, creating...');
-        await supabase
-          .from('tenant_users')
-          .insert({
-            tenant_id: currentTenant.id,
-            user_id: user.id,
-            role: 'owner',
-            is_owner: true,
-          });
+        await supabase.from('tenant_users').insert({
+          tenant_id: currentTenant.id,
+          user_id: user.id,
+          role: 'owner',
+          is_owner: true,
+        });
       }
 
-      // Use Edge Function to get users with their emails
       const { data, error } = await supabase.functions.invoke('get-tenant-users', {
         body: { tenantId: currentTenant.id }
       });
 
-      console.log('=== GET TENANT USERS RESPONSE ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
-
-      if (error) {
-        console.error('Error calling get-tenant-users:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (data?.success && data?.users) {
-        console.log('Users loaded:', data.users);
         setTenantUsers(data.users);
-      } else if (data?.error) {
-        console.error('Error from get-tenant-users:', data.error);
       }
     } catch (err) {
       console.error('Error loading users:', err);
@@ -172,67 +151,51 @@ const Settings: React.FC = () => {
     }
   };
 
-  // Handle logo selection (preview only)
   const handleLogoSelect = (file: File) => {
-    // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
     setClubLogo(previewUrl);
     setLogoFile(file);
   };
 
-  // Save handlers
   const handleSaveClub = async () => {
     if (!currentTenant?.id) return;
     setSaving(true);
     setError(null);
-
     const hasNewLogo = !!logoFile;
-
     try {
       let logoUrl = currentTenant.logo_url;
-
-      // Upload logo if a new file was selected
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `${currentTenant.id}-logo-${Date.now()}.${fileExt}`;
         const filePath = `logos/${fileName}`;
-
         const { error: uploadError } = await supabase.storage
           .from('tenants')
           .upload(filePath, logoFile, { upsert: true });
-
         if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage
-          .from('tenants')
-          .getPublicUrl(filePath);
-
+        const { data } = supabase.storage.from('tenants').getPublicUrl(filePath);
         logoUrl = data.publicUrl;
-        setLogoFile(null); // Clear the file after upload
+        setLogoFile(null);
       }
-
       await tenantService.update(currentTenant.id, {
         name: clubName,
         logo_url: logoUrl || undefined,
         organization_type: organizationType,
         settings: {
           ...(currentTenant.settings as any),
-          cnpj,
-          city,
-          state,
+          address,
+          country,
         },
       });
-
       setSaved(true);
+      // Refresh context so sidebar reflects org type change immediately
+      await refreshTenants();
       setTimeout(() => {
         setSaved(false);
-        // Reload to update sidebar with new logo
-        if (hasNewLogo) {
-          window.location.reload();
-        }
+        if (hasNewLogo) window.location.reload();
       }, 1000);
+
     } catch (err) {
-      setError(getText('Erro ao salvar', 'Error saving', 'Error al guardar'));
+      setError(t('settings.errorSaving'));
       console.error(err);
     } finally {
       setSaving(false);
@@ -242,32 +205,21 @@ const Settings: React.FC = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     setError(null);
-
     const hasNewAvatar = !!avatarFile;
-
     try {
-      // Upload avatar if a new file was selected
       if (avatarFile) {
         await userService.uploadAvatar(avatarFile);
         setAvatarFile(null);
         setAvatarPreview(null);
       }
-
-      await userService.updateProfile({
-        full_name: profileName,
-        phone: profilePhone,
-      });
-
+      await userService.updateProfile({ full_name: profileName, phone: profilePhone });
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
-        // Reload to update header with new profile data
-        if (hasNewAvatar || profileName !== profile?.full_name) {
-          window.location.reload();
-        }
+        if (hasNewAvatar || profileName !== profile?.full_name) window.location.reload();
       }, 1000);
     } catch (err) {
-      setError(getText('Erro ao salvar perfil', 'Error saving profile', 'Error al guardar perfil'));
+      setError(t('settings.errorSavingProfile'));
       console.error(err);
     } finally {
       setSaving(false);
@@ -282,7 +234,7 @@ const Settings: React.FC = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(getText('Erro ao salvar', 'Error saving', 'Error al guardar'));
+      setError(t('settings.errorSaving'));
       console.error(err);
     } finally {
       setSaving(false);
@@ -291,17 +243,14 @@ const Settings: React.FC = () => {
 
   const handleChangePassword = async () => {
     setPasswordError(null);
-
     if (newPassword.length < 6) {
-      setPasswordError(getText('A senha deve ter pelo menos 6 caracteres', 'Password must be at least 6 characters', 'La contraseña debe tener al menos 6 caracteres'));
+      setPasswordError(t('settings.security.passwordMin'));
       return;
     }
-
     if (newPassword !== confirmPassword) {
-      setPasswordError(getText('As senhas não coincidem', 'Passwords do not match', 'Las contraseñas no coinciden'));
+      setPasswordError(t('settings.security.passwordMismatch'));
       return;
     }
-
     setSaving(true);
     try {
       const result = await userService.changePassword(newPassword);
@@ -311,7 +260,7 @@ const Settings: React.FC = () => {
         setConfirmPassword('');
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setPasswordError(result.error || getText('Erro ao alterar senha', 'Error changing password', 'Error al cambiar contraseña'));
+        setPasswordError(result.error || t('settings.security.errorChanging'));
       }
     } catch (err: any) {
       setPasswordError(err.message);
@@ -328,9 +277,7 @@ const Settings: React.FC = () => {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  // Handle avatar selection (preview only)
   const handleAvatarSelect = (file: File) => {
-    // Create a preview URL
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview(previewUrl);
     setAvatarFile(file);
@@ -351,22 +298,96 @@ const Settings: React.FC = () => {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'owner': return getText('Proprietário', 'Owner', 'Propietario');
-      case 'admin': return getText('Administrador', 'Admin', 'Administrador');
-      case 'manager': return getText('Gerente', 'Manager', 'Gerente');
-      case 'member': return getText('Membro', 'Member', 'Miembro');
+      case 'owner':   return t('settings.users.role.owner');
+      case 'admin':   return t('settings.users.role.admin');
+      case 'manager': return t('settings.users.role.manager');
+      case 'member':  return t('settings.users.role.member');
       default: return role;
     }
   };
 
   const tabs = [
-    { id: 'club', icon: Building2, label: getText('Clube', 'Club', 'Club') },
-    { id: 'preferences', icon: Globe, label: getText('Preferências', 'Preferences', 'Preferencias') },
-    { id: 'profile', icon: User, label: getText('Meu Perfil', 'My Profile', 'Mi Perfil') },
-    { id: 'notifications', icon: Bell, label: getText('Notificações', 'Notifications', 'Notificaciones') },
-    { id: 'security', icon: Shield, label: getText('Segurança', 'Security', 'Seguridad') },
-    { id: 'users', icon: Users, label: getText('Usuários', 'Users', 'Usuarios') },
+    { id: 'club',          icon: Building2, label: t('settings.tab.club') },
+    { id: 'preferences',   icon: Globe,     label: t('settings.tab.preferences') },
+    { id: 'profile',       icon: User,      label: t('settings.tab.profile') },
+    { id: 'notifications', icon: Bell,      label: t('settings.tab.notifications') },
+    { id: 'security',      icon: Shield,    label: t('settings.tab.security') },
+    { id: 'users',         icon: Users,     label: t('settings.tab.users') },
   ];
+
+  const countryOptions = [
+    { value: 'Afghanistan',          label: t('country.Afghanistan') },
+    { value: 'Albania',              label: t('country.Albania') },
+    { value: 'Algeria',              label: t('country.Algeria') },
+    { value: 'Angola',               label: t('country.Angola') },
+    { value: 'Argentina',            label: t('country.Argentina') },
+    { value: 'Australia',            label: t('country.Australia') },
+    { value: 'Austria',              label: t('country.Austria') },
+    { value: 'Belgium',              label: t('country.Belgium') },
+    { value: 'Bolivia',              label: t('country.Bolivia') },
+    { value: 'Brazil',               label: t('country.Brazil') },
+    { value: 'Canada',               label: t('country.Canada') },
+    { value: 'Chile',                label: t('country.Chile') },
+    { value: 'China',                label: t('country.China') },
+    { value: 'Colombia',             label: t('country.Colombia') },
+    { value: 'Croatia',              label: t('country.Croatia') },
+    { value: 'Czech Republic',       label: t('country.Czech Republic') },
+    { value: 'Denmark',              label: t('country.Denmark') },
+    { value: 'Ecuador',              label: t('country.Ecuador') },
+    { value: 'Egypt',                label: t('country.Egypt') },
+    { value: 'England',              label: t('country.England') },
+    { value: 'France',               label: t('country.France') },
+    { value: 'Germany',              label: t('country.Germany') },
+    { value: 'Ghana',                label: t('country.Ghana') },
+    { value: 'Greece',               label: t('country.Greece') },
+    { value: 'Hungary',              label: t('country.Hungary') },
+    { value: 'India',                label: t('country.India') },
+    { value: 'Indonesia',            label: t('country.Indonesia') },
+    { value: 'Iran',                 label: t('country.Iran') },
+    { value: 'Ireland',              label: t('country.Ireland') },
+    { value: 'Israel',               label: t('country.Israel') },
+    { value: 'Italy',                label: t('country.Italy') },
+    { value: 'Japan',                label: t('country.Japan') },
+    { value: 'Kenya',                label: t('country.Kenya') },
+    { value: 'Mexico',               label: t('country.Mexico') },
+    { value: 'Morocco',              label: t('country.Morocco') },
+    { value: 'Netherlands',          label: t('country.Netherlands') },
+    { value: 'New Zealand',          label: t('country.New Zealand') },
+    { value: 'Nigeria',              label: t('country.Nigeria') },
+    { value: 'Norway',               label: t('country.Norway') },
+    { value: 'Paraguay',             label: t('country.Paraguay') },
+    { value: 'Peru',                 label: t('country.Peru') },
+    { value: 'Poland',               label: t('country.Poland') },
+    { value: 'Portugal',             label: t('country.Portugal') },
+    { value: 'Romania',              label: t('country.Romania') },
+    { value: 'Russia',               label: t('country.Russia') },
+    { value: 'Saudi Arabia',         label: t('country.Saudi Arabia') },
+    { value: 'Scotland',             label: t('country.Scotland') },
+    { value: 'Senegal',              label: t('country.Senegal') },
+    { value: 'Serbia',               label: t('country.Serbia') },
+    { value: 'South Africa',         label: t('country.South Africa') },
+    { value: 'South Korea',          label: t('country.South Korea') },
+    { value: 'Spain',                label: t('country.Spain') },
+    { value: 'Sweden',               label: t('country.Sweden') },
+    { value: 'Switzerland',          label: t('country.Switzerland') },
+    { value: 'Turkey',               label: t('country.Turkey') },
+    { value: 'Ukraine',              label: t('country.Ukraine') },
+    { value: 'United Arab Emirates', label: t('country.United Arab Emirates') },
+    { value: 'United States',        label: t('country.United States') },
+    { value: 'Uruguay',              label: t('country.Uruguay') },
+    { value: 'Venezuela',            label: t('country.Venezuela') },
+  ].sort((a, b) => a.label.localeCompare(b.label));
+
+  const SaveButton: React.FC<{ onClick: () => void; disabled?: boolean }> = ({ onClick, disabled }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled ?? saving}
+      className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
+    >
+      {saved ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+      {saving ? t('settings.saving') : saved ? t('settings.saved') : t('settings.save')}
+    </button>
+  );
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -375,18 +396,18 @@ const Settings: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 hover:text-slate-800'
-              }`}
+            className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
-            {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+            {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full" />}
           </button>
         ))}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-        {/* Club Tab */}
+
+        {/* ── Club Tab ──────────────────────────────────────────────────── */}
         {activeTab === 'club' && (
           <div className="space-y-8">
             <div className="flex items-center gap-6 pb-8 border-b border-slate-100">
@@ -402,144 +423,79 @@ const Settings: React.FC = () => {
                 >
                   <Camera className="w-6 h-6 text-white" />
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleLogoSelect(e.target.files[0])}
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleLogoSelect(e.target.files[0])} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">{getText('Logo do Clube', 'Club Logo', 'Logo del Club')}</h3>
-                <p className="text-sm text-slate-500 mt-1">{getText('Recomendado: PNG ou JPG, min. 512x512px.', 'Recommended: PNG or JPG, min. 512x512px.', 'Recomendado: PNG o JPG, min. 512x512px.')}</p>
-                {logoFile && (
-                  <p className="text-xs text-primary mt-1 font-semibold">{getText('Nova imagem selecionada - clique em Salvar para aplicar', 'New image selected - click Save to apply', 'Nueva imagen seleccionada - haga clic en Guardar para aplicar')}</p>
-                )}
+                <h3 className="text-lg font-bold text-slate-800">{t('settings.club.logoTitle')}</h3>
+                <p className="text-sm text-slate-500 mt-1">{t('settings.club.logoHint')}</p>
+                {logoFile && <p className="text-xs text-primary mt-1 font-semibold">{t('settings.club.logoSelected')}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{getText('Nome Fantasia', 'Trade Name', 'Nombre Comercial')}</label>
-                <input
-                  type="text"
-                  value={clubName}
-                  onChange={(e) => setClubName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                />
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.club.tradeName')}</label>
+                <input type="text" value={clubName} onChange={(e) => setClubName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">CNPJ</label>
-                <input
-                  type="text"
-                  value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
-                  placeholder="00.000.000/0001-00"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{getText('Cidade', 'City', 'Ciudad')}</label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{getText('Estado (UF)', 'State', 'Estado')}</label>
-                <select
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                >
-                  <option value="SP">São Paulo</option>
-                  <option value="RJ">Rio de Janeiro</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="RS">Rio Grande do Sul</option>
-                  <option value="PR">Paraná</option>
-                  <option value="SC">Santa Catarina</option>
-                  <option value="BA">Bahia</option>
-                  <option value="GO">Goiás</option>
-                  <option value="DF">Distrito Federal</option>
-                  <option value="CE">Ceará</option>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.club.country')}</label>
+                <select value={country} onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                  {countryOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.club.address')}</label>
+                <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
+                  placeholder={t('settings.club.addressPlaceholder')}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
               </div>
             </div>
 
-            {/* Organization Type */}
             <div className="pt-6 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">{getText('Tipo de Organização', 'Organization Type', 'Tipo de Organización')}</h3>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">{t('settings.club.orgType')}</h3>
               <div className="grid grid-cols-2 gap-4 max-w-md">
-                <button
-                  type="button"
-                  onClick={() => setOrganizationType('school')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school'
-                      ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
-                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                    }`}
-                >
+                <button type="button" onClick={() => setOrganizationType('school')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school' ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                   <GraduationCap className="w-6 h-6" />
-                  <span className="text-xs font-bold text-center">{getText('Escolinha de Futebol', 'Football School', 'Escuela de Fútbol')}</span>
+                  <span className="text-xs font-bold text-center">{t('settings.club.orgType.school')}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setOrganizationType('club')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club'
-                      ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
-                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                    }`}
-                >
+                <button type="button" onClick={() => setOrganizationType('club')}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club' ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                   <Shield className="w-6 h-6" />
-                  <span className="text-xs font-bold text-center">{getText('Clube de Futebol', 'Football Club', 'Club de Fútbol')}</span>
+                  <span className="text-xs font-bold text-center">{t('settings.club.orgType.club')}</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-400 mt-2">{getText(
-                'Escolinhas possuem matrículas e mensalidades. Clubes ocultam essas funcionalidades.',
-                'Schools have enrollments and monthly fees. Clubs hide these features.',
-                'Las escuelas tienen matrículas y mensualidades. Los clubes ocultan estas funcionalidades.'
-              )}</p>
+              <p className="text-xs text-slate-400 mt-2">{t('settings.club.orgType.hint')}</p>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
-
             <div className="pt-6 flex justify-end gap-3">
-              <button
-                onClick={handleSaveClub}
-                disabled={saving}
-                className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-              >
-                {saved ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? getText('Salvando...', 'Saving...', 'Guardando...') : saved ? getText('Salvo!', 'Saved!', '¡Guardado!') : getText('Salvar', 'Save', 'Guardar')}
-              </button>
+              <SaveButton onClick={handleSaveClub} />
             </div>
           </div>
         )}
 
-        {/* Preferences Tab */}
+        {/* ── Preferences Tab ───────────────────────────────────────────── */}
         {activeTab === 'preferences' && (
           <div className="space-y-8">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">{getText('Preferências do Sistema', 'System Preferences', 'Preferencias del Sistema')}</h3>
-              <p className="text-sm text-slate-500">{getText('Configure como o sistema se comporta.', 'Configure how the system behaves.', 'Configure cómo se comporta el sistema.')}</p>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">{t('settings.preferences.title')}</h3>
+              <p className="text-sm text-slate-500">{t('settings.preferences.subtitle')}</p>
             </div>
-
             <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-primary/10 rounded-xl">
                   <Globe className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-slate-800">{getText('Idioma', 'Language', 'Idioma')}</h4>
-                  <p className="text-sm text-slate-500 mt-1">{getText('Selecione o idioma do sistema.', 'Select the system language.', 'Seleccione el idioma del sistema.')}</p>
+                  <h4 className="font-bold text-slate-800">{t('settings.preferences.language')}</h4>
+                  <p className="text-sm text-slate-500 mt-1">{t('settings.preferences.languageHint')}</p>
                   <div className="mt-4">
-                    <select
-                      value={selectedLanguage}
-                      onChange={(e) => setSelectedLanguage(e.target.value as typeof language)}
-                      className="w-full max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    >
+                    <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value as typeof language)}
+                      className="w-full max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none">
                       {AVAILABLE_LANGUAGES.map(lang => (
                         <option key={lang.value} value={lang.value}>{lang.label}</option>
                       ))}
@@ -548,27 +504,17 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
-
             <div className="pt-6 flex justify-end">
-              <button
-                onClick={handleSaveLanguage}
-                disabled={saving || selectedLanguage === language}
-                className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-              >
-                {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {saving ? getText('Salvando...', 'Saving...', 'Guardando...') : saved ? getText('Salvo!', 'Saved!', '¡Guardado!') : getText('Salvar', 'Save', 'Guardar')}
-              </button>
+              <SaveButton onClick={handleSaveLanguage} disabled={saving || selectedLanguage === language} />
             </div>
           </div>
         )}
 
-        {/* Profile Tab */}
+        {/* ── Profile Tab ───────────────────────────────────────────────── */}
         {activeTab === 'profile' && (
           <div className="space-y-8">
             {profileLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              </div>
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
             ) : (
               <>
                 <div className="flex items-center gap-6 pb-8 border-b border-slate-100">
@@ -582,38 +528,25 @@ const Settings: React.FC = () => {
                         {profileName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '?'}
                       </div>
                     )}
-                    <button
-                      onClick={() => avatarInputRef.current?.click()}
-                      className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
+                    <button onClick={() => avatarInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Camera className="w-6 h-6 text-white" />
                     </button>
-                    <input
-                      ref={avatarInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handleAvatarSelect(e.target.files[0])}
-                    />
+                    <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handleAvatarSelect(e.target.files[0])} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800">{getText('Foto do Perfil', 'Profile Photo', 'Foto de Perfil')}</h3>
-                    <p className="text-sm text-slate-500 mt-1">{getText('Clique para alterar sua foto.', 'Click to change your photo.', 'Haga clic para cambiar su foto.')}</p>
-                    {avatarFile && (
-                      <p className="text-xs text-primary mt-1 font-semibold">{getText('Nova foto selecionada - clique em Salvar para aplicar', 'New photo selected - click Save to apply', 'Nueva foto seleccionada - haga clic en Guardar para aplicar')}</p>
-                    )}
+                    <h3 className="text-lg font-bold text-slate-800">{t('settings.profile.photoTitle')}</h3>
+                    <p className="text-sm text-slate-500 mt-1">{t('settings.profile.photoHint')}</p>
+                    {avatarFile && <p className="text-xs text-primary mt-1 font-semibold">{t('settings.profile.photoSelected')}</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase">{getText('Nome Completo', 'Full Name', 'Nombre Completo')}</label>
-                    <input
-                      type="text"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
+                    <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.profile.fullName')}</label>
+                    <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
@@ -623,49 +556,35 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase">{getText('Telefone', 'Phone', 'Teléfono')}</label>
-                    <input
-                      type="tel"
-                      value={profilePhone}
-                      onChange={(e) => setProfilePhone(e.target.value)}
-                      placeholder="(00) 00000-0000"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    />
+                    <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.profile.phone')}</label>
+                    <input type="tel" value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="(00) 00000-0000"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
                   </div>
                 </div>
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
-
                 <div className="pt-6 flex justify-end">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-                  >
-                    {saved ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saving ? getText('Salvando...', 'Saving...', 'Guardando...') : saved ? getText('Salvo!', 'Saved!', '¡Guardado!') : getText('Salvar', 'Save', 'Guardar')}
-                  </button>
+                  <SaveButton onClick={handleSaveProfile} />
                 </div>
               </>
             )}
           </div>
         )}
 
-        {/* Notifications Tab */}
+        {/* ── Notifications Tab ─────────────────────────────────────────── */}
         {activeTab === 'notifications' && (
           <div className="space-y-8">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">{getText('Notificações por Email', 'Email Notifications', 'Notificaciones por Email')}</h3>
-              <p className="text-sm text-slate-500">{getText('Configure quais notificações deseja receber.', 'Configure which notifications you want to receive.', 'Configure qué notificaciones desea recibir.')}</p>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">{t('settings.notifications.title')}</h3>
+              <p className="text-sm text-slate-500">{t('settings.notifications.subtitle')}</p>
             </div>
-
             <div className="space-y-4">
               {[
-                { key: 'email_new_enrollment', label: getText('Nova matrícula', 'New enrollment', 'Nueva matrícula'), desc: getText('Quando um novo atleta é matriculado', 'When a new athlete is enrolled', 'Cuando un nuevo atleta se matricula') },
-                { key: 'email_payment_received', label: getText('Pagamento recebido', 'Payment received', 'Pago recibido'), desc: getText('Quando um pagamento é confirmado', 'When a payment is confirmed', 'Cuando un pago es confirmado') },
-                { key: 'email_payment_overdue', label: getText('Pagamento em atraso', 'Payment overdue', 'Pago atrasado'), desc: getText('Quando uma mensalidade está vencida', 'When a fee is overdue', 'Cuando una mensualidad está vencida') },
-                { key: 'email_training_reminder', label: getText('Lembrete de treino', 'Training reminder', 'Recordatorio de entrenamiento'), desc: getText('Lembretes sobre treinos agendados', 'Reminders about scheduled trainings', 'Recordatorios sobre entrenamientos programados') },
-                { key: 'email_system_alerts', label: getText('Alertas do sistema', 'System alerts', 'Alertas del sistema'), desc: getText('Atualizações importantes do sistema', 'Important system updates', 'Actualizaciones importantes del sistema') },
+                { key: 'email_new_enrollment',  label: t('settings.notifications.newEnrollment'),  desc: t('settings.notifications.newEnrollmentDesc')  },
+                { key: 'email_payment_received', label: t('settings.notifications.paymentReceived'), desc: t('settings.notifications.paymentReceivedDesc') },
+                { key: 'email_payment_overdue',  label: t('settings.notifications.paymentOverdue'),  desc: t('settings.notifications.paymentOverdueDesc')  },
+                { key: 'email_training_reminder',label: t('settings.notifications.trainingReminder'),desc: t('settings.notifications.trainingReminderDesc') },
+                { key: 'email_system_alerts',    label: t('settings.notifications.systemAlerts'),    desc: t('settings.notifications.systemAlertsDesc')    },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                   <div>
@@ -681,122 +600,86 @@ const Settings: React.FC = () => {
                 </div>
               ))}
             </div>
-
             <div className="pt-6 flex justify-end">
-              <button
-                onClick={handleSaveNotifications}
-                disabled={saving}
-                className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-              >
-                {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {saving ? getText('Salvando...', 'Saving...', 'Guardando...') : saved ? getText('Salvo!', 'Saved!', '¡Guardado!') : getText('Salvar', 'Save', 'Guardar')}
-              </button>
+              <SaveButton onClick={handleSaveNotifications} />
             </div>
           </div>
         )}
 
-        {/* Security Tab */}
+        {/* ── Security Tab ──────────────────────────────────────────────── */}
         {activeTab === 'security' && (
           <div className="space-y-8">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">{getText('Alterar Senha', 'Change Password', 'Cambiar Contraseña')}</h3>
-              <p className="text-sm text-slate-500">{getText('Digite uma nova senha segura.', 'Enter a new secure password.', 'Ingrese una nueva contraseña segura.')}</p>
+              <h3 className="text-lg font-bold text-slate-800 mb-1">{t('settings.security.title')}</h3>
+              <p className="text-sm text-slate-500">{t('settings.security.subtitle')}</p>
             </div>
-
             <div className="max-w-md space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{getText('Nova Senha', 'New Password', 'Nueva Contraseña')}</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.security.newPassword')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
+                  <input type={showPassword ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{getText('Confirmar Senha', 'Confirm Password', 'Confirmar Contraseña')}</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.security.confirmPassword')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    placeholder="••••••••"
-                  />
+                  <input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" placeholder="••••••••" />
                 </div>
               </div>
-
               {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
-
-              <button
-                onClick={handleChangePassword}
-                disabled={saving || !newPassword || !confirmPassword}
-                className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-              >
+              <button onClick={handleChangePassword} disabled={saving || !newPassword || !confirmPassword}
+                className="flex items-center gap-2 px-8 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50">
                 {saved ? <Check className="w-4 h-4" /> : saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                {saving ? getText('Alterando...', 'Changing...', 'Cambiando...') : saved ? getText('Alterado!', 'Changed!', '¡Cambiado!') : getText('Alterar Senha', 'Change Password', 'Cambiar Contraseña')}
+                {saving ? t('settings.security.changing') : saved ? t('settings.security.changed') : t('settings.security.changeBtn')}
               </button>
             </div>
           </div>
         )}
 
-        {/* Users Tab */}
+        {/* ── Users Tab ─────────────────────────────────────────────────── */}
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">{getText('Usuários do Clube', 'Club Users', 'Usuarios del Club')}</h3>
-                <p className="text-sm text-slate-500">{getText('Gerencie os usuários e suas permissões.', 'Manage users and their permissions.', 'Administre los usuarios y sus permisos.')}</p>
+                <h3 className="text-lg font-bold text-slate-800">{t('settings.users.title')}</h3>
+                <p className="text-sm text-slate-500">{t('settings.users.subtitle')}</p>
               </div>
-              <button
-                onClick={() => setUserModal({ isOpen: true, user: null })}
+              <button onClick={() => setUserModal({ isOpen: true, user: null })}
                 disabled={planLimits ? !planLimits.can_add_user : false}
-                className={`flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark ${planLimits && !planLimits.can_add_user ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
+                className={`flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark ${planLimits && !planLimits.can_add_user ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <Plus className="w-4 h-4" />
-                {getText('Novo Usuário', 'New User', 'Nuevo Usuario')}
+                {t('settings.users.newUser')}
               </button>
             </div>
 
-            {/* User Limit Warning */}
             {planLimits && !planLimits.can_add_user && (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-800">
-                    {getText('Limite de usuários atingido', 'User limit reached', 'Límite de usuarios alcanzado')}
-                  </p>
+                  <p className="text-sm font-semibold text-amber-800">{t('settings.users.limitReached')}</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    {`${planLimits.current_users} / ${planLimits.max_users} ${getText('usuários cadastrados. Faça upgrade do seu plano para adicionar mais.', 'users registered. Upgrade your plan to add more.', 'usuarios registrados. Actualice su plan para agregar más.')}`}
+                    {`${planLimits.current_users} / ${planLimits.max_users} ${t('settings.users.limitDesc')}`}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Usage Counter */}
             {planLimits && planLimits.has_active_subscription && planLimits.max_users !== null && planLimits.can_add_user && (
               <div className="text-xs text-slate-500">
-                {planLimits.current_users} / {planLimits.max_users} {getText('usuários', 'users', 'usuarios')}
+                {planLimits.current_users} / {planLimits.max_users} {t('settings.users.usersLabel')}
               </div>
             )}
 
             {usersLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              </div>
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
             ) : (
               <div className="space-y-3">
                 {tenantUsers.map((tu) => (
@@ -810,37 +693,25 @@ const Settings: React.FC = () => {
                         </div>
                       )}
                       <div>
-                        <p className="font-semibold text-slate-800">
-                          {tu.full_name || tu.email?.split('@')[0] || getText('Sem nome', 'No name', 'Sin nombre')}
-                        </p>
+                        <p className="font-semibold text-slate-800">{tu.full_name || tu.email?.split('@')[0] || t('settings.users.noName')}</p>
                         <p className="text-sm text-slate-500">{tu.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       {tu.is_pending && (
                         <span className="px-2.5 py-1 text-xs font-bold rounded uppercase bg-orange-100 text-orange-700">
-                          {getText('Pendente', 'Pending', 'Pendiente')}
+                          {t('settings.users.pending')}
                         </span>
                       )}
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase ${tu.is_owner ? 'bg-amber-100 text-amber-700' :
-                        tu.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                          tu.role === 'manager' ? 'bg-blue-100 text-blue-700' :
-                            'bg-slate-100 text-slate-600'
-                        }`}>
-                        {tu.is_owner ? getText('Proprietário', 'Owner', 'Propietario') : getRoleLabel(tu.role)}
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase ${tu.is_owner ? 'bg-amber-100 text-amber-700' : tu.role === 'admin' ? 'bg-purple-100 text-purple-700' : tu.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                        {tu.is_owner ? t('settings.users.role.owner') : getRoleLabel(tu.role)}
                       </span>
                       {!tu.is_owner && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setUserModal({ isOpen: true, user: tu })}
-                            className="p-1.5 text-slate-400 hover:text-primary"
-                          >
+                          <button onClick={() => setUserModal({ isOpen: true, user: tu })} className="p-1.5 text-slate-400 hover:text-primary">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => setDeleteUserModal({ isOpen: true, user: tu, loading: false })}
-                            className="p-1.5 text-slate-400 hover:text-red-500"
-                          >
+                          <button onClick={() => setDeleteUserModal({ isOpen: true, user: tu, loading: false })} className="p-1.5 text-slate-400 hover:text-red-500">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -848,11 +719,8 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                 ))}
-
                 {tenantUsers.length === 0 && (
-                  <div className="text-center py-12 text-slate-400">
-                    {getText('Nenhum usuário encontrado', 'No users found', 'No se encontraron usuarios')}
-                  </div>
+                  <div className="text-center py-12 text-slate-400">{t('settings.users.noUsers')}</div>
                 )}
               </div>
             )}
@@ -860,7 +728,6 @@ const Settings: React.FC = () => {
         )}
       </div>
 
-      {/* User Management Modal */}
       <UserManagementModal
         isOpen={userModal.isOpen}
         onClose={() => setUserModal({ isOpen: false, user: null })}
@@ -868,19 +735,14 @@ const Settings: React.FC = () => {
         editingUser={userModal.user}
       />
 
-      {/* Delete User Confirmation */}
       <ConfirmModal
         isOpen={deleteUserModal.isOpen}
         onClose={() => setDeleteUserModal({ isOpen: false, user: null, loading: false })}
         onConfirm={handleRemoveUser}
-        title={getText('Remover Usuário', 'Remove User', 'Eliminar Usuario')}
-        message={getText(
-          `Tem certeza que deseja remover "${deleteUserModal.user?.full_name}" do clube?`,
-          `Are you sure you want to remove "${deleteUserModal.user?.full_name}" from the club?`,
-          `¿Está seguro de que desea eliminar "${deleteUserModal.user?.full_name}" del club?`
-        )}
-        confirmLabel={getText('Remover', 'Remove', 'Eliminar')}
-        cancelLabel={getText('Cancelar', 'Cancel', 'Cancelar')}
+        title={t('settings.users.removeTitle')}
+        message={`${t('settings.users.removeConfirm')} "${deleteUserModal.user?.full_name}"?`}
+        confirmLabel={t('settings.users.removeBtn')}
+        cancelLabel={t('common.cancel')}
         isDestructive={true}
         loading={deleteUserModal.loading}
       />

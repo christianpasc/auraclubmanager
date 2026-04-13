@@ -271,3 +271,71 @@ export const trainingHistoryService = {
         if (error) throw error;
     },
 };
+
+// Fetch real training participations for an athlete (from training_participants + trainings)
+export const athleteTrainingStatsService = {
+    async getTrainings(athleteId: string) {
+        const { data, error } = await supabase
+            .from('training_participants')
+            .select(`
+                *,
+                training:trainings(id, training_date, training_time, end_time, category, focus, location, status, intensity)
+            `)
+            .eq('athlete_id', athleteId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data as Array<{
+            id: string;
+            attended: boolean;
+            performance_rating?: number;
+            effort_rating?: number;
+            notes?: string;
+            training: {
+                id: string;
+                training_date: string;
+                training_time?: string;
+                end_time?: string;
+                category?: string;
+                focus?: string;
+                location?: string;
+                status?: string;
+                intensity?: string;
+            };
+        }>;
+    },
+
+    async getGames(athleteId: string) {
+        const { data, error } = await supabase
+            .from('game_players')
+            .select(`
+                *,
+                game:games(id, game_date, game_time, home_team, away_team, home_score, away_score, status, competition_id,
+                    competition:competitions(id, name, season))
+            `)
+            .eq('athlete_id', athleteId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data as Array<{
+            id: string;
+            minutes_played?: number;
+            goals?: number;
+            assists?: number;
+            yellow_cards?: number;
+            red_cards?: number;
+            is_starter?: boolean;
+            position?: string;
+            game: {
+                id: string;
+                game_date?: string;
+                game_time?: string;
+                home_team?: string;
+                away_team?: string;
+                home_score?: number;
+                away_score?: number;
+                status?: string;
+                competition_id?: string;
+                competition?: { id: string; name: string; season?: string };
+            };
+        }>;
+    },
+};
