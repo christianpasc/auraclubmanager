@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useTenant } from '../contexts/TenantContext';
 import { subscriptionService } from '../services/subscriptionService';
-import { adminPlanService, StripePlan } from '../services/adminPlanService';
+import { adminPlanService, StripePlan, PlanLanguage } from '../services/adminPlanService';
 import { stripeConfig, createCheckoutSession } from '../lib/stripe';
 
 type IntervalFilter = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'all';
@@ -53,11 +53,39 @@ const Plans: React.FC = () => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [intervalFilter, setIntervalFilter] = useState<IntervalFilter>('monthly');
 
-    const getText = (pt: string, en: string, es: string, fr?: string) => {
+    const getText = (pt: string, en: string, es: string, fr?: string, ptPT?: string) => {
         if (language === 'en-US') return en;
         if (language === 'es-ES') return es;
         if (language === 'fr-FR') return fr || pt;
-        return pt; // pt-BR and pt-PT
+        if (language === 'pt-PT') return ptPT || pt;
+        return pt; // pt-BR
+    };
+
+    /** Resolve a plan's text field with i18n fallback chain: current lang → pt-BR → legacy */
+    const getPlanText = (i18nObj: any, legacy: string): string => {
+        if (!i18nObj) return legacy;
+        const obj = typeof i18nObj === 'string' ? JSON.parse(i18nObj) : i18nObj;
+        return (
+            obj[language as PlanLanguage] ||
+            obj['pt-BR'] ||
+            legacy
+        );
+    };
+
+    /** Resolve a plan's features array with i18n fallback chain */
+    const getPlanFeatures = (i18nObj: any, legacy: any): string[] => {
+        const parseArr = (v: any): string[] => {
+            if (!v) return [];
+            if (Array.isArray(v)) return v;
+            try { return JSON.parse(v); } catch { return []; }
+        };
+        if (!i18nObj) return parseArr(legacy);
+        const obj = typeof i18nObj === 'string' ? JSON.parse(i18nObj) : i18nObj;
+        const fromLang = parseArr(obj[language as PlanLanguage]);
+        if (fromLang.length > 0) return fromLang;
+        const fromPtBr = parseArr(obj['pt-BR']);
+        if (fromPtBr.length > 0) return fromPtBr;
+        return parseArr(legacy);
     };
 
     const getIntervalLabel = (interval: string) => {
@@ -92,7 +120,9 @@ const Plans: React.FC = () => {
             setSuccessMessage(getText(
                 'Pagamento realizado com sucesso! Sua assinatura foi ativada.',
                 'Payment successful! Your subscription has been activated.',
-                '¡Pago realizado con éxito! Su suscripción ha sido activada.'
+                '¡Pago realizado con éxito! Su suscripción ha sido activada.',
+                'Paiement effectué avec succès ! Votre abonnement a été activé.',
+                'Pagamento realizado com sucesso! A sua subscrição foi ativada.'
             ));
             refreshSubscription();
             window.location.hash = '#/plans';
@@ -100,7 +130,9 @@ const Plans: React.FC = () => {
             setErrorMessage(getText(
                 'Pagamento cancelado. Você pode tentar novamente a qualquer momento.',
                 'Payment canceled. You can try again at any time.',
-                'Pago cancelado. Puede intentarlo de nuevo en cualquier momento.'
+                'Pago cancelado. Puede intentarlo de nuevo en cualquier momento.',
+                'Paiement annulé. Vous pouvez réessayer à tout moment.',
+                'Pagamento cancelado. Pode tentar novamente a qualquer momento.'
             ));
             window.location.hash = '#/plans';
         }
@@ -131,7 +163,7 @@ const Plans: React.FC = () => {
 
     const handleSubscribe = async (plan: StripePlan) => {
         if (!currentTenant?.id) {
-            alert(getText('Erro: Nenhum clube selecionado', 'Error: No club selected', 'Error: Ningún club seleccionado'));
+            alert(getText('Erro: Nenhum clube selecionado', 'Error: No club selected', 'Error: Ningún club seleccionado', 'Erreur : Aucun club sélectionné', 'Erro: Nenhum clube selecionado'));
             return;
         }
 
@@ -145,10 +177,12 @@ const Plans: React.FC = () => {
                 setSuccessMessage(getText(
                     'Plano ativado com sucesso! (Simulação - sem Stripe Price ID configurado)',
                     'Plan activated successfully! (Simulation - no Stripe Price ID configured)',
-                    '¡Plan activado con éxito! (Simulación - sin Stripe Price ID configurado)'
+                    '¡Plan activado con éxito! (Simulación - sin Stripe Price ID configurado)',
+                    'Offre activée avec succès ! (Simulation - aucun Stripe Price ID configuré)',
+                    'Plano ativado com sucesso! (Simulação - sem Stripe Price ID configurado)'
                 ));
             } catch (error: any) {
-                setErrorMessage(error.message || getText('Erro ao ativar plano', 'Error activating plan', 'Error al activar plan'));
+                setErrorMessage(error.message || getText('Erro ao ativar plano', 'Error activating plan', 'Error al activar plan', 'Erreur lors de l\'activation de l\'offre', 'Erro ao ativar plano'));
             } finally {
                 setSubscribing(null);
             }
@@ -168,7 +202,9 @@ const Plans: React.FC = () => {
             setErrorMessage(error.message || getText(
                 'Erro ao criar sessão de pagamento. Tente novamente.',
                 'Error creating payment session. Please try again.',
-                'Error al crear la sesión de pago. Inténtelo de nuevo.'
+                'Error al crear la sesión de pago. Inténtelo de nuevo.',
+                'Erreur lors de la création de la session de paiement. Veuillez réessayer.',
+                'Erro ao criar a sessão de pagamento. Tente novamente.'
             ));
             setSubscribing(null);
         }
@@ -200,7 +236,7 @@ const Plans: React.FC = () => {
                         <CheckCircle2 className="w-6 h-6 text-green-600" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="font-bold text-green-800 text-lg">{getText('Sucesso!', 'Success!', '¡Éxito!')}</h3>
+                        <h3 className="font-bold text-green-800 text-lg">{getText('Sucesso!', 'Success!', '¡Éxito!', 'Succès !', 'Sucesso!')}</h3>
                         <p className="text-green-700 mt-1">{successMessage}</p>
                     </div>
                     <button onClick={() => setSuccessMessage(null)} className="text-green-400 hover:text-green-600">
@@ -232,13 +268,15 @@ const Plans: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="font-bold text-amber-800 text-lg">
-                            {getText('Seu período de teste expirou', 'Your trial period has expired', 'Su período de prueba ha expirado')}
+                            {getText('Seu período de teste expirou', 'Your trial period has expired', 'Su período de prueba ha expirado', 'Votre période d\'essai a expiré', 'O seu período de teste expirou')}
                         </h3>
                         <p className="text-amber-700 mt-1">
                             {getText(
                                 'Escolha um plano abaixo para continuar usando o Aura Club Manager.',
                                 'Choose a plan below to continue using Aura Club Manager.',
-                                'Elija un plan a continuación para continuar usando Aura Club Manager.'
+                                'Elija un plan a continuación para continuar usando Aura Club Manager.',
+                                'Choisissez une offre ci-dessous pour continuer à utiliser Aura Club Manager.',
+                                'Escolha um plano abaixo para continuar a utilizar o Aura Club Manager.'
                             )}
                         </p>
                     </div>
@@ -248,18 +286,20 @@ const Plans: React.FC = () => {
             {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold text-slate-800 mb-3">
-                    {getText('Escolha seu plano', 'Choose your plan', 'Elija su plan')}
+                    {getText('Escolha seu plano', 'Choose your plan', 'Elija su plan', 'Choisissez votre offre', 'Escolha o seu plano')}
                 </h1>
                 <p className="text-slate-500 max-w-2xl mx-auto mb-4">
                     {getText(
                         'Selecione o plano ideal para o seu clube e desbloqueie todo o potencial do Aura Club Manager.',
                         'Select the ideal plan for your club and unlock the full potential of Aura Club Manager.',
-                        'Seleccione el plan ideal para su club y desbloquee todo el potencial de Aura Club Manager.'
+                        'Seleccione el plan ideal para su club y desbloquee todo el potencial de Aura Club Manager.',
+                        'Sélectionnez l\'offre idéale pour votre club et profitez pleinement d\'Aura Club Manager.',
+                        'Seleccione o plano ideal para o seu clube e desbloqueie todo o potencial do Aura Club Manager.'
                     )}
                 </p>
                 {!stripeConfig.isProduction && (
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                        🟡 {getText('Modo Teste', 'Test Mode', 'Modo de Prueba')}
+                        🟡 {getText('Modo Teste', 'Test Mode', 'Modo de Prueba', 'Mode Test', 'Modo de Teste')}
                     </span>
                 )}
             </div>
@@ -304,7 +344,9 @@ const Plans: React.FC = () => {
                         {getText(
                             'Nenhum plano disponível para este período.',
                             'No plans available for this period.',
-                            'Ningún plan disponible para este período.'
+                            'Ningún plan disponible para este período.',
+                            'Aucune offre disponible pour cette période.',
+                            'Nenhum plano disponível para este período.'
                         )}
                     </p>
                 </div>
@@ -324,7 +366,7 @@ const Plans: React.FC = () => {
                         >
                             {plan.is_popular && (
                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-white text-sm font-bold rounded-full">
-                                    {getText('Mais Popular', 'Most Popular', 'Más Popular')}
+                                    {getText('Mais Popular', 'Most Popular', 'Más Popular', 'Plus Populaire', 'Mais Popular')}
                                 </div>
                             )}
 
@@ -332,9 +374,13 @@ const Plans: React.FC = () => {
                                 {INTERVAL_ICONS[plan.interval] || <Zap className="w-6 h-6" />}
                             </div>
 
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">{plan.name}</h3>
-                            {plan.description && (
-                                <p className="text-sm text-slate-500 mb-3">{plan.description}</p>
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">
+                                {getPlanText(plan.name_i18n, plan.name)}
+                            </h3>
+                            {(plan.description || plan.description_i18n) && (
+                                <p className="text-sm text-slate-500 mb-3">
+                                    {getPlanText(plan.description_i18n, plan.description || '')}
+                                </p>
                             )}
 
                             {/* Price with dynamic currency */}
@@ -349,9 +395,12 @@ const Plans: React.FC = () => {
                             <ul className="space-y-3 mb-4">
                                 {(() => {
                                     const orgType = currentTenant?.organization_type || 'school';
-                                    const parseFeatures = (f: any) => typeof f === 'string' ? JSON.parse(f) : (f || []);
-                                    const typeFeatures = orgType === 'club' ? parseFeatures(plan.features_club) : parseFeatures(plan.features_school);
-                                    const genericFeatures = parseFeatures(plan.features);
+                                    const isClub = orgType === 'club';
+                                    // i18n-aware features resolved per org type
+                                    const typeFeatures = isClub
+                                        ? getPlanFeatures(plan.features_club_i18n, plan.features_club)
+                                        : getPlanFeatures(plan.features_school_i18n, plan.features_school);
+                                    const genericFeatures = getPlanFeatures(plan.features_i18n, plan.features);
                                     const displayFeatures = typeFeatures.length > 0 ? typeFeatures : genericFeatures;
                                     return displayFeatures.map((feature: string, i: number) => (
                                         <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
@@ -368,8 +417,8 @@ const Plans: React.FC = () => {
                                     <Users className="w-4 h-4 text-slate-400" />
                                     <span>
                                         {(plan as any).max_users === null || (plan as any).max_users === undefined
-                                            ? getText('Usuários ilimitados', 'Unlimited users', 'Usuarios ilimitados')
-                                            : getText(`Até ${(plan as any).max_users} usuários`, `Up to ${(plan as any).max_users} users`, `Hasta ${(plan as any).max_users} usuarios`)
+                                            ? getText('Usuários ilimitados', 'Unlimited users', 'Usuarios ilimitados', 'Utilisateurs illimités', 'Utilizadores ilimitados')
+                                            : getText(`Até ${(plan as any).max_users} usuários`, `Up to ${(plan as any).max_users} users`, `Hasta ${(plan as any).max_users} usuarios`, `Jusqu'à ${(plan as any).max_users} utilisateurs`, `Até ${(plan as any).max_users} utilizadores`)
                                         }
                                     </span>
                                 </div>
@@ -377,8 +426,8 @@ const Plans: React.FC = () => {
                                     <UserCheck className="w-4 h-4 text-slate-400" />
                                     <span>
                                         {(plan as any).max_athletes === null || (plan as any).max_athletes === undefined
-                                            ? getText('Atletas ilimitados', 'Unlimited athletes', 'Atletas ilimitados')
-                                            : getText(`Até ${(plan as any).max_athletes} atletas`, `Up to ${(plan as any).max_athletes} athletes`, `Hasta ${(plan as any).max_athletes} atletas`)
+                                            ? getText('Atletas ilimitados', 'Unlimited athletes', 'Atletas ilimitados', 'Athlètes illimités', 'Atletas ilimitados')
+                                            : getText(`Até ${(plan as any).max_athletes} atletas`, `Up to ${(plan as any).max_athletes} athletes`, `Hasta ${(plan as any).max_athletes} atletas`, `Jusqu'à ${(plan as any).max_athletes} athlètes`, `Até ${(plan as any).max_athletes} atletas`)
                                         }
                                     </span>
                                 </div>
@@ -393,7 +442,7 @@ const Plans: React.FC = () => {
                                     } disabled:opacity-50`}
                             >
                                 {subscribing === plan.id && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {getText('Assinar Agora', 'Subscribe Now', 'Suscribirse Ahora')}
+                                {getText('Assinar Agora', 'Subscribe Now', 'Suscribirse Ahora', 'S\'abonner maintenant', 'Subscrever Agora')}
                             </button>
                         </div>
                     ))}

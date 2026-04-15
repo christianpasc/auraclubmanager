@@ -20,10 +20,14 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
   const { language } = useLanguage();
   const { subscriptionInfo } = useSubscription();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [userRole, setUserRole] = useState<string>('');
+  const [rawRole, setRawRole] = useState<{ role: string; is_owner: boolean } | null>(null);
 
-  const getText = (pt: string, en: string, es: string) => {
-    return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
+  const getText = (pt: string, en: string, es: string, fr?: string, ptPT?: string) => {
+    if (language === 'en-US') return en;
+    if (language === 'es-ES') return es;
+    if (language === 'fr-FR') return fr || pt;
+    if (language === 'pt-PT') return ptPT || pt;
+    return pt; // pt-BR
   };
 
   useEffect(() => {
@@ -49,26 +53,22 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
         .single();
 
       if (tenantUser) {
-        if (tenantUser.is_owner) {
-          setUserRole(getText('Proprietário', 'Owner', 'Propietario'));
-        } else {
-          switch (tenantUser.role) {
-            case 'admin':
-              setUserRole(getText('Administrador', 'Administrator', 'Administrador'));
-              break;
-            case 'manager':
-              setUserRole(getText('Gerente', 'Manager', 'Gerente'));
-              break;
-            case 'member':
-              setUserRole(getText('Membro', 'Member', 'Miembro'));
-              break;
-            default:
-              setUserRole(tenantUser.role || '');
-          }
-        }
+        setRawRole({ role: tenantUser.role || '', is_owner: !!tenantUser.is_owner });
       }
     }
   };
+
+  // Derive role label reactively from rawRole + language
+  const userRole = (() => {
+    if (!rawRole) return '';
+    if (rawRole.is_owner) return getText('Proprietário', 'Owner', 'Propietario', 'Propriétaire', 'Proprietário');
+    switch (rawRole.role) {
+      case 'admin':   return getText('Administrador', 'Administrator', 'Administrador', 'Administrateur', 'Administrador');
+      case 'manager': return getText('Gerente', 'Manager', 'Gerente', 'Gérant', 'Gerente');
+      case 'member':  return getText('Membro', 'Member', 'Miembro', 'Membre', 'Membro');
+      default:        return rawRole.role;
+    }
+  })();
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
   const avatarUrl = profile?.avatar_url;
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
         >
           <AlertTriangle className="w-4 h-4" />
           <span className="text-sm font-medium">
-            {getText('Período de teste expirado', 'Trial expired', 'Período de prueba expirado')}
+            {getText('Período de teste expirado', 'Trial expired', 'Período de prueba expirado', 'Période d\'essai expirée', 'Período de teste expirado')}
           </span>
         </Link>
       );
@@ -118,8 +118,8 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
         <Clock className="w-4 h-4" />
         <span className="text-sm font-medium">
           {trialDaysRemaining === 1
-            ? getText('1 dia restante', '1 day left', '1 día restante')
-            : getText(`${trialDaysRemaining} dias restantes`, `${trialDaysRemaining} days left`, `${trialDaysRemaining} días restantes`)
+            ? getText('1 dia restante', '1 day left', '1 día restante', '1 jour restant', '1 dia restante')
+            : getText(`${trialDaysRemaining} dias restantes`, `${trialDaysRemaining} days left`, `${trialDaysRemaining} días restantes`, `${trialDaysRemaining} jours restants`, `${trialDaysRemaining} dias restantes`)
           }
         </span>
       </Link>
@@ -149,7 +149,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder={getText('Buscar...', 'Search...', 'Buscar...')}
+            placeholder={getText('Buscar...', 'Search...', 'Buscar...', 'Rechercher...', 'Pesquisar...')}
             className="pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
           />
         </div>

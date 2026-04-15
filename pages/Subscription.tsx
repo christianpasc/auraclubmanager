@@ -15,8 +15,12 @@ const Subscription: React.FC = () => {
   const [portalLoading, setPortalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const getText = (pt: string, en: string, es: string) => {
-    return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
+  const getText = (pt: string, en: string, es: string, fr?: string, ptPT?: string) => {
+    if (language === 'en-US') return en;
+    if (language === 'es-ES') return es;
+    if (language === 'fr-FR') return fr || pt;
+    if (language === 'pt-PT') return ptPT || pt;
+    return pt; // pt-BR
   };
 
   const handleManageSubscription = async () => {
@@ -34,7 +38,9 @@ const Subscription: React.FC = () => {
       setErrorMessage(error.message || getText(
         'Erro ao abrir portal de assinatura',
         'Error opening subscription portal',
-        'Error al abrir el portal de suscripción'
+        'Error al abrir el portal de suscripción',
+        'Erreur lors de l\'ouverture du portail d\'abonnement',
+        'Erro ao abrir o portal de subscrição'
       ));
     } finally {
       setPortalLoading(false);
@@ -44,7 +50,14 @@ const Subscription: React.FC = () => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
-    return date.toLocaleDateString(language === 'en-US' ? 'en-US' : language === 'es-ES' ? 'es-ES' : 'pt-BR', {
+    const localeMap: Record<string, string> = {
+      'en-US': 'en-US',
+      'es-ES': 'es-ES',
+      'fr-FR': 'fr-FR',
+      'pt-PT': 'pt-PT',
+      'pt-BR': 'pt-BR',
+    };
+    return date.toLocaleDateString(localeMap[language] || 'pt-BR', {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
@@ -89,10 +102,10 @@ const Subscription: React.FC = () => {
             )}
             <span className="text-sm font-bold uppercase tracking-widest opacity-80">
               {isActive
-                ? getText('Plano Ativo', 'Active Plan', 'Plan Activo')
+                ? getText('Plano Ativo', 'Active Plan', 'Plan Activo', 'Abonnement actif', 'Plano Ativo')
                 : isTrial
-                  ? getText('Período de Teste', 'Trial Period', 'Período de Prueba')
-                  : getText('Assinatura Expirada', 'Subscription Expired', 'Suscripción Expirada')
+                  ? getText('Período de Teste', 'Trial Period', 'Período de Prueba', 'Période d\'essai', 'Período de Teste')
+                  : getText('Assinatura Expirada', 'Subscription Expired', 'Suscripción Expirada', 'Abonnement expiré', 'Subscrição Expirada')
               }
             </span>
           </div>
@@ -103,8 +116,8 @@ const Subscription: React.FC = () => {
               : isActive
                 ? 'Aura Club Pro'
                 : isTrial
-                  ? getText('Teste Gratuito', 'Free Trial', 'Prueba Gratuita')
-                  : getText('Sem Plano', 'No Plan', 'Sin Plan')
+                  ? getText('Teste Gratuito', 'Free Trial', 'Prueba Gratuita', 'Essai Gratuit', 'Teste Gratuito')
+                  : getText('Sem Plano', 'No Plan', 'Sin Plan', 'Sans Abonnement', 'Sem Plano')
             }
           </h2>
 
@@ -113,18 +126,24 @@ const Subscription: React.FC = () => {
               ? getText(
                 'Você possui acesso completo a todas as funcionalidades do Aura Club Manager.',
                 'You have full access to all Aura Club Manager features.',
-                'Tienes acceso completo a todas las funciones de Aura Club Manager.'
+                'Tienes acceso completo a todas las funciones de Aura Club Manager.',
+                'Vous avez accès à toutes les fonctionnalités d\'Aura Club Manager.',
+                'Tem acesso completo a todas as funcionalidades do Aura Club Manager.'
               )
               : isTrial
                 ? getText(
                   `Seu período de teste termina em ${subscriptionInfo?.trialDaysRemaining} dias.`,
                   `Your trial ends in ${subscriptionInfo?.trialDaysRemaining} days.`,
-                  `Su prueba termina en ${subscriptionInfo?.trialDaysRemaining} días.`
+                  `Su prueba termina en ${subscriptionInfo?.trialDaysRemaining} días.`,
+                  `Votre essai se termine dans ${subscriptionInfo?.trialDaysRemaining} jour(s).`,
+                  `O seu período de teste termina em ${subscriptionInfo?.trialDaysRemaining} dias.`
                 )
                 : getText(
                   'Seu período de acesso expirou. Assine um plano para continuar.',
                   'Your access period has expired. Subscribe to continue.',
-                  'Su período de acceso ha expirado. Suscríbase para continuar.'
+                  'Su período de acceso ha expirado. Suscríbase para continuar.',
+                  'Votre période d\'accès a expiré. Abonnez-vous pour continuer.',
+                  'O seu período de acesso expirou. Subscreva um plano para continuar.'
                 )
             }
           </p>
@@ -134,7 +153,7 @@ const Subscription: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-200" />
                 <span className="text-sm font-semibold">
-                  {getText('Válido até', 'Valid until', 'Válido hasta')}: {formatDate(subscriptionInfo.subscriptionEndsAt.toISOString())}
+                  {getText('Válido até', 'Valid until', 'Válido hasta', 'Valide jusqu\'au', 'Válido até')}: {formatDate(subscriptionInfo.subscriptionEndsAt.toISOString())}
                 </span>
               </div>
             )}
@@ -142,14 +161,14 @@ const Subscription: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-white/80" />
                 <span className="text-sm font-semibold">
-                  {getText('Expira em', 'Expires on', 'Expira el')}: {formatDate(subscriptionInfo.trialEndsAt.toISOString())}
+                  {getText('Expira em', 'Expires on', 'Expira el', 'Expire le', 'Expira em')}: {formatDate(subscriptionInfo.trialEndsAt.toISOString())}
                 </span>
               </div>
             )}
 
             {!stripeConfig.isProduction && (
               <span className="text-xs bg-white/20 px-3 py-1 rounded-full font-semibold">
-                🧪 {getText('Modo Teste', 'Test Mode', 'Modo Prueba')}
+                🧪 {getText('Modo Teste', 'Test Mode', 'Modo Prueba', 'Mode Test', 'Modo de Teste')}
               </span>
             )}
           </div>
@@ -175,13 +194,15 @@ const Subscription: React.FC = () => {
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-slate-800">
-                {getText('Gerenciar Assinatura', 'Manage Subscription', 'Gestionar Suscripción')}
+                {getText('Gerenciar Assinatura', 'Manage Subscription', 'Gestionar Suscripción', 'Gérer l\'abonnement', 'Gerir Subscrição')}
               </h3>
               <p className="text-sm text-slate-500 mt-0.5">
                 {getText(
                   'Alterar plano, forma de pagamento ou cancelar',
                   'Change plan, payment method or cancel',
-                  'Cambiar plan, método de pago o cancelar'
+                  'Cambiar plan, método de pago o cancelar',
+                  'Changer d\'offre, de moyen de paiement ou annuler',
+                  'Alterar plano, método de pagamento ou cancelar'
                 )}
               </p>
             </div>
@@ -200,13 +221,15 @@ const Subscription: React.FC = () => {
             </div>
             <div className="flex-1">
               <h3 className="font-bold">
-                {getText('Escolher um Plano', 'Choose a Plan', 'Elegir un Plan')}
+                {getText('Escolher um Plano', 'Choose a Plan', 'Elegir un Plan', 'Choisir une offre', 'Escolher um Plano')}
               </h3>
               <p className="text-sm text-white/80 mt-0.5">
                 {getText(
                   'Veja os planos disponíveis e assine',
                   'View available plans and subscribe',
-                  'Ver planes disponibles y suscribirse'
+                  'Ver planes disponibles y suscribirse',
+                  'Voir les offres disponibles et s\'abonner',
+                  'Veja os planos disponíveis e subscreva'
                 )}
               </p>
             </div>
@@ -225,13 +248,15 @@ const Subscription: React.FC = () => {
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-slate-800">
-                {getText('Ver Planos', 'View Plans', 'Ver Planes')}
+                {getText('Ver Planos', 'View Plans', 'Ver Planes', 'Voir les offres', 'Ver Planos')}
               </h3>
               <p className="text-sm text-slate-500 mt-0.5">
                 {getText(
                   'Veja outros planos disponíveis',
                   'See other available plans',
-                  'Ver otros planes disponibles'
+                  'Ver otros planes disponibles',
+                  'Voir les autres offres disponibles',
+                  'Veja outros planos disponíveis'
                 )}
               </p>
             </div>
@@ -244,12 +269,12 @@ const Subscription: React.FC = () => {
       {isActive && (
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <h3 className="font-bold text-slate-800 mb-4">
-            {getText('Detalhes da Assinatura', 'Subscription Details', 'Detalles de la Suscripción')}
+            {getText('Detalhes da Assinatura', 'Subscription Details', 'Detalles de la Suscripción', 'Détails de l\'abonnement', 'Detalhes da Subscrição')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-lg">
               <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-1">
-                {getText('Plano', 'Plan', 'Plan')}
+                {getText('Plano', 'Plan', 'Plan', 'Offre', 'Plano')}
               </p>
               <p className="text-sm font-bold text-slate-800">
                 {subscriptionInfo?.planName || '—'}
@@ -257,15 +282,15 @@ const Subscription: React.FC = () => {
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-1">
-                {getText('Status', 'Status', 'Estado')}
+                {getText('Status', 'Status', 'Estado', 'Statut', 'Estado')}
               </p>
               <p className="text-sm font-bold text-green-600">
-                ● {getText('Ativo', 'Active', 'Activo')}
+                ● {getText('Ativo', 'Active', 'Activo', 'Actif', 'Ativo')}
               </p>
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-1">
-                {getText('Início', 'Start Date', 'Fecha de Inicio')}
+                {getText('Início', 'Start Date', 'Fecha de Inicio', 'Date de début', 'Início')}
               </p>
               <p className="text-sm font-bold text-slate-800">
                 {subscriptionInfo?.subscriptionEndsAt
@@ -275,7 +300,7 @@ const Subscription: React.FC = () => {
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-1">
-                {getText('Válido até', 'Valid Until', 'Válido Hasta')}
+                {getText('Válido até', 'Valid Until', 'Válido Hasta', 'Valide jusqu\'au', 'Válido até')}
               </p>
               <p className="text-sm font-bold text-slate-800">
                 {subscriptionInfo?.subscriptionEndsAt

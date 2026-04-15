@@ -1,6 +1,11 @@
 
 import { supabase } from '../lib/supabase';
 
+export type PlanLanguage = 'pt-BR' | 'pt-PT' | 'en-US' | 'es-ES' | 'fr-FR';
+
+export type PlanI18nRecord = Partial<Record<PlanLanguage, string>>;
+export type PlanFeaturesI18nRecord = Partial<Record<PlanLanguage, string[]>>;
+
 export interface StripePlan {
     id?: string;
     name: string;
@@ -18,6 +23,12 @@ export interface StripePlan {
     is_popular: boolean;
     max_users: number | null;
     max_athletes: number | null;
+    // i18n fields
+    name_i18n?: PlanI18nRecord;
+    description_i18n?: PlanI18nRecord;
+    features_i18n?: PlanFeaturesI18nRecord;
+    features_school_i18n?: PlanFeaturesI18nRecord;
+    features_club_i18n?: PlanFeaturesI18nRecord;
     created_at?: string;
     updated_at?: string;
 }
@@ -48,6 +59,11 @@ export const adminPlanService = {
             p_max_athletes: plan.max_athletes ?? null,
             p_features_school: JSON.stringify(plan.features_school || []),
             p_features_club: JSON.stringify(plan.features_club || []),
+            p_name_i18n: JSON.stringify(plan.name_i18n || {}),
+            p_description_i18n: JSON.stringify(plan.description_i18n || {}),
+            p_features_i18n: JSON.stringify(plan.features_i18n || {}),
+            p_features_school_i18n: JSON.stringify(plan.features_school_i18n || {}),
+            p_features_club_i18n: JSON.stringify(plan.features_club_i18n || {}),
         });
         if (error) throw error;
         return data as StripePlan;
@@ -73,6 +89,11 @@ export const adminPlanService = {
         else params.p_max_athletes = -1;
         if (plan.features_school !== undefined) params.p_features_school = JSON.stringify(plan.features_school);
         if (plan.features_club !== undefined) params.p_features_club = JSON.stringify(plan.features_club);
+        if (plan.name_i18n !== undefined) params.p_name_i18n = JSON.stringify(plan.name_i18n);
+        if (plan.description_i18n !== undefined) params.p_description_i18n = JSON.stringify(plan.description_i18n);
+        if (plan.features_i18n !== undefined) params.p_features_i18n = JSON.stringify(plan.features_i18n);
+        if (plan.features_school_i18n !== undefined) params.p_features_school_i18n = JSON.stringify(plan.features_school_i18n);
+        if (plan.features_club_i18n !== undefined) params.p_features_club_i18n = JSON.stringify(plan.features_club_i18n);
 
         const { data, error } = await supabase.rpc('admin_update_plan', params);
         if (error) throw error;

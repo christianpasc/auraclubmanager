@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { adminPlanService, StripePlan } from '../../services/adminPlanService';
+import { adminPlanService, StripePlan, PlanLanguage, PlanI18nRecord, PlanFeaturesI18nRecord } from '../../services/adminPlanService';
 import { stripeConfig } from '../../lib/stripe';
 import {
     Search, Loader2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
-    CreditCard, Star, X, AlertTriangle, Check, Users, UserCheck, Infinity
+    CreditCard, Star, X, AlertTriangle, Check, Users, UserCheck, Infinity, Globe
 } from 'lucide-react';
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -13,18 +13,35 @@ const INTERVAL_LABELS: Record<string, string> = {
     lifetime: 'Vitalício',
 };
 
-interface PlanFormData {
+const LANGUAGES: { code: PlanLanguage; label: string; flag: string }[] = [
+    { code: 'pt-BR', label: 'PT Brasil', flag: '🇧🇷' },
+    { code: 'pt-PT', label: 'PT Portugal', flag: '🇵🇹' },
+    { code: 'en-US', label: 'English', flag: '🇺🇸' },
+    { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
+    { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
+];
+
+// Per-language fields
+interface LangFields {
     name: string;
     description: string;
+    features: string[];
+    features_school: string[];
+    features_club: string[];
+}
+
+type LangFormData = Record<PlanLanguage, LangFields>;
+
+interface PlanFormData {
+    // Language-specific
+    langs: LangFormData;
+    // Non-language
     stripe_price_id_test: string;
     stripe_price_id_live: string;
     interval: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
     price: string;
     currency: string;
     is_active: boolean;
-    features: string[];
-    features_school: string[];
-    features_club: string[];
     sort_order: string;
     is_popular: boolean;
     max_users: string;
@@ -33,24 +50,48 @@ interface PlanFormData {
     unlimited_athletes: boolean;
 }
 
-const emptyForm: PlanFormData = {
+const emptyLangFields = (): LangFields => ({
     name: '',
     description: '',
+    features: [''],
+    features_school: [''],
+    features_club: [''],
+});
+
+const emptyLangFormData = (): LangFormData => ({
+    'pt-BR': emptyLangFields(),
+    'pt-PT': emptyLangFields(),
+    'en-US': emptyLangFields(),
+    'es-ES': emptyLangFields(),
+    'fr-FR': emptyLangFields(),
+});
+
+const emptyForm: PlanFormData = {
+    langs: emptyLangFormData(),
     stripe_price_id_test: '',
     stripe_price_id_live: '',
     interval: 'monthly',
     price: '',
     currency: 'brl',
     is_active: true,
-    features: [''],
-    features_school: [''],
-    features_club: [''],
     sort_order: '0',
     is_popular: false,
     max_users: '',
     max_athletes: '',
     unlimited_users: true,
     unlimited_athletes: true,
+};
+
+const parseJsonArray = (val: any): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return []; }
+};
+
+const parseJsonObj = (val: any): Record<string, any> => {
+    if (!val) return {};
+    if (typeof val === 'object' && !Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return {}; }
 };
 
 const AdminPlans: React.FC = () => {
@@ -63,6 +104,7 @@ const AdminPlans: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [activeLang, setActiveLang] = useState<PlanLanguage>('pt-BR');
 
     useEffect(() => {
         loadPlans();
@@ -89,32 +131,55 @@ const AdminPlans: React.FC = () => {
     const openCreateModal = () => {
         setEditingPlan(null);
         setForm(emptyForm);
+        setActiveLang('pt-BR');
         setShowModal(true);
     };
 
     const openEditModal = (plan: StripePlan) => {
         setEditingPlan(plan);
+        setActiveLang('pt-BR');
+
+        const nameI18n = parseJsonObj(plan.name_i18n);
+        const descI18n = parseJsonObj(plan.description_i18n);
+        const featI18n = parseJsonObj(plan.features_i18n);
+        const featSchoolI18n = parseJsonObj(plan.features_school_i18n);
+        const featClubI18n = parseJsonObj(plan.features_club_i18n);
+
+        // Legacy fallbacks for pt-BR
+        const legacyFeatures = (() => { const f = parseJsonArray(plan.features); return f.length > 0 ? f : ['']; })();
+        const legacySchool = (() => { const f = parseJsonArray(plan.features_school); return f.length > 0 ? f : ['']; })();
+        const legacyClub = (() => { const f = parseJsonArray(plan.features_club); return f.length > 0 ? f : ['']; })();
+
+        const buildLangFields = (lang: PlanLanguage): LangFields => {
+            const isPtBr = lang === 'pt-BR';
+            const featArr = parseJsonArray(featI18n[lang]);
+            const schoolArr = parseJsonArray(featSchoolI18n[lang]);
+            const clubArr = parseJsonArray(featClubI18n[lang]);
+            return {
+                name: nameI18n[lang] || (isPtBr ? plan.name : ''),
+                description: descI18n[lang] || (isPtBr ? (plan.description || '') : ''),
+                features: featArr.length > 0 ? featArr : (isPtBr ? legacyFeatures : ['']),
+                features_school: schoolArr.length > 0 ? schoolArr : (isPtBr ? legacySchool : ['']),
+                features_club: clubArr.length > 0 ? clubArr : (isPtBr ? legacyClub : ['']),
+            };
+        };
+
+        const langs: LangFormData = {
+            'pt-BR': buildLangFields('pt-BR'),
+            'pt-PT': buildLangFields('pt-PT'),
+            'en-US': buildLangFields('en-US'),
+            'es-ES': buildLangFields('es-ES'),
+            'fr-FR': buildLangFields('fr-FR'),
+        };
+
         setForm({
-            name: plan.name,
-            description: plan.description || '',
+            langs,
             stripe_price_id_test: plan.stripe_price_id_test || '',
             stripe_price_id_live: plan.stripe_price_id_live || '',
             interval: plan.interval,
             price: plan.price.toString(),
             currency: plan.currency || 'brl',
             is_active: plan.is_active,
-            features: (() => {
-                const f = typeof plan.features === 'string' ? JSON.parse(plan.features) : (plan.features || []);
-                return Array.isArray(f) && f.length > 0 ? f : [''];
-            })(),
-            features_school: (() => {
-                const f = typeof plan.features_school === 'string' ? JSON.parse(plan.features_school) : (plan.features_school || []);
-                return Array.isArray(f) && f.length > 0 ? f : [''];
-            })(),
-            features_club: (() => {
-                const f = typeof plan.features_club === 'string' ? JSON.parse(plan.features_club) : (plan.features_club || []);
-                return Array.isArray(f) && f.length > 0 ? f : [''];
-            })(),
             sort_order: (plan.sort_order || 0).toString(),
             is_popular: plan.is_popular || false,
             max_users: plan.max_users !== null && plan.max_users !== undefined ? plan.max_users.toString() : '',
@@ -125,28 +190,87 @@ const AdminPlans: React.FC = () => {
         setShowModal(true);
     };
 
+    const updateLangField = <K extends keyof LangFields>(lang: PlanLanguage, field: K, value: LangFields[K]) => {
+        setForm(prev => ({
+            ...prev,
+            langs: {
+                ...prev.langs,
+                [lang]: { ...prev.langs[lang], [field]: value },
+            },
+        }));
+    };
+
+    const updateFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club', index: number, value: string) => {
+        setForm(prev => {
+            const arr = [...prev.langs[lang][field]];
+            arr[index] = value;
+            return { ...prev, langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: arr } } };
+        });
+    };
+
+    const addFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club') => {
+        setForm(prev => ({
+            ...prev,
+            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: [...prev.langs[lang][field], ''] } },
+        }));
+    };
+
+    const removeFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club', index: number) => {
+        setForm(prev => ({
+            ...prev,
+            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: prev.langs[lang][field].filter((_, i) => i !== index) } },
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         setError(null);
 
         try {
+            // Build i18n objects
+            const nameI18n: PlanI18nRecord = {};
+            const descI18n: PlanI18nRecord = {};
+            const featI18n: PlanFeaturesI18nRecord = {};
+            const featSchoolI18n: PlanFeaturesI18nRecord = {};
+            const featClubI18n: PlanFeaturesI18nRecord = {};
+
+            LANGUAGES.forEach(({ code }) => {
+                const l = form.langs[code];
+                if (l.name.trim()) nameI18n[code] = l.name.trim();
+                if (l.description.trim()) descI18n[code] = l.description.trim();
+                const feats = l.features.filter(f => f.trim() !== '');
+                if (feats.length > 0) featI18n[code] = feats;
+                const school = l.features_school.filter(f => f.trim() !== '');
+                if (school.length > 0) featSchoolI18n[code] = school;
+                const club = l.features_club.filter(f => f.trim() !== '');
+                if (club.length > 0) featClubI18n[code] = club;
+            });
+
+            // pt-BR is canonical for legacy fields
+            const ptBr = form.langs['pt-BR'];
+
             const planData = {
-                name: form.name,
-                description: form.description || null,
+                name: ptBr.name || form.langs['en-US'].name || 'Plano',
+                description: ptBr.description || null,
                 stripe_price_id_test: form.stripe_price_id_test || null,
                 stripe_price_id_live: form.stripe_price_id_live || null,
                 interval: form.interval,
                 price: parseFloat(form.price) || 0,
                 currency: form.currency,
                 is_active: form.is_active,
-                features: form.features.filter(f => f.trim() !== ''),
-                features_school: form.features_school.filter(f => f.trim() !== ''),
-                features_club: form.features_club.filter(f => f.trim() !== ''),
+                features: ptBr.features.filter(f => f.trim() !== ''),
+                features_school: ptBr.features_school.filter(f => f.trim() !== ''),
+                features_club: ptBr.features_club.filter(f => f.trim() !== ''),
                 sort_order: parseInt(form.sort_order) || 0,
                 is_popular: form.is_popular,
                 max_users: form.unlimited_users ? null : (parseInt(form.max_users) || 1),
                 max_athletes: form.unlimited_athletes ? null : (parseInt(form.max_athletes) || 1),
+                name_i18n: nameI18n,
+                description_i18n: descI18n,
+                features_i18n: featI18n,
+                features_school_i18n: featSchoolI18n,
+                features_club_i18n: featClubI18n,
             };
 
             if (editingPlan?.id) {
@@ -186,25 +310,6 @@ const AdminPlans: React.FC = () => {
         }
     };
 
-    const addFeature = () => {
-        setForm(prev => ({ ...prev, features: [...prev.features, ''] }));
-    };
-
-    const removeFeature = (index: number) => {
-        setForm(prev => ({
-            ...prev,
-            features: prev.features.filter((_, i) => i !== index),
-        }));
-    };
-
-    const updateFeature = (index: number, value: string) => {
-        setForm(prev => {
-            const features = [...prev.features];
-            features[index] = value;
-            return { ...prev, features };
-        });
-    };
-
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -212,6 +317,8 @@ const AdminPlans: React.FC = () => {
             </div>
         );
     }
+
+    const currentLangData = form.langs[activeLang];
 
     return (
         <div className="space-y-6">
@@ -408,6 +515,7 @@ const AdminPlans: React.FC = () => {
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                        {/* Modal Header */}
                         <div className="p-6 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
                             <h3 className="text-lg font-bold text-slate-800">
                                 {editingPlan ? 'Editar Plano' : 'Novo Plano'}
@@ -421,54 +529,180 @@ const AdminPlans: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                            {/* Nome e Intervalo */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                        Nome do Plano *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={form.name}
-                                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ex: Plano Básico"
-                                    />
+
+                            {/* ── Language Tabs Section ── */}
+                            <div className="rounded-xl border border-indigo-100 overflow-hidden">
+                                {/* Tab Bar */}
+                                <div className="flex items-center bg-indigo-50 border-b border-indigo-100 overflow-x-auto">
+                                    <div className="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-indigo-600 whitespace-nowrap border-r border-indigo-100 flex-shrink-0">
+                                        <Globe className="w-3.5 h-3.5" />
+                                        Idioma
+                                    </div>
+                                    {LANGUAGES.map(({ code, label, flag }) => (
+                                        <button
+                                            key={code}
+                                            type="button"
+                                            onClick={() => setActiveLang(code)}
+                                            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-colors whitespace-nowrap flex-shrink-0 border-b-2 ${
+                                                activeLang === code
+                                                    ? 'bg-white text-indigo-700 border-indigo-500'
+                                                    : 'text-slate-500 hover:text-slate-700 hover:bg-indigo-100/50 border-transparent'
+                                            }`}
+                                        >
+                                            <span>{flag}</span>
+                                            {label}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                        Intervalo *
-                                    </label>
-                                    <select
-                                        value={form.interval}
-                                        onChange={(e) => setForm(prev => ({ ...prev, interval: e.target.value as any }))}
-                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                                    >
-                                        <option value="monthly">Mensal</option>
-                                        <option value="quarterly">Trimestral</option>
-                                        <option value="yearly">Anual</option>
-                                        <option value="lifetime">Vitalício</option>
-                                    </select>
+
+                                {/* Tab Content */}
+                                <div className="p-4 space-y-4 bg-white">
+                                    {/* Nome */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                            Nome do Plano {activeLang === 'pt-BR' && <span className="text-red-500">*</span>}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required={activeLang === 'pt-BR'}
+                                            value={currentLangData.name}
+                                            onChange={(e) => updateLangField(activeLang, 'name', e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="Ex: Plano Básico"
+                                        />
+                                    </div>
+
+                                    {/* Descrição */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                            Descrição
+                                        </label>
+                                        <textarea
+                                            value={currentLangData.description}
+                                            onChange={(e) => updateLangField(activeLang, 'description', e.target.value)}
+                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                            rows={2}
+                                            placeholder="Descrição curta do plano..."
+                                        />
+                                    </div>
+
+                                    {/* Features */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            Features (recursos inclusos)
+                                        </label>
+                                        <div className="space-y-2">
+                                            {currentLangData.features.map((feature, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={feature}
+                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features', i, e.target.value)}
+                                                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder={`Feature ${i + 1}...`}
+                                                    />
+                                                    {currentLangData.features.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFeatureInLang(activeLang, 'features', i)}
+                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => addFeatureInLang(activeLang, 'features')}
+                                            className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                            Adicionar feature
+                                        </button>
+                                    </div>
+
+                                    {/* Features School */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            🎓 Funcionalidades Escolinha
+                                        </label>
+                                        <div className="space-y-2">
+                                            {currentLangData.features_school.map((feature, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={feature}
+                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features_school', i, e.target.value)}
+                                                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder={`Feature escolinha ${i + 1}...`}
+                                                    />
+                                                    {currentLangData.features_school.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFeatureInLang(activeLang, 'features_school', i)}
+                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => addFeatureInLang(activeLang, 'features_school')}
+                                            className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                            Adicionar feature escolinha
+                                        </button>
+                                    </div>
+
+                                    {/* Features Club */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            🛡️ Funcionalidades Clube
+                                        </label>
+                                        <div className="space-y-2">
+                                            {currentLangData.features_club.map((feature, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={feature}
+                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features_club', i, e.target.value)}
+                                                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        placeholder={`Feature clube ${i + 1}...`}
+                                                    />
+                                                    {currentLangData.features_club.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeFeatureInLang(activeLang, 'features_club', i)}
+                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => addFeatureInLang(activeLang, 'features_club')}
+                                            className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                            Adicionar feature clube
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Descrição */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                    Descrição
-                                </label>
-                                <textarea
-                                    value={form.description}
-                                    onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                                    rows={2}
-                                    placeholder="Descrição curta do plano..."
-                                />
-                            </div>
+                            {/* ── Non-language fields ── */}
 
-                            {/* Preço, Moeda e Ordem */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Preço, Moeda, Ordem e Intervalo */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">
                                         Preço (R$) *
@@ -500,7 +734,22 @@ const AdminPlans: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                        Ordem de exibição
+                                        Intervalo *
+                                    </label>
+                                    <select
+                                        value={form.interval}
+                                        onChange={(e) => setForm(prev => ({ ...prev, interval: e.target.value as any }))}
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                    >
+                                        <option value="monthly">Mensal</option>
+                                        <option value="quarterly">Trimestral</option>
+                                        <option value="yearly">Anual</option>
+                                        <option value="lifetime">Vitalício</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                        Ordem
                                     </label>
                                     <input
                                         type="number"
@@ -622,124 +871,6 @@ const AdminPlans: React.FC = () => {
                                 </p>
                             </div>
 
-                            {/* Features */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Features (recursos inclusos)
-                                </label>
-                                <div className="space-y-2">
-                                    {form.features.map((feature, i) => (
-                                        <div key={i} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={feature}
-                                                onChange={(e) => updateFeature(i, e.target.value)}
-                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                placeholder={`Feature ${i + 1}...`}
-                                            />
-                                            {form.features.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeFeature(i)}
-                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={addFeature}
-                                    className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Adicionar feature
-                                </button>
-                            </div>
-
-                            {/* Features School */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    🎓 Funcionalidades Escolinha
-                                </label>
-                                <div className="space-y-2">
-                                    {form.features_school.map((feature, i) => (
-                                        <div key={i} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={feature}
-                                                onChange={(e) => {
-                                                    const arr = [...form.features_school];
-                                                    arr[i] = e.target.value;
-                                                    setForm(prev => ({ ...prev, features_school: arr }));
-                                                }}
-                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                placeholder={`Feature escolinha ${i + 1}...`}
-                                            />
-                                            {form.features_school.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setForm(prev => ({ ...prev, features_school: prev.features_school.filter((_, idx) => idx !== i) }))}
-                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setForm(prev => ({ ...prev, features_school: [...prev.features_school, ''] }))}
-                                    className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Adicionar feature escolinha
-                                </button>
-                            </div>
-
-                            {/* Features Club */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    🛡️ Funcionalidades Clube
-                                </label>
-                                <div className="space-y-2">
-                                    {form.features_club.map((feature, i) => (
-                                        <div key={i} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={feature}
-                                                onChange={(e) => {
-                                                    const arr = [...form.features_club];
-                                                    arr[i] = e.target.value;
-                                                    setForm(prev => ({ ...prev, features_club: arr }));
-                                                }}
-                                                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                placeholder={`Feature clube ${i + 1}...`}
-                                            />
-                                            {form.features_club.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setForm(prev => ({ ...prev, features_club: prev.features_club.filter((_, idx) => idx !== i) }))}
-                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setForm(prev => ({ ...prev, features_club: [...prev.features_club, ''] }))}
-                                    className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Adicionar feature clube
-                                </button>
-                            </div>
                             {/* Toggles */}
                             <div className="flex flex-wrap gap-6">
                                 <label className="flex items-center gap-2 cursor-pointer">
