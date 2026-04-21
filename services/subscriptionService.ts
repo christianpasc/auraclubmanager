@@ -36,7 +36,8 @@ export const subscriptionService = {
             .from('tenants')
             .select(`
                 created_at, subscription_plan, subscription_status,
-                subscription_plan_id, subscription_starts_at, subscription_ends_at
+                subscription_plan_id, subscription_starts_at, subscription_ends_at,
+                trial_ends_at
             `)
             .eq('id', tenantId)
             .single();
@@ -50,22 +51,35 @@ export const subscriptionService = {
             return null;
         }
 
-        const trialDaysRemaining = this.calculateTrialDaysRemaining(tenant.created_at);
-        const isTrialExpired = trialDaysRemaining <= 0;
-
-        // Check for active subscription: only tenants with a real Stripe plan (subscription_plan_id)
-        // and a valid future expiration date are considered active.
-        // A plan of 'free' or 'EMPTY' with status 'active' is NOT an active subscription — it's just trial state.
+        // ── Source of truth: subscription_status column in the DB ──────────────
+        // The admin can manually set status='active'. We trust that first.
+        // Only fall back to trial/expired calculation when status is NOT 'active'.
+        const dbStatus = tenant.subscription_status as string;
         const now = new Date();
+
         const subscriptionEndsAt = tenant.subscription_ends_at
             ? new Date(tenant.subscription_ends_at)
             : null;
 
-        const hasActiveSubscription = !!(
-            tenant.subscription_plan_id &&
-            subscriptionEndsAt &&
-            subscriptionEndsAt > now
+        // Trust the DB status='active' as primary source of truth.
+        // This prevents users manually marked as active from being shown 'trial expired'
+        // just because subscription_ends_at has lapsed.
+        const hasActiveSubscription = dbStatus === 'active';
+
+        // Use trial_ends_at stored in DB; fall back to created_at + 7d for old rows
+        const trialEndsAt: Date = tenant.trial_ends_at
+            ? new Date(tenant.trial_ends_at)
+            : (() => {
+                const d = new Date(tenant.created_at);
+                d.setDate(d.getDate() + 7);
+                return d;
+            })();
+
+        const trialDaysRemaining = Math.max(
+            0,
+            Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         );
+        const isTrialExpired = !hasActiveSubscription && trialEndsAt < now;
 
         let subscriptionStatus: 'trial' | 'active' | 'expired';
         if (hasActiveSubscription) {
@@ -75,10 +89,6 @@ export const subscriptionService = {
         } else {
             subscriptionStatus = 'trial';
         }
-
-        const createdDate = new Date(tenant.created_at);
-        const trialEndsAt = new Date(createdDate);
-        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
         // Fetch plan name if subscription_plan_id exists
         let planName: string | null = tenant.subscription_plan || null;
