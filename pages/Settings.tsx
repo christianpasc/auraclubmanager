@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, GraduationCap } from 'lucide-react';
-import { useLanguage, AVAILABLE_LANGUAGES } from '../contexts/LanguageContext';
+import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, GraduationCap, CreditCard } from 'lucide-react';
+import { useLanguage, AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,8 @@ import { subscriptionService, PlanLimits } from '../services/subscriptionService
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, currency, setCurrency } = useLanguage();
+
   const { currentTenant, refreshTenants } = useTenant();
 
   const { user } = useAuth();
@@ -63,9 +64,22 @@ const Settings: React.FC = () => {
 
   // Language state
   const [selectedLanguage, setSelectedLanguage] = useState(language);
+  const [selectedCurrency, setSelectedCurrency] = useState(currency);
 
   // Organization type state
   const [organizationType, setOrganizationType] = useState<'school' | 'club'>(currentTenant?.organization_type || 'school');
+
+  // Payment methods state
+  const [paymentMethods, setPaymentMethods] = useState<Array<{ value: string; label: string }>>([]);
+  const [newMethodLabel, setNewMethodLabel] = useState('');
+  const [editingMethodIdx, setEditingMethodIdx] = useState<number | null>(null);
+  const [editingMethodLabel, setEditingMethodLabel] = useState('');
+
+  // Categories state (custom only — defaults are built from t() at render time)
+  const [customIncomeCategories, setCustomIncomeCategories] = useState<string[]>([]);
+  const [customExpenseCategories, setCustomExpenseCategories] = useState<string[]>([]);
+  const [newIncomeCategory, setNewIncomeCategory] = useState('');
+  const [newExpenseCategory, setNewExpenseCategory] = useState('');
 
   // Load data on mount
   useEffect(() => {
@@ -77,6 +91,23 @@ const Settings: React.FC = () => {
       if (settings) {
         setAddress(settings.address || '');
         setCountry(settings.country || 'Brazil');
+        // Load payment methods or set defaults
+        if (settings.payment_methods && Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
+          setPaymentMethods(settings.payment_methods);
+        } else {
+          setPaymentMethods([
+            { value: 'cash', label: t('paymentMethod.cash') },
+            { value: 'card', label: t('paymentMethod.card') },
+          ]);
+        }
+        // Load custom categories
+        setCustomIncomeCategories(Array.isArray(settings.income_categories) ? settings.income_categories : []);
+        setCustomExpenseCategories(Array.isArray(settings.expense_categories) ? settings.expense_categories : []);
+      } else {
+        setPaymentMethods([
+          { value: 'cash', label: t('paymentMethod.cash') },
+          { value: 'card', label: t('paymentMethod.card') },
+        ]);
       }
     }
   }, [currentTenant]);
@@ -96,7 +127,8 @@ const Settings: React.FC = () => {
 
   useEffect(() => {
     setSelectedLanguage(language);
-  }, [language]);
+    setSelectedCurrency(currency);
+  }, [language, currency]);
 
   const loadProfile = async () => {
     setProfileLoading(true);
@@ -275,6 +307,76 @@ const Settings: React.FC = () => {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleSavePaymentMethods = async () => {
+    if (!currentTenant?.id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await tenantService.update(currentTenant.id, {
+        settings: {
+          ...(currentTenant.settings as any),
+          payment_methods: paymentMethods,
+        },
+      });
+      await refreshTenants();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(t('settings.errorSaving'));
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddPaymentMethod = () => {
+    const label = newMethodLabel.trim();
+    if (!label) return;
+    const value = label.toLowerCase().replace(/\s+/g, '_');
+    setPaymentMethods(prev => [...prev, { value, label }]);
+    setNewMethodLabel('');
+  };
+
+  const handleDeletePaymentMethod = (idx: number) => {
+    setPaymentMethods(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleStartEditMethod = (idx: number) => {
+    setEditingMethodIdx(idx);
+    setEditingMethodLabel(paymentMethods[idx].label);
+  };
+
+  const handleSaveEditMethod = (idx: number) => {
+    const label = editingMethodLabel.trim();
+    if (!label) return;
+    setPaymentMethods(prev => prev.map((m, i) => i === idx ? { ...m, label } : m));
+    setEditingMethodIdx(null);
+    setEditingMethodLabel('');
+  };
+
+  const handleSaveCategories = async () => {
+    if (!currentTenant?.id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await tenantService.update(currentTenant.id, {
+        settings: {
+          ...(currentTenant.settings as any),
+          income_categories: customIncomeCategories,
+          expense_categories: customExpenseCategories,
+        },
+      });
+      await refreshTenants();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(t('settings.errorSaving'));
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAvatarSelect = (file: File) => {
@@ -485,6 +587,8 @@ const Settings: React.FC = () => {
               <h3 className="text-lg font-bold text-slate-800 mb-1">{t('settings.preferences.title')}</h3>
               <p className="text-sm text-slate-500">{t('settings.preferences.subtitle')}</p>
             </div>
+
+            {/* Language */}
             <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-primary/10 rounded-xl">
@@ -504,11 +608,279 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="pt-6 flex justify-end">
+            <div className="flex justify-end">
               <SaveButton onClick={handleSaveLanguage} disabled={saving || selectedLanguage === language} />
+            </div>
+
+            {/* Currency */}
+            <div className="border-t border-slate-100 pt-8">
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    <span className="text-primary font-bold text-lg leading-none">$</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-800">{t('settings.preferences.currency')}</h4>
+                    <p className="text-sm text-slate-500 mt-1">{t('settings.preferences.currencyHint')}</p>
+                    <div className="mt-4">
+                      <select
+                        value={selectedCurrency}
+                        onChange={(e) => setSelectedCurrency(e.target.value)}
+                        className="w-full max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                      >
+                        {AVAILABLE_CURRENCIES.map(c => (
+                          <option key={c.code} value={c.code}>{c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end mt-3">
+                <SaveButton
+                  onClick={() => { setCurrency(selectedCurrency); }}
+                  disabled={selectedCurrency === currency}
+                />
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="border-t border-slate-100 pt-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <CreditCard className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800">{t('settings.preferences.paymentMethods')}</h4>
+                  <p className="text-sm text-slate-500 mt-1">{t('settings.preferences.paymentMethodsHint')}</p>
+                  <p className="text-xs text-slate-400 mt-1">{t('settings.preferences.paymentMethodDefaultHint')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {paymentMethods.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-4 text-center">{t('settings.preferences.noPaymentMethods')}</p>
+                ) : (
+                  paymentMethods.map((method, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                      {editingMethodIdx === idx ? (
+                        <>
+                          <input
+                            type="text"
+                            value={editingMethodLabel}
+                            onChange={(e) => setEditingMethodLabel(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveEditMethod(idx)}
+                            className="flex-1 px-3 py-1.5 border border-primary/30 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveEditMethod(idx)}
+                            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingMethodIdx(null)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm font-medium text-slate-700">{method.label}</span>
+                          <button
+                            onClick={() => handleStartEditMethod(idx)}
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                            title={t('settings.preferences.editPaymentMethod')}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePaymentMethod(idx)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title={t('settings.preferences.deletePaymentMethod')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Add new method */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={newMethodLabel}
+                  onChange={(e) => setNewMethodLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddPaymentMethod()}
+                  placeholder={t('settings.preferences.paymentMethodNamePlaceholder')}
+                  className="flex-1 max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
+                <button
+                  onClick={handleAddPaymentMethod}
+                  disabled={!newMethodLabel.trim()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t('settings.preferences.addPaymentMethod')}
+                </button>
+              </div>
+
+              <div className="pt-6 flex justify-end">
+                <SaveButton onClick={handleSavePaymentMethods} />
+              </div>
+            </div>
+
+
+            {/* ── Transaction Categories: Income ───────────────────────── */}
+            <div className="border-t border-slate-100 pt-8">
+              <h4 className="font-bold text-slate-800 mb-1">{t('settings.preferences.incomeCategories')}</h4>
+              <p className="text-sm text-slate-500 mb-4">{t('settings.preferences.incomeCategoriesHint')}</p>
+
+              {/* Default income categories (read-only chips) */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {[
+                  t('category.income.fees'), t('category.income.enrollments'),
+                  t('category.income.sponsorships'), t('category.income.events'),
+                  t('category.income.sales'), t('category.income.donations'),
+                  t('category.income.other'),
+                ].map((cat, i) => (
+                  <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full border border-slate-200">
+                    {cat}
+                  </span>
+                ))}
+              </div>
+
+              {/* Custom income categories */}
+              {customIncomeCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {customIncomeCategories.map((cat, i) => (
+                    <span key={i} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
+                      {cat}
+                      <button
+                        type="button"
+                        onClick={() => setCustomIncomeCategories(prev => prev.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  id="new-income-category"
+                  type="text"
+                  value={newIncomeCategory}
+                  onChange={(e) => setNewIncomeCategory(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newIncomeCategory.trim()) {
+                      setCustomIncomeCategories(prev => [...prev, newIncomeCategory.trim()]);
+                      setNewIncomeCategory('');
+                    }
+                  }}
+                  placeholder={t('settings.preferences.categoryNamePlaceholder')}
+                  className="flex-1 max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newIncomeCategory.trim()) {
+                      setCustomIncomeCategories(prev => [...prev, newIncomeCategory.trim()]);
+                      setNewIncomeCategory('');
+                    }
+                  }}
+                  disabled={!newIncomeCategory.trim()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t('settings.preferences.addCategory')}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Transaction Categories: Expense ───────────────────────── */}
+            <div className="border-t border-slate-100 pt-8">
+              <h4 className="font-bold text-slate-800 mb-1">{t('settings.preferences.expenseCategories')}</h4>
+              <p className="text-sm text-slate-500 mb-4">{t('settings.preferences.expenseCategoriesHint')}</p>
+
+              {/* Default expense categories (read-only chips) */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {[
+                  t('category.expense.infrastructure'), t('category.expense.equipment'),
+                  t('category.expense.salaries'), t('category.expense.transport'),
+                  t('category.expense.food'), t('category.expense.sportsMaterial'),
+                  t('category.expense.marketing'), t('category.expense.maintenance'),
+                  t('category.expense.taxes'), t('category.expense.other'),
+                ].map((cat, i) => (
+                  <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full border border-slate-200">
+                    {cat}
+                  </span>
+                ))}
+              </div>
+
+              {/* Custom expense categories */}
+              {customExpenseCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {customExpenseCategories.map((cat, i) => (
+                    <span key={i} className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full border border-primary/20">
+                      {cat}
+                      <button
+                        type="button"
+                        onClick={() => setCustomExpenseCategories(prev => prev.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  id="new-expense-category"
+                  type="text"
+                  value={newExpenseCategory}
+                  onChange={(e) => setNewExpenseCategory(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newExpenseCategory.trim()) {
+                      setCustomExpenseCategories(prev => [...prev, newExpenseCategory.trim()]);
+                      setNewExpenseCategory('');
+                    }
+                  }}
+                  placeholder={t('settings.preferences.categoryNamePlaceholder')}
+                  className="flex-1 max-w-xs px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newExpenseCategory.trim()) {
+                      setCustomExpenseCategories(prev => [...prev, newExpenseCategory.trim()]);
+                      setNewExpenseCategory('');
+                    }
+                  }}
+                  disabled={!newExpenseCategory.trim()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t('settings.preferences.addCategory')}
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-6 flex justify-end">
+              <SaveButton onClick={handleSaveCategories} />
             </div>
           </div>
         )}
+
 
         {/* ── Profile Tab ───────────────────────────────────────────────── */}
         {activeTab === 'profile' && (

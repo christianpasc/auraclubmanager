@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, ChevronDown } from 'lucide-react';
 import { monthlyFeeService, MonthlyFee, FEE_STATUSES } from '../services/monthlyFeeService';
-import { enrollmentService, EnrollmentWithAthlete, paymentMethods } from '../services/enrollmentService';
+import { enrollmentService, EnrollmentWithAthlete } from '../services/enrollmentService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
 interface MonthlyFeeModalProps {
     isOpen: boolean;
@@ -12,7 +13,8 @@ interface MonthlyFeeModalProps {
 }
 
 const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSaved, feeId }) => {
-    const { language } = useLanguage();
+    const { t } = useLanguage();
+    const { currentTenant } = useTenant();
     const isEditing = !!feeId;
 
     const [loading, setLoading] = useState(false);
@@ -25,9 +27,24 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
         installment_number: 1,
     });
 
-    const getText = (pt: string, en: string, es: string) => {
-        return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
-    };
+    // Resolve payment methods from tenant settings, fall back to defaults
+    const paymentMethods: Array<{ value: string; label: string }> = (() => {
+        const settings = currentTenant?.settings as any;
+        if (settings?.payment_methods && Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
+            return settings.payment_methods;
+        }
+        return [
+            { value: 'cash', label: t('paymentMethod.cash') },
+            { value: 'card', label: t('paymentMethod.card') },
+        ];
+    })();
+
+    // Translate FEE_STATUSES labels using t()
+    const feeStatuses = [
+        { value: 'pending', label: t('monthlyFees.status.pending') },
+        { value: 'paid',    label: t('monthlyFees.status.paid') },
+        { value: 'overdue', label: t('monthlyFees.status.overdue') },
+    ];
 
     useEffect(() => {
         if (isOpen) {
@@ -60,7 +77,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
             const data = await monthlyFeeService.getById(id);
             setFormData(data);
         } catch (err) {
-            setError(getText('Erro ao carregar mensalidade', 'Error loading fee', 'Error al cargar mensualidad'));
+            setError(t('monthlyFees.errorLoadingOne'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -83,11 +100,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
         e.preventDefault();
 
         if (!formData.athlete_id || !formData.due_date || !formData.amount) {
-            setError(getText(
-                'Preencha todos os campos obrigatórios',
-                'Fill in all required fields',
-                'Complete todos los campos obligatorios'
-            ));
+            setError(t('monthlyFees.errorRequiredFields'));
             return;
         }
 
@@ -103,7 +116,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
             onSaved();
             onClose();
         } catch (err) {
-            setError(getText('Erro ao salvar mensalidade', 'Error saving fee', 'Error al guardar mensualidad'));
+            setError(t('monthlyFees.errorSaving'));
             console.error(err);
         } finally {
             setSaving(false);
@@ -118,8 +131,8 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-lg font-bold text-slate-800">
                         {isEditing
-                            ? getText('Editar Mensalidade', 'Edit Monthly Fee', 'Editar Mensualidad')
-                            : getText('Nova Mensalidade', 'New Monthly Fee', 'Nueva Mensualidad')
+                            ? t('monthlyFees.editTitle')
+                            : t('monthlyFees.newTitle')
                         }
                     </h2>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
@@ -142,7 +155,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                         {/* Enrollment Select */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                {getText('Matrícula/Atleta', 'Enrollment/Athlete', 'Matrícula/Atleta')} *
+                                {t('monthlyFees.enrollmentAthlete')} *
                             </label>
                             {isEditing && formData.athlete ? (
                                 // Show read-only athlete info when editing
@@ -156,7 +169,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                                         onChange={(e) => handleEnrollmentChange(e.target.value)}
                                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-10"
                                     >
-                                        <option value="">{getText('Selecione...', 'Select...', 'Seleccione...')}</option>
+                                        <option value="">{t('common.select')}</option>
                                         {enrollments.map(e => (
                                             <option key={e.id} value={e.id}>
                                                 {e.athlete?.full_name} - {e.athlete?.category}
@@ -172,7 +185,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                             {/* Amount */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {getText('Valor', 'Amount', 'Monto')} *
+                                    {t('monthlyFees.amount')} *
                                 </label>
                                 <input
                                     type="number"
@@ -187,7 +200,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                             {/* Due Date */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {getText('Vencimento', 'Due Date', 'Vencimiento')} *
+                                    {t('monthlyFees.dueDate')} *
                                 </label>
                                 <input
                                     type="date"
@@ -202,7 +215,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                             {/* Status */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {getText('Status', 'Status', 'Estado')}
+                                    {t('common.status')}
                                 </label>
                                 <div className="relative">
                                     <select
@@ -210,7 +223,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as MonthlyFee['status'] })}
                                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-10"
                                     >
-                                        {FEE_STATUSES.map(s => (
+                                        {feeStatuses.map(s => (
                                             <option key={s.value} value={s.value}>{s.label}</option>
                                         ))}
                                     </select>
@@ -221,7 +234,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                             {/* Payment Method */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {getText('Forma de Pagamento', 'Payment Method', 'Método de Pago')}
+                                    {t('monthlyFees.paymentMethod')}
                                 </label>
                                 <div className="relative">
                                     <select
@@ -229,7 +242,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                                         onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
                                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-10"
                                     >
-                                        <option value="">{getText('Selecione...', 'Select...', 'Seleccione...')}</option>
+                                        <option value="">{t('common.select')}</option>
                                         {paymentMethods.map(m => (
                                             <option key={m.value} value={m.value}>{m.label}</option>
                                         ))}
@@ -242,21 +255,21 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                         {/* Description */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                {getText('Descrição', 'Description', 'Descripción')}
+                                {t('common.description')}
                             </label>
                             <input
                                 type="text"
                                 value={formData.description || ''}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                                placeholder={getText('Ex: Mensalidade Avulsa', 'Ex: Extra Fee', 'Ej: Mensualidad Extra')}
+                                placeholder={t('monthlyFees.descriptionPlaceholder')}
                             />
                         </div>
 
                         {/* Notes */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                {getText('Observações', 'Notes', 'Observaciones')}
+                                {t('common.notes')}
                             </label>
                             <textarea
                                 value={formData.notes || ''}
@@ -273,7 +286,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                                 onClick={onClose}
                                 className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition-colors"
                             >
-                                {getText('Cancelar', 'Cancel', 'Cancelar')}
+                                {t('common.cancel')}
                             </button>
                             <button
                                 type="submit"
@@ -281,7 +294,7 @@ const MonthlyFeeModal: React.FC<MonthlyFeeModalProps> = ({ isOpen, onClose, onSa
                                 className="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {getText('Salvar', 'Save', 'Guardar')}
+                                {t('common.save')}
                             </button>
                         </div>
                     </form>

@@ -16,7 +16,7 @@ interface Filters {
 
 const Enrollments: React.FC = () => {
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t, language, formatCurrency: formatCurrencyCtx } = useLanguage();
   const [enrollments, setEnrollments] = useState<EnrollmentWithAthlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,9 +119,7 @@ const Enrollments: React.FC = () => {
 
   const formatCurrency = (value?: number) => {
     if (!value) return '-';
-    const locale = language === 'en-US' ? 'en-US' : language === 'es-ES' ? 'es-ES' : 'pt-BR';
-    const currency = language === 'en-US' ? 'USD' : language === 'es-ES' ? 'EUR' : 'BRL';
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
+    return formatCurrencyCtx(value);
   };
 
   if (loading) {

@@ -5,10 +5,11 @@ import {
     User, FileText, CreditCard, Save, ArrowLeft, Loader2,
     Calendar, DollarSign, Camera, X, Check
 } from 'lucide-react';
-import { enrollmentService, Enrollment, planTypes, paymentMethods } from '../services/enrollmentService';
+import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { storageService } from '../services/storageService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
 const EnrollmentForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -16,6 +17,27 @@ const EnrollmentForm: React.FC = () => {
     const isEditing = !!id;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useLanguage();
+    const { currentTenant } = useTenant();
+
+    // Translated plan types using the t() system
+    const planTypes = [
+        { value: 'monthly',    label: t('planType.monthly') },
+        { value: 'quarterly',  label: t('planType.quarterly') },
+        { value: 'semiannual', label: t('planType.semiannual') },
+        { value: 'annual',     label: t('planType.annual') },
+    ];
+
+    // Resolve payment methods from tenant settings, fall back to translated defaults
+    const paymentMethods: Array<{ value: string; label: string }> = (() => {
+        const settings = currentTenant?.settings as any;
+        if (settings?.payment_methods && Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
+            return settings.payment_methods;
+        }
+        return [
+            { value: 'cash', label: t('paymentMethod.cash') },
+            { value: 'card', label: t('paymentMethod.card') },
+        ];
+    })();
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Loader2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { financeService, Transaction, TRANSACTION_CATEGORIES } from '../services/financeService';
+import { financeService, Transaction } from '../services/financeService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
 interface TransactionModalProps {
     isOpen: boolean;
@@ -17,7 +18,44 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     transactionId,
 }) => {
     const { t, language } = useLanguage();
+    const { currentTenant } = useTenant();
     const isEditing = Boolean(transactionId);
+
+    // Default translated categories
+    const DEFAULT_CATEGORIES = {
+        income: [
+            t('category.income.fees'),
+            t('category.income.enrollments'),
+            t('category.income.sponsorships'),
+            t('category.income.events'),
+            t('category.income.sales'),
+            t('category.income.donations'),
+            t('category.income.other'),
+        ],
+        expense: [
+            t('category.expense.infrastructure'),
+            t('category.expense.equipment'),
+            t('category.expense.salaries'),
+            t('category.expense.transport'),
+            t('category.expense.food'),
+            t('category.expense.sportsMaterial'),
+            t('category.expense.marketing'),
+            t('category.expense.maintenance'),
+            t('category.expense.taxes'),
+            t('category.expense.other'),
+        ],
+    };
+
+    // Merge default + custom categories from tenant settings
+    const CATEGORIES = (() => {
+        const settings = currentTenant?.settings as any;
+        const customIncome: string[] = settings?.income_categories || [];
+        const customExpense: string[] = settings?.expense_categories || [];
+        return {
+            income: [...DEFAULT_CATEGORIES.income, ...customIncome.filter(c => !DEFAULT_CATEGORIES.income.includes(c))],
+            expense: [...DEFAULT_CATEGORIES.expense, ...customExpense.filter(c => !DEFAULT_CATEGORIES.expense.includes(c))],
+        };
+    })();
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -32,10 +70,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
         status: 'pending',
         notes: '',
     });
-
-    const getText = (pt: string, en: string, es: string) => {
-        return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
-    };
 
     useEffect(() => {
         if (isOpen) {
@@ -72,7 +106,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 notes: data.notes || '',
             });
         } catch (err) {
-            setError(getText('Erro ao carregar transação', 'Error loading transaction', 'Error al cargar transacción'));
+            setError(t('finance.errorLoadingOne'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -83,7 +117,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
         e.preventDefault();
 
         if (!formData.description || !formData.category || !formData.amount) {
-            setError(getText('Preencha todos os campos obrigatórios', 'Please fill all required fields', 'Complete todos los campos requeridos'));
+            setError(t('finance.errorRequiredFields'));
             return;
         }
 
@@ -110,9 +144,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             onSaved();
             onClose();
         } catch (err: any) {
-            const errorMessage = err?.message || getText('Erro desconhecido', 'Unknown error', 'Error desconocido');
+            const errorMessage = err?.message || t('common.error');
             console.error('Error saving transaction:', err);
-            setError(`${getText('Erro ao salvar transação', 'Error saving transaction', 'Error al guardar transacción')}: ${errorMessage}`);
+            setError(`${t('finance.errorSaving')}: ${errorMessage}`);
         } finally {
             setSaving(false);
         }
@@ -128,8 +162,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     };
 
     const categories = formData.type === 'income'
-        ? TRANSACTION_CATEGORIES.income
-        : TRANSACTION_CATEGORIES.expense;
+        ? CATEGORIES.income
+        : CATEGORIES.expense;
 
     if (!isOpen) return null;
 
@@ -147,8 +181,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-lg font-bold text-slate-800">
                         {isEditing
-                            ? getText('Editar Transação', 'Edit Transaction', 'Editar Transacción')
-                            : getText('Nova Transação', 'New Transaction', 'Nueva Transacción')
+                            ? t('finance.editTransaction')
+                            : t('finance.newTransaction')
                         }
                     </h2>
                     <button
@@ -176,7 +210,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                             {/* Type Selection */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {getText('Tipo de Transação', 'Transaction Type', 'Tipo de Transacción')} *
+                                    {t('finance.transactionType')} *
                                 </label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -189,7 +223,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                     >
                                         <ArrowUpCircle className="w-5 h-5" />
                                         <span className="font-semibold">
-                                            {getText('Receita', 'Income', 'Ingreso')}
+                                            {t('finance.income')}
                                         </span>
                                     </button>
                                     <button
@@ -202,7 +236,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                     >
                                         <ArrowDownCircle className="w-5 h-5" />
                                         <span className="font-semibold">
-                                            {getText('Despesa', 'Expense', 'Gasto')}
+                                            {t('finance.expense')}
                                         </span>
                                     </button>
                                 </div>
@@ -211,13 +245,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                             {/* Description */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                    {getText('Descrição', 'Description', 'Descripción')} *
+                                    {t('common.description')} *
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.description || ''}
                                     onChange={(e) => handleChange('description', e.target.value)}
-                                    placeholder={getText('Ex: Mensalidade Outubro', 'Ex: October Monthly Fee', 'Ej: Mensualidad Octubre')}
+                                    placeholder={t('finance.descriptionPlaceholder')}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                                 />
                             </div>
@@ -232,7 +266,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                     onChange={(e) => handleChange('category', e.target.value)}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none bg-white"
                                 >
-                                    <option value="">{getText('Selecione...', 'Select...', 'Seleccionar...')}</option>
+                                    <option value="">{t('common.select')}</option>
                                     {categories.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
@@ -243,7 +277,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                 {/* Date */}
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                        {getText('Data', 'Date', 'Fecha')} *
+                                        {t('common.date')} *
                                     </label>
                                     <input
                                         type="date"
@@ -256,7 +290,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                 {/* Amount */}
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                        {getText('Valor', 'Amount', 'Valor')} *
+                                        {t('common.amount')} *
                                     </label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -291,7 +325,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                             className="text-primary focus:ring-primary"
                                         />
                                         <span className="text-sm text-slate-600">
-                                            {getText('Pendente', 'Pending', 'Pendiente')}
+                                            {t('finance.status.pending')}
                                         </span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -304,7 +338,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                                             className="text-primary focus:ring-primary"
                                         />
                                         <span className="text-sm text-slate-600">
-                                            {getText('Conciliado', 'Reconciled', 'Conciliado')}
+                                            {t('finance.status.reconciled')}
                                         </span>
                                     </label>
                                 </div>
@@ -313,13 +347,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                             {/* Notes */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                    {getText('Observações', 'Notes', 'Notas')}
+                                    {t('common.notes')}
                                 </label>
                                 <textarea
                                     value={formData.notes || ''}
                                     onChange={(e) => handleChange('notes', e.target.value)}
                                     rows={2}
-                                    placeholder={getText('Observações adicionais...', 'Additional notes...', 'Notas adicionales...')}
+                                    placeholder={t('common.notes')}
                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
                                 />
                             </div>

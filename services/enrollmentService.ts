@@ -123,11 +123,10 @@ export const planTypes = [
     { value: 'annual', label: 'Anual' },
 ];
 
-export const paymentMethods = [
-    { value: 'pix', label: 'PIX' },
-    { value: 'credit_card', label: 'Cartão de Crédito' },
-    { value: 'boleto', label: 'Boleto' },
-    { value: 'cash', label: 'Dinheiro' },
+// Default payment methods (shown when tenant has no custom methods configured)
+export const DEFAULT_PAYMENT_METHODS = [
+    { value: 'cash' },
+    { value: 'card' },
 ];
 
 export const enrollmentStatuses = [

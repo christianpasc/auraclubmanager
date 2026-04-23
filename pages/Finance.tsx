@@ -5,9 +5,10 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
 import TransactionModal from '../components/TransactionModal';
-import { financeService, Transaction, TRANSACTION_CATEGORIES } from '../services/financeService';
+import { financeService, Transaction } from '../services/financeService';
 import { monthlyFeeService, MonthlyFee } from '../services/monthlyFeeService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
 interface Filters {
   type: string;
@@ -17,7 +18,8 @@ interface Filters {
 
 const Finance: React.FC = () => {
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t, language, formatCurrency } = useLanguage();
+  const { currentTenant } = useTenant();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthlyFees, setMonthlyFees] = useState<MonthlyFee[]>([]);
@@ -49,27 +51,17 @@ const Finance: React.FC = () => {
       setTransactions(txData);
       setMonthlyFees(feeData); // Load all fees, not just paid
     } catch (err) {
-      setError(getText('Erro ao carregar transações', 'Error loading transactions', 'Error al cargar transacciones'));
+      setError(t('finance.errorLoading'));
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getText = (pt: string, en: string, es: string) => {
-    return language === 'en-US' ? en : language === 'es-ES' ? es : pt;
-  };
-
-  const formatCurrency = (value: number) => {
-    const locale = language === 'en-US' ? 'en-US' : language === 'es-ES' ? 'es-ES' : 'pt-BR';
-    const currency = language === 'en-US' ? 'USD' : language === 'es-ES' ? 'EUR' : 'BRL';
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
-  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
-    const locale = language === 'en-US' ? 'en-US' : language === 'es-ES' ? 'es-ES' : 'pt-BR';
-    return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString(language, { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   // Only count paid fees as income
@@ -109,8 +101,8 @@ const Finance: React.FC = () => {
     ...monthlyFees.map(fee => ({
       id: fee.id!,
       type: 'fee' as const,
-      description: fee.description || `${getText('Mensalidade', 'Monthly Fee', 'Mensualidad')} - ${fee.athlete?.full_name || ''}`,
-      category: getText('Mensalidade', 'Monthly Fee', 'Mensualidad'),
+      description: fee.description || `${t('finance.monthlyFee')} - ${fee.athlete?.full_name || ''}`,
+      category: t('finance.monthlyFee'),
       date: fee.due_date,
       amount: fee.amount,
       status: fee.status,
@@ -133,7 +125,25 @@ const Finance: React.FC = () => {
   const activeFiltersCount = [filters.type, filters.category, filters.status].filter(Boolean).length;
   const clearFilters = () => setFilters({ type: '', category: '', status: '' });
 
-  const allCategories = [...new Set([...TRANSACTION_CATEGORIES.income, ...TRANSACTION_CATEGORIES.expense])];
+  // Translated default categories + custom tenant categories
+  const defaultIncome = [
+    t('category.income.fees'), t('category.income.enrollments'), t('category.income.sponsorships'),
+    t('category.income.events'), t('category.income.sales'), t('category.income.donations'), t('category.income.other'),
+  ];
+  const defaultExpense = [
+    t('category.expense.infrastructure'), t('category.expense.equipment'), t('category.expense.salaries'),
+    t('category.expense.transport'), t('category.expense.food'), t('category.expense.sportsMaterial'),
+    t('category.expense.marketing'), t('category.expense.maintenance'), t('category.expense.taxes'), t('category.expense.other'),
+  ];
+  const tenantSettings = currentTenant?.settings as any;
+  const allCategories = [
+    ...new Set([
+      ...defaultIncome,
+      ...defaultExpense,
+      ...(tenantSettings?.income_categories || []),
+      ...(tenantSettings?.expense_categories || []),
+    ])
+  ];
 
   const openDeleteModal = (transaction: Transaction) => {
     setDeleteModal({ isOpen: true, transaction, loading: false });
@@ -152,7 +162,7 @@ const Finance: React.FC = () => {
       setTransactions(transactions.filter(t => t.id !== deleteModal.transaction?.id));
       closeDeleteModal();
     } catch (err) {
-      setError(getText('Erro ao excluir transação', 'Error deleting transaction', 'Error al eliminar transacción'));
+      setError(t('finance.errorDeleting'));
       console.error(err);
       setDeleteModal(prev => ({ ...prev, loading: false }));
     }
@@ -170,11 +180,11 @@ const Finance: React.FC = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'reconciled': return getText('Conciliado', 'Reconciled', 'Conciliado');
-      case 'paid': return getText('Pago', 'Paid', 'Pagado');
-      case 'overdue': return getText('Atrasado', 'Overdue', 'Atrasado');
-      case 'pending': return getText('Pendente', 'Pending', 'Pendiente');
-      default: return getText('Pendente', 'Pending', 'Pendiente');
+      case 'reconciled': return t('finance.status.reconciled');
+      case 'paid': return t('finance.status.paid');
+      case 'overdue': return t('finance.status.overdue');
+      case 'pending': return t('finance.status.pending');
+      default: return t('finance.status.pending');
     }
   };
 
@@ -227,9 +237,9 @@ const Finance: React.FC = () => {
               <CreditCard className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800">{getText('Mensalidades', 'Monthly Fees', 'Mensualidades')}</h3>
+              <h3 className="font-bold text-slate-800">{t('finance.monthlyFees')}</h3>
               <p className="text-sm text-slate-600">
-                {paidFees.length} {getText('pagas', 'paid', 'pagadas')} ({formatCurrency(monthlyFeesIncome)}) • {monthlyFees.filter(f => f.status === 'pending').length} {getText('pendentes', 'pending', 'pendientes')}
+                {paidFees.length} {t('finance.paidCount')} ({formatCurrency(monthlyFeesIncome)}) • {monthlyFees.filter(f => f.status === 'pending').length} {t('finance.pendingCount')}
               </p>
             </div>
           </div>
@@ -237,7 +247,7 @@ const Finance: React.FC = () => {
             onClick={() => navigate('/monthly-fees')}
             className="px-4 py-2 bg-white text-primary font-semibold text-sm rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition-colors"
           >
-            {getText('Ver Mensalidades', 'View Fees', 'Ver Mensualidades')}
+            {t('finance.viewMonthlyFees')}
           </button>
         </div>
       )}
@@ -246,12 +256,12 @@ const Finance: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h3 className="font-bold text-slate-800">
-            {getText('Transações Recentes', 'Recent Transactions', 'Transacciones Recientes')}
+            {t('finance.recentTransactions')}
           </h3>
           <div className="flex flex-wrap gap-2">
             <button className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-100">
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">{getText('Exportar', 'Export', 'Exportar')}</span>
+              <span className="hidden sm:inline">{t('common.export')}</span>
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -273,7 +283,7 @@ const Finance: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary-dark"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{getText('Lançamento', 'New Entry', 'Nuevo Registro')}</span>
+              <span className="hidden sm:inline">{t('finance.newEntry')}</span>
             </button>
           </div>
         </div>
@@ -292,7 +302,7 @@ const Finance: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                  {getText('Tipo', 'Type', 'Tipo')}
+                  {t('common.type')}
                 </label>
                 <div className="relative">
                   <select
@@ -300,10 +310,10 @@ const Finance: React.FC = () => {
                     onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
                   >
-                    <option value="">{getText('Todos', 'All', 'Todos')}</option>
-                    <option value="income">{getText('Receita', 'Income', 'Ingreso')}</option>
-                    <option value="expense">{getText('Despesa', 'Expense', 'Gasto')}</option>
-                    <option value="fee">{getText('Mensalidade', 'Monthly Fee', 'Mensualidad')}</option>
+                    <option value="">{t('finance.allTypes')}</option>
+                    <option value="income">{t('finance.income')}</option>
+                    <option value="expense">{t('finance.expense')}</option>
+                    <option value="fee">{t('finance.monthlyFee')}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -318,7 +328,7 @@ const Finance: React.FC = () => {
                     onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
                   >
-                    <option value="">{getText('Todas', 'All', 'Todas')}</option>
+                    <option value="">{t('finance.allCategories')}</option>
                     {allCategories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -336,9 +346,9 @@ const Finance: React.FC = () => {
                     onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
                   >
-                    <option value="">{getText('Todos', 'All', 'Todos')}</option>
-                    <option value="pending">{getText('Pendente', 'Pending', 'Pendiente')}</option>
-                    <option value="reconciled">{getText('Conciliado', 'Reconciled', 'Conciliado')}</option>
+                    <option value="">{t('finance.allTypes')}</option>
+                    <option value="pending">{t('finance.status.pending')}</option>
+                    <option value="reconciled">{t('finance.status.reconciled')}</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -351,11 +361,11 @@ const Finance: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                <th className="px-3 md:px-6 py-3 md:py-4">{getText('Descrição', 'Description', 'Descripción')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4">{t('finance.col.description')}</th>
                 <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4">{t('athletes.category')}</th>
-                <th className="hidden md:table-cell px-6 py-4">{getText('Data', 'Date', 'Fecha')}</th>
+                <th className="hidden md:table-cell px-6 py-4">{t('finance.col.date')}</th>
                 <th className="hidden lg:table-cell px-6 py-4">{t('common.status')}</th>
-                <th className="px-3 md:px-6 py-3 md:py-4 text-right">{getText('Valor', 'Amount', 'Monto')}</th>
+                <th className="px-3 md:px-6 py-3 md:py-4 text-right">{t('finance.col.amount')}</th>
                 <th className="px-3 md:px-6 py-3 md:py-4 text-right">{t('common.actions')}</th>
               </tr>
             </thead>
@@ -364,8 +374,8 @@ const Finance: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                     {activeFiltersCount > 0
-                      ? getText('Nenhum lançamento encontrado com os filtros aplicados', 'No entries found with applied filters', 'No se encontraron registros con los filtros aplicados')
-                      : getText('Nenhum lançamento cadastrado', 'No entries registered', 'No hay registros')
+                      ? t('finance.noEntriesFiltered')
+                      : t('finance.noEntries')
                     }
                   </td>
                 </tr>
@@ -420,7 +430,7 @@ const Finance: React.FC = () => {
                           onClick={() => navigate('/monthly-fees')}
                           className="text-xs text-primary hover:underline"
                         >
-                          {getText('Ver', 'View', 'Ver')}
+                          {t('common.view')}
                         </button>
                       )}
                     </td>
@@ -435,9 +445,9 @@ const Finance: React.FC = () => {
         {unifiedItems.length > 0 && (
           <div className="px-6 py-3 border-t border-slate-100 text-sm text-slate-500">
             {filteredItems.length === unifiedItems.length ? (
-              <span>{unifiedItems.length} {getText('lançamentos', 'entries', 'registros')}</span>
+              <span>{unifiedItems.length} {t('finance.entries')}</span>
             ) : (
-              <span>{filteredItems.length} de {unifiedItems.length} {getText('lançamentos', 'entries', 'registros')}</span>
+              <span>{filteredItems.length} {t('common.of')} {unifiedItems.length} {t('finance.entries')}</span>
             )}
           </div>
         )}
@@ -448,9 +458,9 @@ const Finance: React.FC = () => {
         isOpen={deleteModal.isOpen}
         onClose={closeDeleteModal}
         onConfirm={handleConfirmDelete}
-        title={getText('Excluir Transação', 'Delete Transaction', 'Eliminar Transacción')}
-        message={`${getText('Tem certeza que deseja excluir', 'Are you sure you want to delete', '¿Está seguro de que desea eliminar')} "${deleteModal.transaction?.description}"? ${getText('Esta ação não pode ser desfeita.', 'This action cannot be undone.', 'Esta acción no se puede deshacer.')}`}
-        confirmLabel={getText('Excluir', 'Delete', 'Eliminar')}
+        title={t('finance.deleteTransaction')}
+        message={`${t('finance.deleteConfirm')} "${deleteModal.transaction?.description}"? ${t('finance.deleteWarning')}`}
+        confirmLabel={t('common.delete')}
         cancelLabel={t('common.cancel')}
         isDestructive={true}
         loading={deleteModal.loading}
