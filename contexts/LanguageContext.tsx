@@ -129,6 +129,8 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.upcomingGames': 'Próximos Jogos',
         'dashboard.noGamesScheduled': 'Nenhum jogo agendado',
         'dashboard.errorLoading': 'Erro ao carregar dados do dashboard',
+        'dashboard.lastAthletes': 'Últimos Atletas Cadastrados',
+        'dashboard.registrationDate': 'Data de Cadastro',
 
         // Athletes
         'athletes.title': 'Atletas',
@@ -958,6 +960,8 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.upcomingGames': 'Upcoming Games',
         'dashboard.noGamesScheduled': 'No games scheduled',
         'dashboard.errorLoading': 'Error loading dashboard data',
+        'dashboard.lastAthletes': 'Last Registered Athletes',
+        'dashboard.registrationDate': 'Registration Date',
 
         // Athletes
         'athletes.title': 'Athletes',
@@ -1788,6 +1792,8 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.upcomingGames': 'Próximos Partidos',
         'dashboard.noGamesScheduled': 'No hay partidos programados',
         'dashboard.errorLoading': 'Error al cargar datos del panel',
+        'dashboard.lastAthletes': 'Últimos Atletas Registrados',
+        'dashboard.registrationDate': 'Fecha de Registro',
 
         // Athletes
         'athletes.title': 'Atletas',
@@ -2637,6 +2643,8 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.upcomingGames': 'Prochains matchs',
         'dashboard.noGamesScheduled': 'Aucun match programmé',
         'dashboard.errorLoading': 'Erreur lors du chargement des données',
+        'dashboard.lastAthletes': 'Derniers Athlètes Inscrits',
+        'dashboard.registrationDate': "Date d'inscription",
 
         // Athletes
         'athletes.title': 'Athlètes',
@@ -3464,6 +3472,8 @@ const translations: Record<Language, Record<string, string>> = {
         'dashboard.upcomingGames': 'Próximos jogos',
         'dashboard.noGamesScheduled': 'Nenhum jogo agendado',
         'dashboard.errorLoading': 'Erro ao carregar dados do painel',
+        'dashboard.lastAthletes': 'Últimos Atletas Cadastrados',
+        'dashboard.registrationDate': 'Data de Cadastro',
 
         // Athletes
         'athletes.title': 'Atletas',

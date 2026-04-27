@@ -115,11 +115,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <aside className={`
-      w-64 bg-slate-900 text-white flex flex-col fixed h-full z-50
+      w-64 text-white flex flex-col fixed h-full z-50
       transform transition-transform duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       lg:translate-x-0
-    `}>
+    `} style={{ background: '#1a2d4e' }}>
       <div className="p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {currentTenant?.logo_url ? (

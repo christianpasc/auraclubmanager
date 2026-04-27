@@ -111,6 +111,16 @@ export const athleteService = {
         return data as Athlete[];
     },
 
+    async getRecent(limit: number = 5) {
+        const { data, error } = await supabase
+            .from('athletes')
+            .select('id, full_name, category, status, photo_url, created_at')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        if (error) throw error;
+        return data as Athlete[];
+    },
+
     async getById(id: string) {
         const { data, error } = await supabase
             .from('athletes')

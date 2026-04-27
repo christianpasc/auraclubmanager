@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   CheckCircle,
   AlertCircle,
   Timer,
   Trophy,
-  Loader2
+  Loader2,
+  MoreVertical
 } from 'lucide-react';
 import {
   AreaChart,
@@ -19,10 +21,12 @@ import {
   Line
 } from 'recharts';
 import StatCard from '../components/StatCard';
+import StatusBadge from '../components/StatusBadge';
 import { useTenant } from '../contexts/TenantContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { dashboardService, DashboardStats, UpcomingGame, FinancialFlowData } from '../services/dashboardService';
 import { Training } from '../services/trainingService';
+import { athleteService, Athlete } from '../services/athleteService';
 
 const Dashboard: React.FC = () => {
   const { currentTenant, loading: tenantLoading, isSchool } = useTenant();
@@ -31,6 +35,7 @@ const Dashboard: React.FC = () => {
   const [upcomingGames, setUpcomingGames] = useState<UpcomingGame[]>([]);
   const [nextTraining, setNextTraining] = useState<Training | null>(null);
   const [financialData, setFinancialData] = useState<FinancialFlowData[]>([]);
+  const [recentAthletes, setRecentAthletes] = useState<Athlete[]>([]);
   const [chartView, setChartView] = useState<'weekly' | 'monthly'>('monthly');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,15 +83,17 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [statsData, gamesData, trainingData] = await Promise.all([
+      const [statsData, gamesData, trainingData, athletesData] = await Promise.all([
         dashboardService.getStats(),
         dashboardService.getUpcomingGames(3),
         dashboardService.getNextTraining(),
+        athleteService.getRecent(5),
       ]);
 
       setStats(statsData);
       setUpcomingGames(gamesData);
       setNextTraining(trainingData);
+      setRecentAthletes(athletesData);
     } catch (err: any) {
       if (err.name === 'AbortError' || err.message?.includes('AbortError')) {
         console.log('Dashboard data fetch aborted');
@@ -146,6 +153,25 @@ const Dashboard: React.FC = () => {
   const enrollmentPercentage = stats && stats.totalAthletes > 0
     ? Math.round((stats.activeEnrollments / stats.totalAthletes) * 100)
     : 0;
+
+  const getAthleteStatusVariant = (status?: string) => {
+    switch (status?.toLowerCase()) {
+      case 'active': case 'ativo': return 'success';
+      case 'inactive': case 'inativo': return 'neutral';
+      case 'pending': case 'pendente': return 'warning';
+      default: return 'neutral';
+    }
+  };
+
+  const getInitials = (name: string) =>
+    name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+
+  const formatRegistrationDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    const locale = language === 'en-US' ? 'en-US' : language === 'es-ES' ? 'es-ES' : 'pt-BR';
+    return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
 
   return (
     <div className="space-y-8">
@@ -269,6 +295,96 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Recent Athletes Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800">{t('dashboard.lastAthletes')}</h3>
+          <Link to="/athletes" className="text-xs font-semibold text-primary hover:underline">
+            {t('common.seeAll')}
+          </Link>
+        </div>
+
+        {recentAthletes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <Users className="w-10 h-10 mb-2 opacity-40" />
+            <p className="text-sm">{t('athletes.noAthletes')}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t('athletes.athlete')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t('athletes.category')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t('dashboard.registrationDate')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t('common.status')}
+                  </th>
+                  <th className="px-6 py-3 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    {t('common.actions')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentAthletes.map((athlete) => (
+                  <tr key={athlete.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {athlete.photo_url ? (
+                          <img
+                            src={athlete.photo_url}
+                            alt={athlete.full_name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-blue-600">
+                              {getInitials(athlete.full_name)}
+                            </span>
+                          </div>
+                        )}
+                        <Link
+                          to={`/athletes/${athlete.id}`}
+                          className="font-medium text-slate-800 hover:text-primary transition-colors"
+                        >
+                          {athlete.full_name}
+                        </Link>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-500">
+                      {athlete.category || <span className="text-slate-300">—</span>}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500">
+                      {formatRegistrationDate(athlete.created_at)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge
+                        status={athlete.status || '—'}
+                        variant={getAthleteStatusVariant(athlete.status)}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link
+                        to={`/athletes/${athlete.id}`}
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
