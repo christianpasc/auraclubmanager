@@ -278,6 +278,8 @@ const translations: Record<Language, Record<string, string>> = {
 
         // Auth extra
         'auth.tagline': 'Gestão inteligente para seu clube',
+        'auth.heroTitle': 'A excelência na gestão do seu clube esportivo.',
+        'auth.heroSubtitle': 'Centralize operações, gerencie atletas e otimize resultados com a plataforma líder em tecnologia esportiva.',
         'auth.loading': 'Entrando...',
         'auth.creatingAccount': 'Criando conta...',
         'auth.passwordMinLength': 'Mínimo de 6 caracteres',
@@ -1105,6 +1107,8 @@ const translations: Record<Language, Record<string, string>> = {
 
         // Auth extra
         'auth.tagline': 'Smart management for your club',
+        'auth.heroTitle': 'Excellence in sports club management.',
+        'auth.heroSubtitle': 'Centralize operations, manage athletes and optimize results with the leading sports technology platform.',
         'auth.loading': 'Signing in...',
         'auth.creatingAccount': 'Creating account...',
         'auth.passwordMinLength': 'At least 6 characters',
@@ -1933,6 +1937,8 @@ const translations: Record<Language, Record<string, string>> = {
 
         // Auth extra
         'auth.tagline': 'Gestión inteligente para tu club',
+        'auth.heroTitle': 'La excelencia en la gestión de tu club deportivo.',
+        'auth.heroSubtitle': 'Centraliza operaciones, gestiona atletas y optimiza resultados con la plataforma líder en tecnología deportiva.',
         'auth.loading': 'Iniciando sesión...',
         'auth.creatingAccount': 'Creando cuenta...',
         'auth.passwordMinLength': 'Mínimo 6 caracteres',
@@ -2549,6 +2555,8 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.checkEmail': 'Vérifiez votre boîte de réception pour activer votre compte.',
         'auth.goToLogin': 'Aller à la connexion',
         'auth.tagline': 'Gestion intelligente pour votre club',
+        'auth.heroTitle': "L'excellence dans la gestion de votre club sportif.",
+        'auth.heroSubtitle': 'Centralisez les opérations, gérez les athlètes et optimisez les résultats avec la plateforme leader en technologie sportive.',
         'auth.loading': 'Connexion...',
         'auth.creatingAccount': 'Création du compte...',
         'auth.passwordMinLength': 'Au moins 6 caractères',
@@ -3374,6 +3382,8 @@ const translations: Record<Language, Record<string, string>> = {
         'auth.checkEmail': 'Verifique a sua caixa de entrada para ativar a sua conta.',
         'auth.goToLogin': 'Ir para o início de sessão',
         'auth.tagline': 'Gestão inteligente para o seu clube',
+        'auth.heroTitle': 'A excelência na gestão do seu clube desportivo.',
+        'auth.heroSubtitle': 'Centralize operações, gira atletas e otimize resultados com a plataforma líder em tecnologia desportiva.',
         'auth.loading': 'A entrar...',
         'auth.creatingAccount': 'A criar conta...',
         'auth.passwordMinLength': 'Mínimo de 6 caracteres',
