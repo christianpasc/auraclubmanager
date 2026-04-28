@@ -285,7 +285,7 @@ const TrainingForm: React.FC = () => {
                             {t('trainingForm.section.dateTime')}
                         </h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.date')} *</label>
                                     <input type="date" value={training.training_date || ''} onChange={(e) => updateTraining('training_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
@@ -315,7 +315,7 @@ const TrainingForm: React.FC = () => {
                             {t('trainingForm.section.details')}
                         </h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.category')}</label>
                                     <select value={training.category || ''} onChange={(e) => updateTraining('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
@@ -381,7 +381,7 @@ const TrainingForm: React.FC = () => {
                         </div>
 
                         {showAthleteSelector && (
-                            <div className="mt-4 p-4 bg-slate-50 rounded-lg max-h-60 overflow-y-auto">
+                            <div className="mt-4 p-4 bg-slate-50 rounded-lg max-h-48 sm:max-h-60 overflow-y-auto">
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                     {availableAthletes.map(athlete => (
                                         <button
@@ -429,9 +429,9 @@ const TrainingForm: React.FC = () => {
                                         <tr className="bg-slate-50 text-slate-500 text-xs uppercase">
                                             <th className="px-4 py-3 text-left font-bold">{t('athletes.athlete')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-20">{t('trainingForm.athletes.col.present')}</th>
-                                            <th className="px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.performance')}</th>
-                                            <th className="px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.effort')}</th>
-                                            <th className="px-3 py-3 text-left font-bold w-48">{t('athleteForm.wardrobe.notes')}</th>
+                                            <th className="hidden sm:table-cell px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.performance')}</th>
+                                            <th className="hidden sm:table-cell px-3 py-3 text-center font-bold w-32">{t('trainingForm.athletes.col.effort')}</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-left font-bold w-48">{t('athleteForm.wardrobe.notes')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-12"></th>
                                         </tr>
                                     </thead>
@@ -461,7 +461,7 @@ const TrainingForm: React.FC = () => {
                                                         className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden sm:table-cell px-3 py-3">
                                                     <select
                                                         value={participant.performance_rating || ''}
                                                         onChange={(e) => updateParticipant(index, 'performance_rating', e.target.value ? parseInt(e.target.value) : undefined)}
@@ -471,7 +471,7 @@ const TrainingForm: React.FC = () => {
                                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n}</option>)}
                                                     </select>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden sm:table-cell px-3 py-3">
                                                     <select
                                                         value={participant.effort_rating || ''}
                                                         onChange={(e) => updateParticipant(index, 'effort_rating', e.target.value ? parseInt(e.target.value) : undefined)}
@@ -481,7 +481,7 @@ const TrainingForm: React.FC = () => {
                                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <option key={n} value={n}>{n}</option>)}
                                                     </select>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden md:table-cell px-3 py-3">
                                                     <input
                                                         type="text"
                                                         value={participant.notes || ''}

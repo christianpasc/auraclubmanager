@@ -269,7 +269,7 @@ const GameForm: React.FC = () => {
                             {t('trainingForm.section.dateTime')}
                         </h3>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-2">{t('gameForm.field.date')}</label>
                                     <input type="date" value={game.game_date || ''} onChange={(e) => updateGame('game_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
@@ -409,13 +409,13 @@ const GameForm: React.FC = () => {
                                     <thead>
                                         <tr className="bg-slate-50 text-slate-500 text-xs uppercase">
                                             <th className="px-4 py-3 text-left font-bold">{t('gameForm.lineup.col.player')}</th>
-                                            <th className="px-3 py-3 text-left font-bold w-36">{t('gameForm.lineup.col.position')}</th>
+                                            <th className="hidden sm:table-cell px-3 py-3 text-left font-bold w-36">{t('gameForm.lineup.col.position')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-16">{t('gameForm.lineup.col.starter')}</th>
-                                            <th className="px-3 py-3 text-center font-bold w-20">{t('gameForm.lineup.col.minutes')}</th>
-                                            <th className="px-3 py-3 text-center font-bold w-16">⚽</th>
-                                            <th className="px-3 py-3 text-center font-bold w-16">🅰️</th>
-                                            <th className="px-3 py-3 text-center font-bold w-16">🟨</th>
-                                            <th className="px-3 py-3 text-center font-bold w-16">🟥</th>
+                                            <th className="hidden sm:table-cell px-3 py-3 text-center font-bold w-20">{t('gameForm.lineup.col.minutes')}</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">⚽</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🅰️</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🟨</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🟥</th>
                                             <th className="px-3 py-3 text-center font-bold w-12"></th>
                                         </tr>
                                     </thead>
@@ -437,7 +437,7 @@ const GameForm: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden sm:table-cell px-3 py-3">
                                                     <select
                                                         value={player.position || player.athlete?.position || ''}
                                                         onChange={(e) => updatePlayer(index, 'position', e.target.value)}
@@ -455,7 +455,7 @@ const GameForm: React.FC = () => {
                                                         className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden sm:table-cell px-3 py-3">
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -466,7 +466,7 @@ const GameForm: React.FC = () => {
                                                         placeholder="0"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden md:table-cell px-3 py-3">
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -476,7 +476,7 @@ const GameForm: React.FC = () => {
                                                         placeholder="0"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden md:table-cell px-3 py-3">
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -486,7 +486,7 @@ const GameForm: React.FC = () => {
                                                         placeholder="0"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden md:table-cell px-3 py-3">
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -496,7 +496,7 @@ const GameForm: React.FC = () => {
                                                         placeholder="0"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+                                                <td className="hidden md:table-cell px-3 py-3">
                                                     <input
                                                         type="number"
                                                         min="0"

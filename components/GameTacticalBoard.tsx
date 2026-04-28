@@ -317,7 +317,7 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
 
             {/* Header bar */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className={`items-center gap-3 flex-wrap ${isFullscreen ? 'hidden sm:flex' : 'flex'}`}>
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
                         <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
                         {homeTeamName || 'Nosso Time'} — {state.ourPlayers.length} titulares
@@ -484,7 +484,7 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                 </div>
 
                 {/* Right panel */}
-                <div className="w-52 border-l border-slate-100 flex flex-col flex-shrink-0 overflow-hidden bg-white">
+                <div className={`w-52 border-l border-slate-100 flex-col flex-shrink-0 overflow-hidden bg-white ${isFullscreen ? 'hidden sm:flex' : 'flex'}`}>
 
                     {/* Our starters */}
                     <div className="border-b border-slate-100">

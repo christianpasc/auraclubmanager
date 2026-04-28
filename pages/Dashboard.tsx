@@ -235,7 +235,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="h-72">
+          <div className="h-48 sm:h-64 lg:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={financialData}>
                 <defs>
@@ -319,10 +319,10 @@ const Dashboard: React.FC = () => {
                   <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                     {t('athletes.athlete')}
                   </th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                     {t('athletes.category')}
                   </th>
-                  <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                     {t('dashboard.registrationDate')}
                   </th>
                   <th className="px-6 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -359,10 +359,10 @@ const Dashboard: React.FC = () => {
                         </Link>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-500">
+                    <td className="hidden sm:table-cell px-6 py-4 text-slate-500">
                       {athlete.category || <span className="text-slate-300">—</span>}
                     </td>
-                    <td className="px-6 py-4 text-slate-500">
+                    <td className="hidden md:table-cell px-6 py-4 text-slate-500">
                       {formatRegistrationDate(athlete.created_at)}
                     </td>
                     <td className="px-6 py-4">
