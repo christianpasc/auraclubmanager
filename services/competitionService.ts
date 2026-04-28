@@ -44,6 +44,7 @@ export interface Game {
     address?: string;
     status?: string;
     notes?: string;
+    tactical_board?: string;
     created_at?: string;
     updated_at?: string;
     // Joined

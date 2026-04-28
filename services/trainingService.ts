@@ -47,6 +47,7 @@ export interface TrainingActivity {
     duration_minutes?: number;
     description?: string;
     order_index?: number;
+    tactical_board?: string;
     created_at?: string;
 }
 

@@ -5,6 +5,7 @@ import {
     Calendar, Save, ArrowLeft, Loader2, Users, Clock, MapPin, Plus, Trash2, UserPlus,
     Dumbbell, ListChecks, GripVertical
 } from 'lucide-react';
+import TacticalBoardModal from '../components/TacticalBoardModal';
 import {
     trainingService, trainingParticipantService, trainingActivityService,
     Training, TrainingParticipant, TrainingActivity,
@@ -25,6 +26,7 @@ const TrainingForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [saved, setSaved] = useState(false);
 
     const [training, setTraining] = useState<Partial<Training>>({
         status: 'scheduled',
@@ -35,6 +37,7 @@ const TrainingForm: React.FC = () => {
     const [athletes, setAthletes] = useState<Athlete[]>([]);
     const [showAthleteSelector, setShowAthleteSelector] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [tacticalBoardIdx, setTacticalBoardIdx] = useState<number | null>(null);
 
     const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
 
@@ -170,11 +173,13 @@ const TrainingForm: React.FC = () => {
                     duration_minutes: a.duration_minutes,
                     description: a.description,
                     order_index: index,
+                    tactical_board: a.tactical_board || null,
                 }));
                 await trainingActivityService.upsertMany(trainingId, activitiesToSave);
             }
 
-            navigate('/training');
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
         } catch (err) {
             setError(t('trainingForm.error.saving'));
             console.error(err);
@@ -234,6 +239,13 @@ const TrainingForm: React.FC = () => {
                     {t('common.save')}
                 </button>
             </div>
+
+            {saved && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <p className="text-sm text-green-700 font-medium">Treino salvo com sucesso!</p>
+                </div>
+            )}
 
             {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -493,6 +505,20 @@ const TrainingForm: React.FC = () => {
                 </div>
             )}
 
+            {/* Tactical Board Modal */}
+            {tacticalBoardIdx !== null && (
+                <TacticalBoardModal
+                    activityName={activities[tacticalBoardIdx]?.activity_name || `Atividade ${tacticalBoardIdx + 1}`}
+                    participants={participants as any[]}
+                    initialData={activities[tacticalBoardIdx]?.tactical_board}
+                    onSave={(data: string) => {
+                        updateActivity(tacticalBoardIdx, 'tactical_board', data);
+                        setTacticalBoardIdx(null);
+                    }}
+                    onClose={() => setTacticalBoardIdx(null)}
+                />
+            )}
+
             {/* Activities Tab */}
             {activeTab === 'activities' && (
                 <div className="space-y-6">
@@ -575,7 +601,29 @@ const TrainingForm: React.FC = () => {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex items-start">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <button
+                                                onClick={() => setTacticalBoardIdx(index)}
+                                                title="Mesa Tática"
+                                                className={`p-2 rounded-lg transition-colors ${activity.tactical_board ? 'text-green-700 bg-green-100 hover:bg-green-200' : 'text-green-600 hover:bg-green-50'}`}
+                                            >
+                                                <svg viewBox="0 0 20 13" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                                                    {/* field boundary */}
+                                                    <rect x="1" y="1" width="18" height="11" rx="0.5" />
+                                                    {/* center line */}
+                                                    <line x1="10" y1="1" x2="10" y2="12" />
+                                                    {/* center circle */}
+                                                    <circle cx="10" cy="6.5" r="2.2" />
+                                                    {/* left penalty area */}
+                                                    <rect x="1" y="3.5" width="3.5" height="6" />
+                                                    {/* right penalty area */}
+                                                    <rect x="15.5" y="3.5" width="3.5" height="6" />
+                                                    {/* left goal */}
+                                                    <rect x="1" y="5" width="1.2" height="3" />
+                                                    {/* right goal */}
+                                                    <rect x="17.8" y="5" width="1.2" height="3" />
+                                                </svg>
+                                            </button>
                                             <button onClick={() => removeActivity(index)} className="p-2 text-slate-400 hover:text-red-500">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

@@ -2,33 +2,47 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Calendar, Save, ArrowLeft, Loader2, Users, Trophy, MapPin, Clock, Plus, Trash2, UserPlus
+    Calendar, Save, ArrowLeft, Loader2, Users, Trophy, MapPin, Clock, Plus, Trash2, UserPlus, LayoutDashboard
 } from 'lucide-react';
+import GameTacticalBoard from '../components/GameTacticalBoard';
 import {
     gameService, gamePlayerService, competitionService, Game, GamePlayer, Competition,
     gameStatuses
 } from '../services/competitionService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTenant } from '../contexts/TenantContext';
 
-type TabType = 'general' | 'lineup';
+type TabType = 'general' | 'lineup' | 'tactical';
 
 const GameForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditing = !!id;
     const { t } = useLanguage();
+    const { currentTenant } = useTenant();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [saved, setSaved] = useState(false);
 
     const [game, setGame] = useState<Partial<Game>>({
         status: 'scheduled',
         is_home_game: true,
-        home_team: 'Aura FC',
+        home_team: currentTenant?.name || '',
     });
+
+    // Auto-fill home team from tenant when creating a new game
+    useEffect(() => {
+        if (!isEditing && currentTenant?.name) {
+            setGame(prev => ({
+                ...prev,
+                home_team: prev.home_team || currentTenant.name,
+            }));
+        }
+    }, [currentTenant?.name, isEditing]);
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [players, setPlayers] = useState<Partial<GamePlayer>[]>([]);
     const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -142,7 +156,8 @@ const GameForm: React.FC = () => {
                 await gamePlayerService.upsertMany(gameId, playersToSave);
             }
 
-            navigate('/games');
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
         } catch (err) {
             setError(t('gameForm.error.saving'));
             console.error(err);
@@ -162,8 +177,9 @@ const GameForm: React.FC = () => {
     }
 
     const tabs = [
-        { id: 'general' as TabType, label: t('gameForm.tab.general'), icon: Calendar },
-        { id: 'lineup' as TabType, label: t('gameForm.tab.lineup'), icon: Users },
+        { id: 'general'  as TabType, label: t('gameForm.tab.general'), icon: Calendar },
+        { id: 'lineup'   as TabType, label: t('gameForm.tab.lineup'), icon: Users },
+        { id: 'tactical' as TabType, label: 'Organização Tática', icon: LayoutDashboard },
     ];
 
     return (
@@ -184,6 +200,13 @@ const GameForm: React.FC = () => {
                     {t('common.save')}
                 </button>
             </div>
+
+            {saved && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <p className="text-sm text-green-700 font-medium">Jogo salvo com sucesso!</p>
+                </div>
+            )}
 
             {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -294,6 +317,18 @@ const GameForm: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Tactical Tab */}
+            {activeTab === 'tactical' && (
+                <GameTacticalBoard
+                    starters={players.filter(p => p.is_starter)}
+                    homeTeamName={game.home_team || 'Nosso Time'}
+                    awayTeamName={game.away_team || 'Adversário'}
+                    isHomeGame={game.is_home_game ?? true}
+                    initialData={game.tactical_board}
+                    onChange={(data) => updateGame('tactical_board', data)}
+                />
             )}
 
             {/* Lineup Tab */}
