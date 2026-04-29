@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { X, MousePointer, Pencil, Eraser, RotateCcw, Trash2, Save, LogIn, LogOut, ArrowLeftRight } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PlayerToken {
     id: string;
@@ -104,6 +105,7 @@ const ToolBtn: React.FC<{
 const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
     activityName, participants, initialData, onSave, onClose,
 }) => {
+    const { t } = useLanguage();
     const svgRef = useRef<SVGSVGElement>(null);
 
     const buildInitialState = (): TacticalBoardData => {
@@ -307,7 +309,7 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={e => { e.stopPropagation(); moveToSection(pl.id, toggleSection); }}
-                        title={isBenched ? 'Colocar em campo' : 'Mandar pro banco'}
+                        title={isBenched ? t('tacticalBoard.training.putInField') : t('tacticalBoard.training.sendToBench')}
                         className="p-0.5 text-slate-400 hover:text-white transition-colors"
                     >
                         {isBenched ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
@@ -315,7 +317,7 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={e => { e.stopPropagation(); moveToSection(pl.id, switchSection); }}
-                        title={`Mover para Time ${otherTeam}`}
+                        title={`${t('tacticalBoard.training.moveToTeam')} ${otherTeam}`}
                         className="p-0.5 text-slate-400 hover:text-white transition-colors"
                     >
                         <ArrowLeftRight className="w-3 h-3" />
@@ -336,7 +338,7 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
         >
             {players.map(pl => <PlayerCard key={pl.id} pl={pl} section={section} />)}
             {players.length === 0 && panelDragId && dropTarget !== section && (
-                <p className="text-[10px] text-slate-600 text-center py-1">Solte aqui</p>
+                <p className="text-[10px] text-slate-600 text-center py-1">{t('tacticalBoard.training.dropHere')}</p>
             )}
         </div>
     );
@@ -358,19 +360,19 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                             </svg>
                         </div>
                         <div>
-                            <p className="text-white font-bold text-sm leading-tight">Mesa Tática</p>
-                            <p className="text-slate-400 text-xs truncate max-w-[200px]">{activityName || 'Atividade'}</p>
+                            <p className="text-white font-bold text-sm leading-tight">{t('tacticalBoard.training.title')}</p>
+                            <p className="text-slate-400 text-xs truncate max-w-[200px]">{activityName || t('tacticalBoard.training.activity')}</p>
                         </div>
                     </div>
                     {/* Team counter pills */}
                     <div className="hidden sm:flex items-center gap-2">
                         <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-900/40 rounded-full text-xs font-semibold text-blue-300">
                             <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                            Time A — {teamAField.length} em campo{teamABench.length > 0 ? ` · ${teamABench.length} banco` : ''}
+                            {t('tacticalBoard.training.teamA')} — {teamAField.length} {t('tacticalBoard.training.onField')}{teamABench.length > 0 ? ` · ${teamABench.length} ${t('tacticalBoard.training.bench').toLowerCase()}` : ''}
                         </span>
                         <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-900/40 rounded-full text-xs font-semibold text-red-300">
                             <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-                            Time B — {teamBField.length} em campo{teamBBench.length > 0 ? ` · ${teamBBench.length} banco` : ''}
+                            {t('tacticalBoard.training.teamB')} — {teamBField.length} {t('tacticalBoard.training.onField')}{teamBBench.length > 0 ? ` · ${teamBBench.length} ${t('tacticalBoard.training.bench').toLowerCase()}` : ''}
                         </span>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700 transition-colors">
@@ -383,13 +385,13 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
 
                     {/* Left toolbar */}
                     <div className="flex flex-col items-center gap-2 p-2 border-r border-slate-700 bg-slate-800/60 flex-shrink-0">
-                        <ToolBtn active={tool === 'select'} onClick={() => setTool('select')} title="Mover jogadores">
+                        <ToolBtn active={tool === 'select'} onClick={() => setTool('select')} title={t('tacticalBoard.tool.move')}>
                             <MousePointer className="w-4 h-4" />
                         </ToolBtn>
-                        <ToolBtn active={tool === 'draw'} onClick={() => setTool('draw')} title="Desenhar seta">
+                        <ToolBtn active={tool === 'draw'} onClick={() => setTool('draw')} title={t('tacticalBoard.tool.draw')}>
                             <Pencil className="w-4 h-4" />
                         </ToolBtn>
-                        <ToolBtn active={tool === 'erase'} onClick={() => setTool('erase')} title="Apagar seta">
+                        <ToolBtn active={tool === 'erase'} onClick={() => setTool('erase')} title={t('tacticalBoard.tool.erase')}>
                             <Eraser className="w-4 h-4" />
                         </ToolBtn>
                         <div className="w-7 h-px bg-slate-700 my-1" />
@@ -401,10 +403,10 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                             />
                         ))}
                         <div className="w-7 h-px bg-slate-700 my-1" />
-                        <ToolBtn active={false} onClick={undo} title="Desfazer" disabled={history.length === 0}>
+                        <ToolBtn active={false} onClick={undo} title={t('tacticalBoard.tool.undo')} disabled={history.length === 0}>
                             <RotateCcw className="w-4 h-4" />
                         </ToolBtn>
-                        <ToolBtn active={false} onClick={clearArrows} title="Limpar setas">
+                        <ToolBtn active={false} onClick={clearArrows} title={t('tacticalBoard.tool.clearArrows')}>
                             <Trash2 className="w-4 h-4" />
                         </ToolBtn>
                     </div>
@@ -500,18 +502,18 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-900/30">
                                     <span className="w-2.5 h-2.5 rounded-full bg-blue-500 flex-shrink-0" />
                                     <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">
-                                        Time A
+                                        {t('tacticalBoard.training.teamA')}
                                     </span>
                                     <span className="ml-auto text-[10px] text-blue-400 font-semibold">
                                         {teamAField.length + teamABench.length}
                                     </span>
                                 </div>
                                 <div className="px-2 pt-2">
-                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">Em Campo</p>
+                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">{t('tacticalBoard.training.inField')}</p>
                                     <DropZone section="A-field" players={teamAField} />
                                 </div>
                                 <div className="px-2 pt-1 pb-2">
-                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">Banco</p>
+                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">{t('tacticalBoard.training.bench')}</p>
                                     <DropZone section="A-bench" players={teamABench} />
                                 </div>
                             </div>
@@ -521,18 +523,18 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                                 <div className="flex items-center gap-2 px-3 py-2 bg-red-900/30">
                                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />
                                     <span className="text-xs font-bold text-red-300 uppercase tracking-wider">
-                                        Time B
+                                        {t('tacticalBoard.training.teamB')}
                                     </span>
                                     <span className="ml-auto text-[10px] text-red-400 font-semibold">
                                         {teamBField.length + teamBBench.length}
                                     </span>
                                 </div>
                                 <div className="px-2 pt-2">
-                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">Em Campo</p>
+                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">{t('tacticalBoard.training.inField')}</p>
                                     <DropZone section="B-field" players={teamBField} />
                                 </div>
                                 <div className="px-2 pt-1 pb-2">
-                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">Banco</p>
+                                    <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider px-1 mb-1">{t('tacticalBoard.training.bench')}</p>
                                     <DropZone section="B-bench" players={teamBBench} />
                                 </div>
                             </div>
@@ -542,7 +544,7 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                         {/* Panel legend */}
                         <div className="border-t border-slate-700 px-3 py-2 flex-shrink-0">
                             <p className="text-[9px] text-slate-600 leading-tight">
-                                Arraste para mover entre times e banco
+                                {t('tacticalBoard.training.dragHint')}
                             </p>
                         </div>
                     </div>
@@ -551,19 +553,19 @@ const TacticalBoardModal: React.FC<TacticalBoardModalProps> = ({
                 {/* Footer */}
                 <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700 bg-slate-800/50 flex-shrink-0">
                     <p className="text-xs text-slate-500 hidden sm:block">
-                        {tool === 'select' && '↖ Arraste os jogadores para reposicioná-los'}
-                        {tool === 'draw'   && '↗ Clique e arraste para desenhar setas'}
-                        {tool === 'erase'  && '✕ Clique em uma seta para apagá-la'}
+                        {tool === 'select' && t('tacticalBoard.training.hintSelect')}
+                        {tool === 'draw'   && t('tacticalBoard.training.hintDraw')}
+                        {tool === 'erase'  && t('tacticalBoard.training.hintErase')}
                     </p>
                     <div className="flex items-center gap-3 ml-auto">
                         <button onClick={onClose}
                             className="px-4 py-2 text-slate-300 hover:text-white text-sm font-semibold transition-colors rounded-lg hover:bg-slate-700">
-                            Cancelar
+                            {t('common.cancel')}
                         </button>
                         <button onClick={() => onSave(JSON.stringify(state))}
                             className="flex items-center gap-2 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-lg transition-colors shadow-lg shadow-green-600/25">
                             <Save className="w-4 h-4" />
-                            Salvar Mesa
+                            {t('tacticalBoard.training.save')}
                         </button>
                     </div>
                 </div>

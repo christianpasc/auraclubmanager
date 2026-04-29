@@ -179,7 +179,7 @@ const GameForm: React.FC = () => {
     const tabs = [
         { id: 'general'  as TabType, label: t('gameForm.tab.general'), icon: Calendar },
         { id: 'lineup'   as TabType, label: t('gameForm.tab.lineup'), icon: Users },
-        { id: 'tactical' as TabType, label: 'Organização Tática', icon: LayoutDashboard },
+        { id: 'tactical' as TabType, label: t('gameForm.tab.tactical'), icon: LayoutDashboard },
     ];
 
     return (
