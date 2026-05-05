@@ -433,17 +433,26 @@ const Plans: React.FC = () => {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => handleSubscribe(plan)}
-                                disabled={subscribing === plan.id}
-                                className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${plan.is_popular
-                                    ? 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
-                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                    } disabled:opacity-50`}
-                            >
-                                {subscribing === plan.id && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {getText('Assinar Agora', 'Subscribe Now', 'Suscribirse Ahora', 'S\'abonner maintenant', 'Subscrever Agora')}
-                            </button>
+                            {(plan as any).is_coming_soon ? (
+                                <button
+                                    disabled
+                                    className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 bg-violet-50 text-violet-400 border-2 border-violet-100 cursor-not-allowed"
+                                >
+                                    🔜 {getText('Em Breve', 'Coming Soon', 'Próximamente', 'Bientôt disponible', 'Em Breve')}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => handleSubscribe(plan)}
+                                    disabled={subscribing === plan.id}
+                                    className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${plan.is_popular
+                                        ? 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                        } disabled:opacity-50`}
+                                >
+                                    {subscribing === plan.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {getText('Assinar Agora', 'Subscribe Now', 'Suscribirse Ahora', 'S\'abonner maintenant', 'Subscrever Agora')}
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>

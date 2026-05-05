@@ -17,7 +17,8 @@ import {
   Calendar,
   Clock,
   AlertTriangle,
-  X
+  X,
+  Radar,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { icon: Trophy, label: t('nav.competitions'), path: '/competitions' },
     { icon: Calendar, label: t('nav.games'), path: '/games' },
     { icon: Dumbbell, label: t('nav.training'), path: '/training' },
+    ...(!isSchool ? [{ icon: Radar, label: t('nav.prospects'), path: '/prospects' }] : []),
   ];
 
   const bottomItems = [

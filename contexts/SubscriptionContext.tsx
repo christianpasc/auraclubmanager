@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { subscriptionService, SubscriptionInfo } from '../services/subscriptionService';
+import { ModuleKey, isModuleEnabled } from '../services/featureFlagService';
 import { useTenant } from './TenantContext';
 import { useAuth } from './AuthContext';
 
@@ -9,6 +10,7 @@ interface SubscriptionContextType {
     loading: boolean;
     refreshSubscription: () => Promise<void>;
     canAccessApp: boolean;
+    hasFeature: (key: ModuleKey) => boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -27,7 +29,7 @@ interface SubscriptionProviderProps {
 
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
     const { user } = useAuth();
-    const { currentTenant, loading: tenantLoading } = useTenant();
+    const { currentTenant, loading: tenantLoading, isSchool } = useTenant();
     const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -99,6 +101,14 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
 
 
+    const hasFeature = (key: ModuleKey): boolean => {
+        if (!subscriptionInfo) return true;
+        const features = isSchool
+            ? subscriptionInfo.moduleFeaturesSchool
+            : subscriptionInfo.moduleFeaturesClub;
+        return isModuleEnabled(features, key);
+    };
+
     return (
         <SubscriptionContext.Provider
             value={{
@@ -106,6 +116,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
                 loading,
                 refreshSubscription,
                 canAccessApp,
+                hasFeature,
             }}
         >
             {children}

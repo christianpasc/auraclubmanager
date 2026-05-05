@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminPlanService, StripePlan, PlanLanguage, PlanI18nRecord, PlanFeaturesI18nRecord } from '../../services/adminPlanService';
+import { PLAN_MODULES, ModuleFeatures } from '../../services/featureFlagService';
 import { stripeConfig } from '../../lib/stripe';
 import {
     Search, Loader2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
@@ -42,12 +43,15 @@ interface PlanFormData {
     price: string;
     currency: string;
     is_active: boolean;
+    is_coming_soon: boolean;
     sort_order: string;
     is_popular: boolean;
     max_users: string;
     max_athletes: string;
     unlimited_users: boolean;
     unlimited_athletes: boolean;
+    module_features_school: ModuleFeatures;
+    module_features_club: ModuleFeatures;
 }
 
 const emptyLangFields = (): LangFields => ({
@@ -74,12 +78,15 @@ const emptyForm: PlanFormData = {
     price: '',
     currency: 'brl',
     is_active: true,
+    is_coming_soon: false,
     sort_order: '0',
     is_popular: false,
     max_users: '',
     max_athletes: '',
     unlimited_users: true,
     unlimited_athletes: true,
+    module_features_school: {},
+    module_features_club: {},
 };
 
 const parseJsonArray = (val: any): string[] => {
@@ -180,12 +187,15 @@ const AdminPlans: React.FC = () => {
             price: plan.price.toString(),
             currency: plan.currency || 'brl',
             is_active: plan.is_active,
+            is_coming_soon: plan.is_coming_soon || false,
             sort_order: (plan.sort_order || 0).toString(),
             is_popular: plan.is_popular || false,
             max_users: plan.max_users !== null && plan.max_users !== undefined ? plan.max_users.toString() : '',
             max_athletes: plan.max_athletes !== null && plan.max_athletes !== undefined ? plan.max_athletes.toString() : '',
             unlimited_users: plan.max_users === null || plan.max_users === undefined,
             unlimited_athletes: plan.max_athletes === null || plan.max_athletes === undefined,
+            module_features_school: (plan.module_features_school as ModuleFeatures) || {},
+            module_features_club: (plan.module_features_club as ModuleFeatures) || {},
         });
         setShowModal(true);
     };
@@ -264,6 +274,7 @@ const AdminPlans: React.FC = () => {
                 features_club: ptBr.features_club.filter(f => f.trim() !== ''),
                 sort_order: parseInt(form.sort_order) || 0,
                 is_popular: form.is_popular,
+                is_coming_soon: form.is_coming_soon,
                 max_users: form.unlimited_users ? null : (parseInt(form.max_users) || 1),
                 max_athletes: form.unlimited_athletes ? null : (parseInt(form.max_athletes) || 1),
                 name_i18n: nameI18n,
@@ -275,8 +286,14 @@ const AdminPlans: React.FC = () => {
 
             if (editingPlan?.id) {
                 await adminPlanService.updatePlan(editingPlan.id, planData);
+                await adminPlanService.updateComingSoon(editingPlan.id, form.is_coming_soon);
+                await adminPlanService.updateModuleFeatures(editingPlan.id, form.module_features_school, form.module_features_club);
             } else {
-                await adminPlanService.createPlan(planData);
+                const created = await adminPlanService.createPlan(planData);
+                if (created.id) {
+                    await adminPlanService.updateComingSoon(created.id, form.is_coming_soon);
+                    await adminPlanService.updateModuleFeatures(created.id, form.module_features_school, form.module_features_club);
+                }
             }
 
             setShowModal(false);
@@ -394,6 +411,9 @@ const AdminPlans: React.FC = () => {
                                                 <div className="font-medium text-slate-900">{plan.name}</div>
                                                 {plan.is_popular && (
                                                     <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                                )}
+                                                {plan.is_coming_soon && (
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-700">Em breve</span>
                                                 )}
                                             </div>
                                             {plan.description && (
@@ -871,6 +891,93 @@ const AdminPlans: React.FC = () => {
                                 </p>
                             </div>
 
+                            {/* ── Módulos do Plano ── */}
+                            <div className="space-y-3">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-700 mb-0.5">Módulos Habilitados</p>
+                                    <p className="text-xs text-slate-500">Deixe vazio para liberar tudo. Marque ao menos um para restringir por tipo de organização.</p>
+                                </div>
+
+                                {/* Escolinha */}
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-xl space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold text-green-700 uppercase tracking-wide">🎓 Escolinha de Futebol</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const schoolMods = PLAN_MODULES.filter(m => !m.clubOnly);
+                                                const all = schoolMods.every(m => form.module_features_school[m.key] === true);
+                                                const next: ModuleFeatures = {};
+                                                schoolMods.forEach(m => { next[m.key] = !all; });
+                                                setForm(prev => ({ ...prev, module_features_school: next }));
+                                            }}
+                                            className="text-xs text-green-700 font-semibold hover:text-green-900"
+                                        >
+                                            {PLAN_MODULES.filter(m => !m.clubOnly).every(m => form.module_features_school[m.key] === true) ? 'Desmarcar todos' : 'Marcar todos'}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {PLAN_MODULES.filter(m => !m.clubOnly).map(mod => (
+                                            <label key={mod.key} className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-green-100 cursor-pointer hover:border-green-400 transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={form.module_features_school[mod.key] === true}
+                                                    onChange={(e) => setForm(prev => ({
+                                                        ...prev,
+                                                        module_features_school: { ...prev.module_features_school, [mod.key]: e.target.checked },
+                                                    }))}
+                                                    className="w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500"
+                                                />
+                                                <span className="text-base leading-none">{mod.emoji}</span>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold text-slate-700">{mod.labelPt}</p>
+                                                    <p className="text-[10px] text-slate-400 truncate">{mod.description}</p>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Clube */}
+                                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide">🛡️ Clube de Futebol</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const all = PLAN_MODULES.every(m => form.module_features_club[m.key] === true);
+                                                const next: ModuleFeatures = {};
+                                                PLAN_MODULES.forEach(m => { next[m.key] = !all; });
+                                                setForm(prev => ({ ...prev, module_features_club: next }));
+                                            }}
+                                            className="text-xs text-indigo-700 font-semibold hover:text-indigo-900"
+                                        >
+                                            {PLAN_MODULES.every(m => form.module_features_club[m.key] === true) ? 'Desmarcar todos' : 'Marcar todos'}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {PLAN_MODULES.map(mod => (
+                                            <label key={mod.key} className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-indigo-100 cursor-pointer hover:border-indigo-400 transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={form.module_features_club[mod.key] === true}
+                                                    onChange={(e) => setForm(prev => ({
+                                                        ...prev,
+                                                        module_features_club: { ...prev.module_features_club, [mod.key]: e.target.checked },
+                                                    }))}
+                                                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                                                />
+                                                <span className="text-base leading-none">{mod.emoji}</span>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold text-slate-700">{mod.labelPt}</p>
+                                                    <p className="text-[10px] text-slate-400 truncate">{mod.description}</p>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Toggles */}
                             <div className="flex flex-wrap gap-6">
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -890,6 +997,15 @@ const AdminPlans: React.FC = () => {
                                         className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
                                     />
                                     <span className="text-sm font-medium text-slate-700">⭐ Destacar como Popular</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.is_coming_soon}
+                                        onChange={(e) => setForm(prev => ({ ...prev, is_coming_soon: e.target.checked }))}
+                                        className="w-4 h-4 text-violet-600 rounded border-slate-300 focus:ring-violet-500"
+                                    />
+                                    <span className="text-sm font-medium text-slate-700">🔜 Em Breve</span>
                                 </label>
                             </div>
 

@@ -5,6 +5,7 @@ import {
     Calendar, Save, ArrowLeft, Loader2, Users, Trophy, MapPin, Clock, Plus, Trash2, UserPlus, LayoutDashboard
 } from 'lucide-react';
 import GameTacticalBoard from '../components/GameTacticalBoard';
+import FeatureGate from '../components/FeatureGate';
 import {
     gameService, gamePlayerService, competitionService, Game, GamePlayer, Competition,
     gameStatuses
@@ -321,14 +322,16 @@ const GameForm: React.FC = () => {
 
             {/* Tactical Tab */}
             {activeTab === 'tactical' && (
-                <GameTacticalBoard
-                    starters={players.filter(p => p.is_starter)}
-                    homeTeamName={game.home_team || 'Nosso Time'}
-                    awayTeamName={game.away_team || 'Adversário'}
-                    isHomeGame={game.is_home_game ?? true}
-                    initialData={game.tactical_board}
-                    onChange={(data) => updateGame('tactical_board', data)}
-                />
+                <FeatureGate feature="tactical">
+                    <GameTacticalBoard
+                        starters={players.filter(p => p.is_starter)}
+                        homeTeamName={game.home_team || 'Nosso Time'}
+                        awayTeamName={game.away_team || 'Adversário'}
+                        isHomeGame={game.is_home_game ?? true}
+                        initialData={game.tactical_board}
+                        onChange={(data) => updateGame('tactical_board', data)}
+                    />
+                </FeatureGate>
             )}
 
             {/* Lineup Tab */}

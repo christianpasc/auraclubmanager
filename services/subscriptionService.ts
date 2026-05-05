@@ -1,5 +1,6 @@
 
 import { supabase } from '../lib/supabase';
+import { ModuleFeatures } from './featureFlagService';
 
 export interface SubscriptionInfo {
     trialDaysRemaining: number;
@@ -9,6 +10,8 @@ export interface SubscriptionInfo {
     trialEndsAt: Date | null;
     planName: string | null;
     subscriptionEndsAt: Date | null;
+    moduleFeaturesSchool: ModuleFeatures;
+    moduleFeaturesClub: ModuleFeatures;
 }
 
 export const subscriptionService = {
@@ -90,20 +93,24 @@ export const subscriptionService = {
             subscriptionStatus = 'trial';
         }
 
-        // Fetch plan name if subscription_plan_id exists
+        // Fetch plan name and module_features if subscription_plan_id exists
         let planName: string | null = tenant.subscription_plan || null;
+        let moduleFeaturesSchool: ModuleFeatures = {};
+        let moduleFeaturesClub: ModuleFeatures = {};
         if (tenant.subscription_plan_id) {
             try {
                 const { data: planData } = await supabase
                     .from('stripe_plans')
-                    .select('name')
+                    .select('name, module_features_school, module_features_club')
                     .eq('id', tenant.subscription_plan_id)
                     .single();
                 if (planData) {
                     planName = planData.name;
+                    moduleFeaturesSchool = (planData.module_features_school as ModuleFeatures) || {};
+                    moduleFeaturesClub = (planData.module_features_club as ModuleFeatures) || {};
                 }
             } catch {
-                // Ignore error - keep existing planName
+                // Ignore error - keep defaults (all modules enabled)
             }
         }
 
@@ -115,6 +122,8 @@ export const subscriptionService = {
             trialEndsAt,
             planName,
             subscriptionEndsAt,
+            moduleFeaturesSchool,
+            moduleFeaturesClub,
         };
     },
 

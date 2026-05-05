@@ -23,6 +23,8 @@ import Settings from './pages/Settings';
 import Enrollments from './pages/Enrollments';
 import EnrollmentForm from './pages/EnrollmentForm';
 import MonthlyFees from './pages/MonthlyFees';
+import Prospects from './pages/Prospects';
+import ProspectForm from './pages/ProspectForm';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -31,7 +33,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
 import Onboarding from './pages/Onboarding';
+import FeatureGate from './components/FeatureGate';
 import { useAuth } from './contexts/AuthContext';
+import { ModuleKey } from './services/featureFlagService';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -56,6 +60,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       case '/subscription': return t('pages.subscription');
       case '/plans': return t('pages.plans');
       case '/settings': return t('pages.settings');
+      case '/prospects': return t('pages.prospects');
       default: return 'Aura Club';
     }
   };
@@ -134,6 +139,11 @@ const NotFoundPage: React.FC = () => {
   );
 };
 
+// Wraps a page with a FeatureGate — shows blurred content + lock overlay when disabled
+const Gated: React.FC<{ feature: ModuleKey; children: React.ReactNode }> = ({ feature, children }) => (
+  <FeatureGate feature={feature}>{children}</FeatureGate>
+);
+
 // Wrapper for routes that should only be accessible by school-type tenants
 const SchoolOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isSchool, loading } = useTenant();
@@ -173,22 +183,25 @@ const ProtectedRoutes: React.FC = () => {
 
             {/* Protected Routes - require active trial or subscription */}
             <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
-            <Route path="/athletes" element={<ProtectedLayout><Athletes /></ProtectedLayout>} />
+            <Route path="/athletes" element={<ProtectedLayout><Gated feature="athletes"><Athletes /></Gated></ProtectedLayout>} />
             <Route path="/athletes/new" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
             <Route path="/athletes/:id" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
-            <Route path="/enrollments" element={<ProtectedLayout><SchoolOnlyRoute><Enrollments /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/enrollments" element={<ProtectedLayout><SchoolOnlyRoute><Gated feature="enrollments"><Enrollments /></Gated></SchoolOnlyRoute></ProtectedLayout>} />
             <Route path="/enrollments/new" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
             <Route path="/enrollments/:id" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
-            <Route path="/competitions" element={<ProtectedLayout><Competitions /></ProtectedLayout>} />
+            <Route path="/competitions" element={<ProtectedLayout><Gated feature="competitions"><Competitions /></Gated></ProtectedLayout>} />
             <Route path="/competitions/new" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
             <Route path="/competitions/:id" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
-            <Route path="/games" element={<ProtectedLayout><Games /></ProtectedLayout>} />
+            <Route path="/games" element={<ProtectedLayout><Gated feature="games"><Games /></Gated></ProtectedLayout>} />
             <Route path="/games/new" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
             <Route path="/games/:id" element={<ProtectedLayout><GameForm /></ProtectedLayout>} />
-            <Route path="/training" element={<ProtectedLayout><Training /></ProtectedLayout>} />
+            <Route path="/training" element={<ProtectedLayout><Gated feature="training"><Training /></Gated></ProtectedLayout>} />
             <Route path="/training/new" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
             <Route path="/training/:id" element={<ProtectedLayout><TrainingForm /></ProtectedLayout>} />
-            <Route path="/finance" element={<ProtectedLayout><Finance /></ProtectedLayout>} />
+            <Route path="/prospects" element={<ProtectedLayout><Gated feature="scouting"><Prospects /></Gated></ProtectedLayout>} />
+            <Route path="/prospects/new" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
+            <Route path="/prospects/:id" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
+            <Route path="/finance" element={<ProtectedLayout><Gated feature="finance"><Finance /></Gated></ProtectedLayout>} />
             <Route path="/finance/fees" element={<ProtectedLayout><SchoolOnlyRoute><MonthlyFees /></SchoolOnlyRoute></ProtectedLayout>} />
             <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
             <Route path="*" element={

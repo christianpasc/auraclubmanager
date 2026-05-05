@@ -1,5 +1,6 @@
 
 import { supabase } from '../lib/supabase';
+import { ModuleFeatures } from './featureFlagService';
 
 export type PlanLanguage = 'pt-BR' | 'pt-PT' | 'en-US' | 'es-ES' | 'fr-FR';
 
@@ -16,6 +17,7 @@ export interface StripePlan {
     price: number;
     currency: string;
     is_active: boolean;
+    is_coming_soon: boolean;
     features: string[];
     features_school: string[];
     features_club: string[];
@@ -29,6 +31,8 @@ export interface StripePlan {
     features_i18n?: PlanFeaturesI18nRecord;
     features_school_i18n?: PlanFeaturesI18nRecord;
     features_club_i18n?: PlanFeaturesI18nRecord;
+    module_features_school?: ModuleFeatures;
+    module_features_club?: ModuleFeatures;
     created_at?: string;
     updated_at?: string;
 }
@@ -116,9 +120,32 @@ export const adminPlanService = {
         if (error) throw error;
     },
 
+    // Update is_coming_soon via RPC to bypass RLS
+    async updateComingSoon(id: string, isComingSoon: boolean): Promise<void> {
+        const { error } = await supabase.rpc('admin_update_coming_soon', {
+            p_id: id,
+            p_is_coming_soon: isComingSoon,
+        });
+        if (error) throw error;
+    },
+
+    // Update module_features (school + club) via RPC to bypass RLS
+    async updateModuleFeatures(id: string, school: ModuleFeatures, club: ModuleFeatures): Promise<void> {
+        const { error } = await supabase.rpc('admin_update_module_features', {
+            p_id: id,
+            p_module_features_school: school,
+            p_module_features_club: club,
+        });
+        if (error) throw error;
+    },
+
     // Get active plans (public - for user-facing page)
     async getActivePlans(): Promise<StripePlan[]> {
-        const { data, error } = await supabase.rpc('get_active_plans');
+        const { data, error } = await supabase
+            .from('stripe_plans')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
         if (error) throw error;
         return (data || []) as StripePlan[];
     },

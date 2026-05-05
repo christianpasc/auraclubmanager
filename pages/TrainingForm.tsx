@@ -13,6 +13,7 @@ import {
 } from '../services/trainingService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 type TabType = 'general' | 'athletes' | 'activities';
 
@@ -21,6 +22,7 @@ const TrainingForm: React.FC = () => {
     const navigate = useNavigate();
     const isEditing = !!id;
     const { t } = useLanguage();
+    const { hasFeature } = useSubscription();
 
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(false);
@@ -603,9 +605,9 @@ const TrainingForm: React.FC = () => {
                                         </div>
                                         <div className="flex flex-col items-center gap-2">
                                             <button
-                                                onClick={() => setTacticalBoardIdx(index)}
-                                                title="Mesa Tática"
-                                                className={`p-2 rounded-lg transition-colors ${activity.tactical_board ? 'text-green-700 bg-green-100 hover:bg-green-200' : 'text-green-600 hover:bg-green-50'}`}
+                                                onClick={() => hasFeature('tactical') ? setTacticalBoardIdx(index) : navigate('/subscription')}
+                                                title={hasFeature('tactical') ? 'Mesa Tática' : 'Mesa Tática — disponível no plano Pro'}
+                                                className={`p-2 rounded-lg transition-colors ${!hasFeature('tactical') ? 'text-slate-300 cursor-not-allowed' : activity.tactical_board ? 'text-green-700 bg-green-100 hover:bg-green-200' : 'text-green-600 hover:bg-green-50'}`}
                                             >
                                                 <svg viewBox="0 0 20 13" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
                                                     {/* field boundary */}
