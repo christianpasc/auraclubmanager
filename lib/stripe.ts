@@ -45,13 +45,24 @@ export function getStripe(): Promise<Stripe | null> {
     return stripePromise || Promise.resolve(null);
 }
 
+// Maps app language codes to Stripe-supported locale codes
+const STRIPE_LOCALE_MAP: Record<string, string> = {
+    'pt-BR': 'pt-BR',
+    'pt-PT': 'pt',
+    'en-US': 'en',
+    'es-ES': 'es',
+    'fr-FR': 'fr',
+};
+
 // Create a Stripe Checkout Session via Edge Function
 export async function createCheckoutSession(
     planId: string,
-    tenantId: string
+    tenantId: string,
+    language?: string
 ): Promise<{ url: string; session_id: string } | null> {
     const successUrl = `${window.location.origin}${window.location.pathname}#/plans?success=true`;
     const cancelUrl = `${window.location.origin}${window.location.pathname}#/plans?canceled=true`;
+    const locale = (language && STRIPE_LOCALE_MAP[language]) || 'auto';
 
     const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
@@ -60,6 +71,7 @@ export async function createCheckoutSession(
             mode: stripeConfig.mode,
             success_url: successUrl,
             cancel_url: cancelUrl,
+            locale,
         },
     });
 
@@ -81,15 +93,18 @@ export async function createCheckoutSession(
 
 // Create a Stripe Customer Portal Session via Edge Function
 export async function createPortalSession(
-    tenantId: string
+    tenantId: string,
+    language?: string
 ): Promise<{ url: string }> {
     const returnUrl = `${window.location.origin}${window.location.pathname}#/subscription`;
+    const locale = (language && STRIPE_LOCALE_MAP[language]) || 'auto';
 
     const { data, error } = await supabase.functions.invoke('create-portal-session', {
         body: {
             tenant_id: tenantId,
             mode: stripeConfig.mode,
             return_url: returnUrl,
+            locale,
         },
     });
 

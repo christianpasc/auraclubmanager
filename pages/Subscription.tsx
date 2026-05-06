@@ -29,7 +29,7 @@ const Subscription: React.FC = () => {
     try {
       setPortalLoading(true);
       setErrorMessage(null);
-      const result = await createPortalSession(currentTenant.id);
+      const result = await createPortalSession(currentTenant.id, language);
       if (result?.url) {
         window.location.href = result.url;
       }

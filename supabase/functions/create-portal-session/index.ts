@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-        const { tenant_id, mode, return_url } = await req.json();
+        const { tenant_id, mode, return_url, locale } = await req.json();
 
         if (!tenant_id || !mode) {
             return new Response(
@@ -71,6 +71,7 @@ Deno.serve(async (req: Request) => {
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: tenant.stripe_customer_id,
             return_url: return_url || `${req.headers.get("origin")}/#/subscription`,
+            locale: locale || 'auto',
         });
 
         return new Response(

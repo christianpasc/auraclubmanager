@@ -192,7 +192,7 @@ const Plans: React.FC = () => {
         try {
             setSubscribing(plan.id!);
             setErrorMessage(null);
-            const result = await createCheckoutSession(plan.id!, currentTenant.id);
+            const result = await createCheckoutSession(plan.id!, currentTenant.id, language);
             if (result?.url) {
                 window.location.href = result.url;
             } else {

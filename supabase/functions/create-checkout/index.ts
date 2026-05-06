@@ -25,6 +25,7 @@ Deno.serve(async (req: Request) => {
             mode,
             success_url,
             cancel_url,
+            locale,
         } = await req.json();
 
         if (!plan_id || !tenant_id || !mode) {
@@ -82,7 +83,7 @@ Deno.serve(async (req: Request) => {
         // Get or create Stripe customer for this tenant
         const { data: tenant, error: tenantError } = await supabase
             .from("tenants")
-            .select("id, name, stripe_customer_id")
+            .select("id, name, stripe_customer_id, stripe_customer_id_test")
             .eq("id", tenant_id)
             .single();
 
@@ -93,7 +94,8 @@ Deno.serve(async (req: Request) => {
             );
         }
 
-        let customerId = tenant.stripe_customer_id;
+        const customerField = mode === "live" ? "stripe_customer_id" : "stripe_customer_id_test";
+        let customerId = mode === "live" ? tenant.stripe_customer_id : tenant.stripe_customer_id_test;
 
         if (!customerId) {
             // Create a new Stripe customer
@@ -106,10 +108,10 @@ Deno.serve(async (req: Request) => {
             });
             customerId = customer.id;
 
-            // Save customer ID to tenant
+            // Save customer ID to tenant using the correct mode field
             await supabase
                 .from("tenants")
-                .update({ stripe_customer_id: customerId })
+                .update({ [customerField]: customerId })
                 .eq("id", tenant_id);
         }
 
@@ -127,6 +129,7 @@ Deno.serve(async (req: Request) => {
                 },
             ],
             mode: checkoutMode,
+            locale: locale || 'auto',
             success_url: success_url || `${req.headers.get("origin")}/#/plans?success=true`,
             cancel_url: cancel_url || `${req.headers.get("origin")}/#/plans?canceled=true`,
             metadata: {
