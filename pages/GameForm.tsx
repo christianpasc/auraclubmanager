@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Calendar, Save, ArrowLeft, Loader2, Users, Trophy, MapPin, Clock, Plus, Trash2, UserPlus, LayoutDashboard
+    Calendar, Save, ArrowLeft, Loader2, Users, Trophy, MapPin, Clock, Plus, Trash2, UserPlus, LayoutDashboard,
+    ArrowUpFromLine, ArrowDownToLine, RefreshCw, Share2
 } from 'lucide-react';
 import GameTacticalBoard from '../components/GameTacticalBoard';
 import FeatureGate from '../components/FeatureGate';
@@ -15,6 +16,16 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 
 type TabType = 'general' | 'lineup' | 'tactical';
+
+interface LocalSubstitution {
+    localId: string;
+    minute: number;
+    outAthleteId: string;
+    inAthleteId: string;
+}
+
+let subCounter = 0;
+const newLocalId = () => `sub-${++subCounter}`;
 
 const GameForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -35,7 +46,6 @@ const GameForm: React.FC = () => {
         home_team: currentTenant?.name || '',
     });
 
-    // Auto-fill home team from tenant when creating a new game
     useEffect(() => {
         if (!isEditing && currentTenant?.name) {
             setGame(prev => ({
@@ -44,11 +54,21 @@ const GameForm: React.FC = () => {
             }));
         }
     }, [currentTenant?.name, isEditing]);
+
     const [competitions, setCompetitions] = useState<Competition[]>([]);
     const [players, setPlayers] = useState<Partial<GamePlayer>[]>([]);
     const [athletes, setAthletes] = useState<Athlete[]>([]);
     const [showAthleteSelector, setShowAthleteSelector] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+    // Substitutions
+    const [substitutions, setSubstitutions] = useState<LocalSubstitution[]>([]);
+    const [addingSubstitution, setAddingSubstitution] = useState(false);
+    const [newSub, setNewSub] = useState<{ minute: number; outAthleteId: string; inAthleteId: string }>({
+        minute: 0,
+        outAthleteId: '',
+        inAthleteId: '',
+    });
 
     const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
     const positions = ['Goleiro', 'Zagueiro', 'Lateral Direito', 'Lateral Esquerdo', 'Volante', 'Meia', 'Meia Atacante', 'Ponta Direita', 'Ponta Esquerda', 'Centroavante', 'Atacante'];
@@ -74,6 +94,22 @@ const GameForm: React.FC = () => {
                 ]);
                 setGame(gameData);
                 setPlayers(playersData);
+
+                // Reconstruct substitutions from player data
+                const subs: LocalSubstitution[] = [];
+                for (const p of playersData) {
+                    if (p.replaced_player_id && p.sub_in_minute != null && p.athlete_id) {
+                        subs.push({
+                            localId: newLocalId(),
+                            minute: p.sub_in_minute,
+                            outAthleteId: p.replaced_player_id,
+                            inAthleteId: p.athlete_id,
+                        });
+                    }
+                }
+                // Sort by minute
+                subs.sort((a, b) => a.minute - b.minute);
+                setSubstitutions(subs);
             }
         } catch (err) {
             setError(t('gameForm.error.loading'));
@@ -119,8 +155,38 @@ const GameForm: React.FC = () => {
     };
 
     const removePlayer = (index: number) => {
+        const athleteId = players[index]?.athlete_id;
         setPlayers(prev => prev.filter((_, i) => i !== index));
+        if (athleteId) {
+            setSubstitutions(prev => prev.filter(s => s.outAthleteId !== athleteId && s.inAthleteId !== athleteId));
+        }
     };
+
+    // Substitution helpers
+    const startersAvailableToGoOff = players.filter(p =>
+        p.is_starter && !substitutions.some(s => s.outAthleteId === p.athlete_id)
+    );
+
+    const benchAvailableToComeon = players.filter(p =>
+        !p.is_starter && !substitutions.some(s => s.inAthleteId === p.athlete_id)
+    );
+
+    const confirmAddSubstitution = () => {
+        if (!newSub.outAthleteId || !newSub.inAthleteId || newSub.minute < 0) return;
+        setSubstitutions(prev => [
+            ...prev,
+            { ...newSub, localId: newLocalId() },
+        ].sort((a, b) => a.minute - b.minute));
+        setNewSub({ minute: 0, outAthleteId: '', inAthleteId: '' });
+        setAddingSubstitution(false);
+    };
+
+    const removeSubstitution = (localId: string) => {
+        setSubstitutions(prev => prev.filter(s => s.localId !== localId));
+    };
+
+    const getPlayerName = (athleteId: string) =>
+        players.find(p => p.athlete_id === athleteId)?.athlete?.full_name || athleteId;
 
     const handleSave = async () => {
         if (!game.competition_id) {
@@ -141,19 +207,25 @@ const GameForm: React.FC = () => {
                 gameId = created.id;
             }
 
-            // Save players
             if (gameId) {
-                const playersToSave = players.map(p => ({
-                    game_id: gameId,
-                    athlete_id: p.athlete_id,
-                    position: p.position || p.athlete?.position,
-                    is_starter: p.is_starter,
-                    minutes_played: p.minutes_played,
-                    goals: p.goals,
-                    assists: p.assists,
-                    yellow_cards: p.yellow_cards,
-                    red_cards: p.red_cards,
-                }));
+                const playersToSave = players.map(p => {
+                    const inSub = substitutions.find(s => s.inAthleteId === p.athlete_id);
+                    const outSub = substitutions.find(s => s.outAthleteId === p.athlete_id);
+                    return {
+                        game_id: gameId,
+                        athlete_id: p.athlete_id,
+                        position: p.position || p.athlete?.position,
+                        is_starter: p.is_starter,
+                        minutes_played: p.minutes_played,
+                        goals: p.goals,
+                        assists: p.assists,
+                        yellow_cards: p.yellow_cards,
+                        red_cards: p.red_cards,
+                        sub_in_minute: inSub?.minute ?? null,
+                        replaced_player_id: inSub?.outAthleteId ?? null,
+                        sub_out_minute: outSub?.minute ?? null,
+                    };
+                });
                 await gamePlayerService.upsertMany(gameId, playersToSave);
             }
 
@@ -325,6 +397,8 @@ const GameForm: React.FC = () => {
                 <FeatureGate feature="tactical">
                     <GameTacticalBoard
                         starters={players.filter(p => p.is_starter)}
+                        allPlayers={players}
+                        substitutions={substitutions}
                         homeTeamName={game.home_team || 'Nosso Time'}
                         awayTeamName={game.away_team || 'Adversário'}
                         isHomeGame={game.is_home_game ?? true}
@@ -415,111 +489,253 @@ const GameForm: React.FC = () => {
                                             <th className="hidden sm:table-cell px-3 py-3 text-left font-bold w-36">{t('gameForm.lineup.col.position')}</th>
                                             <th className="px-3 py-3 text-center font-bold w-16">{t('gameForm.lineup.col.starter')}</th>
                                             <th className="hidden sm:table-cell px-3 py-3 text-center font-bold w-20">{t('gameForm.lineup.col.minutes')}</th>
-                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">⚽</th>
-                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🅰️</th>
-                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🟨</th>
-                                            <th className="hidden md:table-cell px-3 py-3 text-center font-bold w-16">🟥</th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center w-20">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <svg viewBox="0 0 20 20" className="w-5 h-5 text-green-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.3"/>
+                                                        <polygon points="10,6.2 12.9,8.3 11.8,11.8 8.2,11.8 7.1,8.3" fill="currentColor"/>
+                                                        <line x1="10" y1="6.2" x2="10" y2="1.5" stroke="currentColor" strokeWidth="1.1"/>
+                                                        <line x1="12.9" y1="8.3" x2="17.5" y2="5.8" stroke="currentColor" strokeWidth="1.1"/>
+                                                        <line x1="11.8" y1="11.8" x2="15.8" y2="15.8" stroke="currentColor" strokeWidth="1.1"/>
+                                                        <line x1="8.2" y1="11.8" x2="4.2" y2="15.8" stroke="currentColor" strokeWidth="1.1"/>
+                                                        <line x1="7.1" y1="8.3" x2="2.5" y2="5.8" stroke="currentColor" strokeWidth="1.1"/>
+                                                    </svg>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Gols</span>
+                                                </div>
+                                            </th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center w-20">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <Share2 className="w-5 h-5 text-blue-500" />
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Assist.</span>
+                                                </div>
+                                            </th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center w-20">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="w-4 h-[22px] bg-yellow-400 rounded-[3px] shadow-sm border border-yellow-500" />
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Amarelo</span>
+                                                </div>
+                                            </th>
+                                            <th className="hidden md:table-cell px-3 py-3 text-center w-20">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="w-4 h-[22px] bg-red-500 rounded-[3px] shadow-sm border border-red-600" />
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Vermelho</span>
+                                                </div>
+                                            </th>
                                             <th className="px-3 py-3 text-center font-bold w-12"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {players.map((player, index) => (
-                                            <tr key={index} className="hover:bg-slate-50">
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        {player.athlete?.photo_url ? (
-                                                            <img src={player.athlete.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                                                                {player.athlete?.full_name?.charAt(0) || '?'}
+                                        {players.map((player, index) => {
+                                            const isSubbedOut = substitutions.some(s => s.outAthleteId === player.athlete_id);
+                                            const isSubbedIn  = substitutions.some(s => s.inAthleteId  === player.athlete_id);
+                                            const subOutMin   = substitutions.find(s => s.outAthleteId === player.athlete_id)?.minute;
+                                            const subInMin    = substitutions.find(s => s.inAthleteId  === player.athlete_id)?.minute;
+                                            return (
+                                                <tr key={index} className={`hover:bg-slate-50 ${isSubbedOut ? 'opacity-60' : ''}`}>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-3">
+                                                            {player.athlete?.photo_url ? (
+                                                                <img src={player.athlete.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                                                                    {player.athlete?.full_name?.charAt(0) || '?'}
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <p className="font-semibold text-slate-800">{player.athlete?.full_name}</p>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <p className="text-xs text-slate-400">{player.athlete?.category}</p>
+                                                                    {isSubbedOut && (
+                                                                        <span className="inline-flex items-center gap-0.5 text-xs text-red-500 font-semibold">
+                                                                            <ArrowUpFromLine className="w-3 h-3" />{subOutMin}'
+                                                                        </span>
+                                                                    )}
+                                                                    {isSubbedIn && (
+                                                                        <span className="inline-flex items-center gap-0.5 text-xs text-green-600 font-semibold">
+                                                                            <ArrowDownToLine className="w-3 h-3" />{subInMin}'
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                        <div>
-                                                            <p className="font-semibold text-slate-800">{player.athlete?.full_name}</p>
-                                                            <p className="text-xs text-slate-500">{player.athlete?.category}</p>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="hidden sm:table-cell px-3 py-3">
-                                                    <select
-                                                        value={player.position || player.athlete?.position || ''}
-                                                        onChange={(e) => updatePlayer(index, 'position', e.target.value)}
-                                                        className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm"
-                                                    >
-                                                        <option value="">{t('gameForm.field.select')}</option>
-                                                        {positions.map(p => <option key={p} value={p}>{p}</option>)}
-                                                    </select>
-                                                </td>
-                                                <td className="px-3 py-3 text-center">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={player.is_starter || false}
-                                                        onChange={(e) => updatePlayer(index, 'is_starter', e.target.checked)}
-                                                        className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
-                                                    />
-                                                </td>
-                                                <td className="hidden sm:table-cell px-3 py-3">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="120"
-                                                        value={player.minutes_played ?? ''}
-                                                        onChange={(e) => updatePlayer(index, 'minutes_played', e.target.value ? parseInt(e.target.value) : 0)}
-                                                        className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-center text-sm"
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="hidden md:table-cell px-3 py-3">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={player.goals ?? ''}
-                                                        onChange={(e) => updatePlayer(index, 'goals', e.target.value ? parseInt(e.target.value) : 0)}
-                                                        className="w-full px-2 py-1 bg-green-50 border border-green-200 rounded text-center text-sm font-semibold text-green-700"
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="hidden md:table-cell px-3 py-3">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={player.assists ?? ''}
-                                                        onChange={(e) => updatePlayer(index, 'assists', e.target.value ? parseInt(e.target.value) : 0)}
-                                                        className="w-full px-2 py-1 bg-blue-50 border border-blue-200 rounded text-center text-sm font-semibold text-blue-700"
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="hidden md:table-cell px-3 py-3">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={player.yellow_cards ?? ''}
-                                                        onChange={(e) => updatePlayer(index, 'yellow_cards', e.target.value ? parseInt(e.target.value) : 0)}
-                                                        className="w-full px-2 py-1 bg-yellow-50 border border-yellow-200 rounded text-center text-sm font-semibold text-yellow-700"
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="hidden md:table-cell px-3 py-3">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={player.red_cards ?? ''}
-                                                        onChange={(e) => updatePlayer(index, 'red_cards', e.target.value ? parseInt(e.target.value) : 0)}
-                                                        className="w-full px-2 py-1 bg-red-50 border border-red-200 rounded text-center text-sm font-semibold text-red-700"
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-3 text-center">
-                                                    <button onClick={() => removePlayer(index)} className="p-1 text-slate-400 hover:text-red-500">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                    </td>
+                                                    <td className="hidden sm:table-cell px-3 py-3">
+                                                        <select
+                                                            value={player.position || player.athlete?.position || ''}
+                                                            onChange={(e) => updatePlayer(index, 'position', e.target.value)}
+                                                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm"
+                                                        >
+                                                            <option value="">{t('gameForm.field.select')}</option>
+                                                            {positions.map(p => <option key={p} value={p}>{p}</option>)}
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={player.is_starter || false}
+                                                            onChange={(e) => updatePlayer(index, 'is_starter', e.target.checked)}
+                                                            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                                                        />
+                                                    </td>
+                                                    <td className="hidden sm:table-cell px-3 py-3">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="120"
+                                                            value={player.minutes_played ?? ''}
+                                                            onChange={(e) => updatePlayer(index, 'minutes_played', e.target.value ? parseInt(e.target.value) : 0)}
+                                                            className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-center text-sm"
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="hidden md:table-cell px-2 py-3">
+                                                        <input type="number" min="0" value={player.goals ?? ''} onChange={(e) => updatePlayer(index, 'goals', e.target.value ? parseInt(e.target.value) : 0)} className="w-full min-w-[56px] px-2 py-1.5 bg-green-50 border border-green-200 rounded-lg text-center text-sm font-bold text-green-700 focus:ring-2 focus:ring-green-200 outline-none" placeholder="0" />
+                                                    </td>
+                                                    <td className="hidden md:table-cell px-2 py-3">
+                                                        <input type="number" min="0" value={player.assists ?? ''} onChange={(e) => updatePlayer(index, 'assists', e.target.value ? parseInt(e.target.value) : 0)} className="w-full min-w-[56px] px-2 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-center text-sm font-bold text-blue-700 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="0" />
+                                                    </td>
+                                                    <td className="hidden md:table-cell px-2 py-3">
+                                                        <input type="number" min="0" value={player.yellow_cards ?? ''} onChange={(e) => updatePlayer(index, 'yellow_cards', e.target.value ? parseInt(e.target.value) : 0)} className="w-full min-w-[56px] px-2 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-sm font-bold text-yellow-700 focus:ring-2 focus:ring-yellow-200 outline-none" placeholder="0" />
+                                                    </td>
+                                                    <td className="hidden md:table-cell px-2 py-3">
+                                                        <input type="number" min="0" value={player.red_cards ?? ''} onChange={(e) => updatePlayer(index, 'red_cards', e.target.value ? parseInt(e.target.value) : 0)} className="w-full min-w-[56px] px-2 py-1.5 bg-red-50 border border-red-200 rounded-lg text-center text-sm font-bold text-red-700 focus:ring-2 focus:ring-red-200 outline-none" placeholder="0" />
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center">
+                                                        <button onClick={() => removePlayer(index)} className="p-1 text-slate-400 hover:text-red-500">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
                         )}
+                    </div>
+
+                    {/* Substitutions */}
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 text-primary" />
+                                Substituições
+                                {substitutions.length > 0 && (
+                                    <span className="ml-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{substitutions.length}</span>
+                                )}
+                            </h3>
+                            {!addingSubstitution && (
+                                <button
+                                    onClick={() => setAddingSubstitution(true)}
+                                    disabled={startersAvailableToGoOff.length === 0 || benchAvailableToComeon.length === 0}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Adicionar
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                            {substitutions.length === 0 && !addingSubstitution && (
+                                <p className="text-sm text-slate-400 text-center py-4">Nenhuma substituição registrada</p>
+                            )}
+
+                            {/* Substitution rows */}
+                            {substitutions.map(sub => (
+                                <div key={sub.localId} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                    {/* Minute badge */}
+                                    <div className="flex-shrink-0 w-12 h-10 bg-slate-700 text-white rounded-lg flex flex-col items-center justify-center">
+                                        <span className="text-xs font-bold leading-none">{sub.minute}'</span>
+                                    </div>
+
+                                    {/* Out player */}
+                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                        <ArrowUpFromLine className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                        <span className="text-sm font-semibold text-slate-800 truncate">{getPlayerName(sub.outAthleteId)}</span>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className="flex-shrink-0 text-slate-300 font-bold">→</div>
+
+                                    {/* In player */}
+                                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                                        <ArrowDownToLine className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                        <span className="text-sm font-semibold text-slate-800 truncate">{getPlayerName(sub.inAthleteId)}</span>
+                                    </div>
+
+                                    <button onClick={() => removeSubstitution(sub.localId)} className="flex-shrink-0 p-1 text-slate-400 hover:text-red-500">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Add substitution form */}
+                            {addingSubstitution && (
+                                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
+                                    <p className="text-sm font-bold text-slate-700">Nova Substituição</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1">Minuto</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="120"
+                                                value={newSub.minute || ''}
+                                                onChange={(e) => setNewSub(p => ({ ...p, minute: parseInt(e.target.value) || 0 }))}
+                                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                                placeholder="Ex: 65"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                                <ArrowUpFromLine className="w-3 h-3 text-red-500" /> Sai
+                                            </label>
+                                            <select
+                                                value={newSub.outAthleteId}
+                                                onChange={(e) => setNewSub(p => ({ ...p, outAthleteId: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                            >
+                                                <option value="">Selecionar titular</option>
+                                                {startersAvailableToGoOff.map(p => (
+                                                    <option key={p.athlete_id} value={p.athlete_id}>{p.athlete?.full_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                                <ArrowDownToLine className="w-3 h-3 text-green-600" /> Entra
+                                            </label>
+                                            <select
+                                                value={newSub.inAthleteId}
+                                                onChange={(e) => setNewSub(p => ({ ...p, inAthleteId: e.target.value }))}
+                                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                            >
+                                                <option value="">Selecionar reserva</option>
+                                                {benchAvailableToComeon.map(p => (
+                                                    <option key={p.athlete_id} value={p.athlete_id}>{p.athlete?.full_name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 justify-end">
+                                        <button
+                                            onClick={() => { setAddingSubstitution(false); setNewSub({ minute: 0, outAthleteId: '', inAthleteId: '' }); }}
+                                            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={confirmAddSubstitution}
+                                            disabled={!newSub.outAthleteId || !newSub.inAthleteId}
+                                            className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-50"
+                                        >
+                                            Confirmar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

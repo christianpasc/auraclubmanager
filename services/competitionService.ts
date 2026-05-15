@@ -51,6 +51,48 @@ export interface Game {
     competition?: Competition;
 }
 
+export interface CompetitionTeam {
+    id?: string;
+    competition_id?: string;
+    tenant_id?: string;
+    team_name: string;
+    is_our_club?: boolean;
+    group_name?: string;
+    sort_order?: number;
+    created_at?: string;
+}
+
+export const competitionTeamsService = {
+    async getByCompetition(competitionId: string) {
+        const { data, error } = await supabase
+            .from('competition_teams')
+            .select('*')
+            .eq('competition_id', competitionId)
+            .order('sort_order', { ascending: true });
+        if (error) throw error;
+        return data as CompetitionTeam[];
+    },
+
+    async createMany(teams: Omit<CompetitionTeam, 'id' | 'created_at'>[]) {
+        const tenant_id = await getCurrentTenantId();
+        if (!tenant_id) throw new Error('No tenant selected');
+        const { data, error } = await supabase
+            .from('competition_teams')
+            .insert(teams.map(t => ({ ...t, tenant_id })))
+            .select();
+        if (error) throw error;
+        return data as CompetitionTeam[];
+    },
+
+    async deleteByCompetition(competitionId: string) {
+        const { error } = await supabase
+            .from('competition_teams')
+            .delete()
+            .eq('competition_id', competitionId);
+        if (error) throw error;
+    },
+};
+
 export const competitionService = {
     async getAll() {
         const { data, error } = await supabase
@@ -193,6 +235,9 @@ export interface GamePlayer {
     yellow_cards?: number;
     red_cards?: number;
     notes?: string;
+    sub_in_minute?: number;
+    sub_out_minute?: number;
+    replaced_player_id?: string;
     created_at?: string;
     updated_at?: string;
     // Joined

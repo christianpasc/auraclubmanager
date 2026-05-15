@@ -12,6 +12,8 @@ interface OurToken {
     position?: string;
     x: number;
     y: number;
+    isSub?: boolean;
+    subMinute?: number;
 }
 
 interface OpponentToken {
@@ -46,8 +48,16 @@ interface StarterPlayer {
     is_starter?: boolean;
 }
 
+export interface SubstitutionInfo {
+    outAthleteId: string;
+    inAthleteId: string;
+    minute: number;
+}
+
 interface GameTacticalBoardProps {
     starters: StarterPlayer[];
+    allPlayers?: StarterPlayer[];
+    substitutions?: SubstitutionInfo[];
     homeTeamName?: string;
     awayTeamName?: string;
     isHomeGame?: boolean;
@@ -107,45 +117,86 @@ const getOpponentPos = (idx: number, isHome: boolean) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
-    starters, homeTeamName, awayTeamName, isHomeGame = true, initialData, onChange,
+    starters, allPlayers, substitutions, homeTeamName, awayTeamName, isHomeGame = true, initialData, onChange,
 }) => {
     const { t } = useLanguage();
     const svgRef = useRef<SVGSVGElement>(null);
 
+    // Refs to avoid stale closures in effects
+    const startersRef  = useRef(starters);
+    const allPlayersRef = useRef(allPlayers);
+    useEffect(() => { startersRef.current = starters; });
+    useEffect(() => { allPlayersRef.current = allPlayers; });
+
+    // Build fresh tokens from current starters, with substitutions applied
+    const buildActiveTokens = useCallback((
+        posMap: Map<string, { x: number; y: number }>,
+        subs: SubstitutionInfo[] | undefined,
+        players: StarterPlayer[] | undefined,
+    ): OurToken[] => {
+        const outIds = new Set((subs || []).map(s => s.outAthleteId));
+
+        // Base starters (skip those who got subbed off)
+        let tokens: OurToken[] = startersRef.current.map((s, i) => {
+            const saved = posMap.get(s.athlete_id || '');
+            const name  = s.athlete?.full_name || `Jogador ${i + 1}`;
+            const pos   = s.position || s.athlete?.position;
+            const defP  = getOurDefaultPos(pos, i, startersRef.current.length);
+            const x = saved?.x ?? (isHomeGame ? defP.x : mirrorX(defP.x));
+            const y = saved?.y ?? defP.y;
+            return { id: s.athlete_id || `our-${i}`, name, initials: mkInitials(name), position: pos, x, y };
+        }).filter(t => !outIds.has(t.id));
+
+        // Apply substitutions: add incoming players
+        if (subs?.length && players?.length) {
+            for (const sub of subs) {
+                if (tokens.some(t => t.id === sub.inAthleteId)) continue;
+
+                const inPlayer = players.find(p => p.athlete_id === sub.inAthleteId);
+                if (!inPlayer) continue;
+
+                // Position: saved position of incoming player, or saved position of outgoing player, or field centre
+                const savedIn  = posMap.get(sub.inAthleteId);
+                const savedOut = posMap.get(sub.outAthleteId);
+                const fallback = { x: isHomeGame ? 52 : mirrorX(52), y: 34 };
+                const pos      = savedIn || savedOut || fallback;
+
+                const name = inPlayer.athlete?.full_name || 'Jogador';
+                const playerPos = inPlayer.position || inPlayer.athlete?.position;
+
+                tokens.push({
+                    id: sub.inAthleteId,
+                    name,
+                    initials: mkInitials(name),
+                    position: playerPos,
+                    x: pos.x,
+                    y: pos.y,
+                    isSub: true,
+                    subMinute: sub.minute,
+                });
+            }
+        }
+
+        return tokens;
+    }, [isHomeGame]);
+
     const buildInitialState = (): GameTacticalData => {
-        const buildFresh = (): OurToken[] => starters.map((s, i) => {
-            const name = s.athlete?.full_name || `Jogador ${i + 1}`;
-            const pos  = s.position || s.athlete?.position;
-            const p    = getOurDefaultPos(pos, i, starters.length);
-            const x    = isHomeGame ? p.x : mirrorX(p.x);
-            return { id: s.athlete_id || `our-${i}`, name, initials: mkInitials(name), position: pos, x, y: p.y };
-        });
+        const emptyPos = new Map<string, { x: number; y: number }>();
 
         if (initialData) {
             try {
                 const saved: GameTacticalData = JSON.parse(initialData);
-                const savedIds   = new Set(saved.ourPlayers.map(p => p.id));
-                const starterIds = new Set(starters.map(s => s.athlete_id).filter(Boolean));
-
-                // Keep only players still marked as starter
-                const kept = saved.ourPlayers.filter(p => starterIds.has(p.id));
-
-                // Add new starters not yet on the board
-                const newTokens: OurToken[] = starters
-                    .filter(s => s.athlete_id && !savedIds.has(s.athlete_id))
-                    .map((s, i) => {
-                        const name = s.athlete?.full_name || `Jogador ${i + 1}`;
-                        const pos  = s.position || s.athlete?.position;
-                        const p    = getOurDefaultPos(pos, kept.length + i, starters.length);
-                        const x    = isHomeGame ? p.x : mirrorX(p.x);
-                        return { id: s.athlete_id!, name, initials: mkInitials(name), position: pos, x, y: p.y };
-                    });
-
-                return { ...saved, ourPlayers: [...kept, ...newTokens] };
+                const posMap = new Map(saved.ourPlayers.map(p => [p.id, { x: p.x, y: p.y }]));
+                const tokens = buildActiveTokens(posMap, substitutions, allPlayers);
+                return { ...saved, ourPlayers: tokens };
             } catch {}
         }
 
-        return { ourPlayers: buildFresh(), opponents: [], arrows: [] };
+        return {
+            ourPlayers: buildActiveTokens(emptyPos, substitutions, allPlayers),
+            opponents: [],
+            arrows: [],
+        };
     };
 
     const [state, setState]         = useState<GameTacticalData>(buildInitialState);
@@ -155,11 +206,22 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
     const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
     const [drawLive, setDrawLive]   = useState<{ x: number; y: number } | null>(null);
     const [history, setHistory]     = useState<GameTacticalData[]>([]);
-    // Opponent add form
     const [newOppName, setNewOppName] = useState('');
     const [newOppNum,  setNewOppNum]  = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [sidesFlipped, setSidesFlipped] = useState(false);
+
+    // React to substitution changes after initial render
+    const initDoneRef = useRef(false);
+    useEffect(() => {
+        if (!initDoneRef.current) { initDoneRef.current = true; return; }
+
+        setState(prev => {
+            const posMap = new Map(prev.ourPlayers.map(p => [p.id, { x: p.x, y: p.y }]));
+            const tokens = buildActiveTokens(posMap, substitutions, allPlayersRef.current);
+            return { ...prev, ourPlayers: tokens };
+        });
+    }, [substitutions, buildActiveTokens]);
 
     // Auto-save on state change
     useEffect(() => {
@@ -314,6 +376,9 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
         ? 'fixed inset-0 z-50 bg-white flex flex-col'
         : 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col';
 
+    const startersOnField  = state.ourPlayers.filter(p => !p.isSub);
+    const subsOnField      = state.ourPlayers.filter(p => p.isSub);
+
     return (
         <div className={wrapperClass}>
 
@@ -322,7 +387,8 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                 <div className={`items-center gap-3 flex-wrap ${isFullscreen ? 'hidden sm:flex' : 'flex'}`}>
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
                         <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
-                        {homeTeamName || t('tacticalBoard.ourTeam')} — {state.ourPlayers.length} {t('tacticalBoard.starters')}
+                        {homeTeamName || t('tacticalBoard.ourTeam')} — {startersOnField.length} {t('tacticalBoard.starters')}
+                        {subsOnField.length > 0 && <span className="ml-1 text-green-600">+{subsOnField.length}</span>}
                     </span>
                     <span className="text-slate-300">vs</span>
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 border border-red-200 rounded-full text-xs font-semibold text-red-700">
@@ -455,7 +521,7 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                                 style={{ pointerEvents: 'none' }} />
                         )}
 
-                        {/* Our players (blue) */}
+                        {/* Our players */}
                         {state.ourPlayers.map(pl => (
                             <g key={pl.id} transform={`translate(${pl.x},${pl.y})`}
                                 style={{ cursor: tool === 'select' ? (dragging?.id === pl.id ? 'grabbing' : 'grab') : 'default' }}
@@ -465,6 +531,16 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                                 <circle r="3.6" fill={OUR_COLOR} stroke="white" strokeWidth="0.6" />
                                 <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize="2.3" fontWeight="bold" style={{ pointerEvents: 'none', userSelect: 'none' }}>{pl.initials}</text>
                                 <text y="5.8" textAnchor="middle" fill="white" fontSize="2" fontWeight="600" stroke="rgba(0,0,0,0.6)" strokeWidth="0.5" paintOrder="stroke" style={{ pointerEvents: 'none', userSelect: 'none' }}>{pl.name.split(' ')[0]}</text>
+
+                                {/* Substitution badge: green circle with down arrow */}
+                                {pl.isSub && (
+                                    <g transform="translate(2.7,-2.7)">
+                                        <circle r="1.9" fill="#16a34a" stroke="white" strokeWidth="0.45" />
+                                        {/* Down arrow */}
+                                        <line x1="0" y1="-0.9" x2="0" y2="0.7" stroke="white" strokeWidth="0.55" strokeLinecap="round" />
+                                        <polyline points="-0.7,0.1 0,0.9 0.7,0.1" fill="none" stroke="white" strokeWidth="0.55" strokeLinecap="round" strokeLinejoin="round" />
+                                    </g>
+                                )}
                             </g>
                         ))}
 
@@ -488,7 +564,7 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                 {/* Right panel */}
                 <div className={`w-52 border-l border-slate-100 flex-col flex-shrink-0 overflow-hidden bg-white ${isFullscreen ? 'hidden sm:flex' : 'flex'}`}>
 
-                    {/* Our starters */}
+                    {/* Our players (starters + subs) */}
                     <div className="border-b border-slate-100">
                         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50">
                             <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
@@ -496,13 +572,18 @@ const GameTacticalBoard: React.FC<GameTacticalBoardProps> = ({
                                 {homeTeamName || t('tacticalBoard.ourTeam')}
                             </span>
                         </div>
-                        <div className="overflow-y-auto p-2 space-y-1" style={{ maxHeight: '180px' }}>
+                        <div className="overflow-y-auto p-2 space-y-1" style={{ maxHeight: '220px' }}>
                             {state.ourPlayers.map(pl => (
-                                <div key={pl.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-blue-50/60">
-                                    <div className="w-5 h-5 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-[8px] font-bold text-white">{pl.initials}</div>
+                                <div key={pl.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${pl.isSub ? 'bg-green-50' : 'bg-blue-50/60'}`}>
+                                    <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-bold text-white ${pl.isSub ? 'bg-green-600' : 'bg-blue-600'}`}>
+                                        {pl.initials}
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs text-slate-700 font-semibold truncate">{pl.name.split(' ')[0]}</p>
-                                        {pl.position && <p className="text-[9px] text-slate-400 truncate">{pl.position}</p>}
+                                        {pl.isSub && pl.subMinute != null
+                                            ? <p className="text-[9px] text-green-600 font-bold">↓ {pl.subMinute}'</p>
+                                            : pl.position && <p className="text-[9px] text-slate-400 truncate">{pl.position}</p>
+                                        }
                                     </div>
                                 </div>
                             ))}

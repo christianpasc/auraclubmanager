@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, FileText, CreditCard, Save, ArrowLeft, Loader2,
-    Calendar, DollarSign, Camera, X, Check
+    Calendar, DollarSign, Camera, X, Check, Search, UserCheck
 } from 'lucide-react';
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { athleteService, Athlete } from '../services/athleteService';
@@ -16,10 +16,10 @@ const EnrollmentForm: React.FC = () => {
     const navigate = useNavigate();
     const isEditing = !!id;
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const searchRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
     const { currentTenant } = useTenant();
 
-    // Translated plan types using the t() system
     const planTypes = [
         { value: 'monthly',    label: t('planType.monthly') },
         { value: 'quarterly',  label: t('planType.quarterly') },
@@ -27,7 +27,6 @@ const EnrollmentForm: React.FC = () => {
         { value: 'annual',     label: t('planType.annual') },
     ];
 
-    // Resolve payment methods from tenant settings, fall back to translated defaults
     const paymentMethods: Array<{ value: string; label: string }> = (() => {
         const settings = currentTenant?.settings as any;
         if (settings?.payment_methods && Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
@@ -44,11 +43,21 @@ const EnrollmentForm: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-    // Athlete data (for pre-registration)
+    // Mode: 'new' = create new athlete, 'existing' = pick existing athlete
+    const [mode, setMode] = useState<'new' | 'existing'>('new');
+
+    // Athlete data (for new athlete mode)
     const [athlete, setAthlete] = useState<Partial<Athlete>>({
         full_name: '',
         status: 'active',
     });
+
+    // Existing athlete picker state
+    const [allAthletes, setAllAthletes] = useState<Athlete[]>([]);
+    const [athleteSearch, setAthleteSearch] = useState('');
+    const [selectedExistingAthlete, setSelectedExistingAthlete] = useState<Athlete | null>(null);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [loadingAthletes, setLoadingAthletes] = useState(false);
 
     // Enrollment data
     const [enrollment, setEnrollment] = useState<Partial<Enrollment>>({
@@ -63,6 +72,36 @@ const EnrollmentForm: React.FC = () => {
     useEffect(() => {
         if (id) loadEnrollment(id);
     }, [id]);
+
+    // Load athletes list when switching to existing mode
+    useEffect(() => {
+        if (mode === 'existing' && allAthletes.length === 0) {
+            loadAthletes();
+        }
+    }, [mode]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleOutsideClick = (e: MouseEvent) => {
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, []);
+
+    const loadAthletes = async () => {
+        setLoadingAthletes(true);
+        try {
+            const data = await athleteService.getAll();
+            setAllAthletes(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingAthletes(false);
+        }
+    };
 
     const loadEnrollment = async (enrollmentId: string) => {
         setLoading(true);
@@ -96,23 +135,31 @@ const EnrollmentForm: React.FC = () => {
     };
 
     const handleSave = async () => {
-        if (!athlete.full_name?.trim()) {
-            setError(t('enrollmentForm.error.nameRequired'));
-            return;
-        }
-
         setSaving(true);
         setError(null);
 
         try {
             if (isEditing && id) {
-                // Update existing enrollment and athlete
                 if (enrollment.athlete_id) {
                     await athleteService.update(enrollment.athlete_id, athlete);
                 }
                 await enrollmentService.update(id, enrollment);
+            } else if (mode === 'existing') {
+                if (!selectedExistingAthlete?.id) {
+                    setError('Selecione um atleta para criar a matrícula.');
+                    setSaving(false);
+                    return;
+                }
+                await enrollmentService.create({
+                    ...enrollment,
+                    athlete_id: selectedExistingAthlete.id,
+                });
             } else {
-                // Create new athlete and enrollment
+                if (!athlete.full_name?.trim()) {
+                    setError(t('enrollmentForm.error.nameRequired'));
+                    setSaving(false);
+                    return;
+                }
                 await enrollmentService.createWithAthlete(
                     athlete as Athlete,
                     enrollment
@@ -133,6 +180,21 @@ const EnrollmentForm: React.FC = () => {
 
     const updateEnrollment = (field: keyof Enrollment, value: any) => {
         setEnrollment(prev => ({ ...prev, [field]: value }));
+    };
+
+    const filteredAthletes = allAthletes.filter(a =>
+        a.full_name?.toLowerCase().includes(athleteSearch.toLowerCase())
+    );
+
+    const handleSelectAthlete = (a: Athlete) => {
+        setSelectedExistingAthlete(a);
+        setAthleteSearch(a.full_name || '');
+        setShowDropdown(false);
+    };
+
+    const handleClearSelection = () => {
+        setSelectedExistingAthlete(null);
+        setAthleteSearch('');
     };
 
     if (loading) {
@@ -168,85 +230,197 @@ const EnrollmentForm: React.FC = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Athlete Data */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                        <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <User className="w-5 h-5 text-primary" />
-                            {t('enrollmentForm.section.athleteData')}
-                        </h3>
+            {/* Mode toggle (only for new enrollments) */}
+            {!isEditing && (
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
+                    <button
+                        onClick={() => setMode('new')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'new' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <User className="w-4 h-4" />
+                        Novo Atleta
+                    </button>
+                    <button
+                        onClick={() => setMode('existing')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === 'existing' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <UserCheck className="w-4 h-4" />
+                        Atleta Existente
+                    </button>
+                </div>
+            )}
 
-                        <div className="flex items-start gap-6 mb-6">
-                            {/* Photo */}
-                            <div className="flex-shrink-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column */}
+                <div className="lg:col-span-2 space-y-6">
+                    {mode === 'existing' && !isEditing ? (
+                        /* Existing athlete picker */
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <UserCheck className="w-5 h-5 text-primary" />
+                                Selecionar Atleta
+                            </h3>
+
+                            <div ref={searchRef} className="relative">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Buscar atleta *</label>
                                 <div className="relative">
-                                    {athlete.photo_url ? (
-                                        <div className="relative w-24 h-24">
-                                            <img src={athlete.photo_url} alt={t('athleteForm.photo')} className="w-24 h-24 rounded-xl object-cover border-2 border-slate-200" />
-                                            <button type="button" onClick={() => setAthlete(prev => ({ ...prev, photo_url: undefined }))} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs">
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
-                                            {uploadingPhoto ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Camera className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">{t('athleteForm.addPhoto')}</span></>}
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={athleteSearch}
+                                        onChange={(e) => {
+                                            setAthleteSearch(e.target.value);
+                                            setSelectedExistingAthlete(null);
+                                            setShowDropdown(true);
+                                        }}
+                                        onFocus={() => setShowDropdown(true)}
+                                        placeholder="Digite o nome do atleta..."
+                                        className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                    />
+                                    {athleteSearch && (
+                                        <button onClick={handleClearSelection} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                            <X className="w-4 h-4" />
                                         </button>
                                     )}
-                                    <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])} className="hidden" />
+                                </div>
+
+                                {showDropdown && (
+                                    <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                                        {loadingAthletes ? (
+                                            <div className="flex items-center justify-center py-6">
+                                                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                            </div>
+                                        ) : filteredAthletes.length === 0 ? (
+                                            <div className="px-4 py-6 text-sm text-slate-400 text-center">Nenhum atleta encontrado</div>
+                                        ) : (
+                                            filteredAthletes.map(a => (
+                                                <button
+                                                    key={a.id}
+                                                    onMouseDown={() => handleSelectAthlete(a)}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-left transition-colors border-b border-slate-100 last:border-0"
+                                                >
+                                                    {a.photo_url ? (
+                                                        <img src={a.photo_url} alt={a.full_name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                                                            <User className="w-4 h-4 text-slate-400" />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-slate-800">{a.full_name}</p>
+                                                        {a.category && <p className="text-xs text-slate-400">{a.category}</p>}
+                                                    </div>
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Selected athlete card */}
+                            {selectedExistingAthlete && (
+                                <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-4">
+                                    {selectedExistingAthlete.photo_url ? (
+                                        <img src={selectedExistingAthlete.photo_url} alt={selectedExistingAthlete.full_name} className="w-14 h-14 rounded-xl object-cover border-2 border-white shadow-sm flex-shrink-0" />
+                                    ) : (
+                                        <div className="w-14 h-14 rounded-xl bg-slate-200 flex items-center justify-center flex-shrink-0">
+                                            <User className="w-7 h-7 text-slate-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800">{selectedExistingAthlete.full_name}</p>
+                                        <div className="flex items-center gap-3 mt-0.5">
+                                            {selectedExistingAthlete.category && <span className="text-xs text-slate-500">{selectedExistingAthlete.category}</span>}
+                                            {selectedExistingAthlete.birth_date && <span className="text-xs text-slate-400">{new Date(selectedExistingAthlete.birth_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
+                                        </div>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                            <Check className="w-3 h-3" /> Selecionado
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* New athlete form */
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                <User className="w-5 h-5 text-primary" />
+                                {t('enrollmentForm.section.athleteData')}
+                            </h3>
+
+                            <div className="flex items-start gap-6 mb-6">
+                                {/* Photo */}
+                                <div className="flex-shrink-0">
+                                    <div className="relative">
+                                        {athlete.photo_url ? (
+                                            <div className="relative w-24 h-24">
+                                                <img src={athlete.photo_url} alt={t('athleteForm.photo')} className="w-24 h-24 rounded-xl object-cover border-2 border-slate-200" />
+                                                <button type="button" onClick={() => setAthlete(prev => ({ ...prev, photo_url: undefined }))} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs">
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
+                                                {uploadingPhoto ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Camera className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">{t('athleteForm.addPhoto')}</span></>}
+                                            </button>
+                                        )}
+                                        <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handlePhotoUpload(e.target.files[0])} className="hidden" />
+                                    </div>
+                                </div>
+
+                                {/* Name and Birth Date */}
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.fullName')} *</label>
+                                        <input type="text" value={athlete.full_name || ''} onChange={(e) => updateAthlete('full_name', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder={t('athleteForm.field.fullName')} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.birthDate')}</label>
+                                        <input type="date" value={athlete.birth_date || ''} onChange={(e) => updateAthlete('birth_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athletes.category')}</label>
+                                        <select value={athlete.category || ''} onChange={(e) => updateAthlete('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                            <option value="">{t('trainingForm.field.select')}</option>
+                                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Name and Birth Date */}
-                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.fullName')} *</label>
-                                    <input type="text" value={athlete.full_name || ''} onChange={(e) => updateAthlete('full_name', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder={t('athleteForm.field.fullName')} />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athletes.cpf')}</label>
+                                    <input type="text" value={athlete.cpf || ''} onChange={(e) => updateAthlete('cpf', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="000.000.000-00" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.birthDate')}</label>
-                                    <input type="date" value={athlete.birth_date || ''} onChange={(e) => updateAthlete('birth_date', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.phone')}</label>
+                                    <input type="tel" value={athlete.phone || ''} onChange={(e) => updateAthlete('phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="(00) 00000-0000" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athletes.category')}</label>
-                                    <select value={athlete.category || ''} onChange={(e) => updateAthlete('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                        <option value="">{t('trainingForm.field.select')}</option>
-                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                    </select>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.email')}</label>
+                                    <input type="email" value={athlete.email || ''} onChange={(e) => updateAthlete('email', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="atleta@email.com" />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athletes.cpf')}</label>
-                                <input type="text" value={athlete.cpf || ''} onChange={(e) => updateAthlete('cpf', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="000.000.000-00" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.phone')}</label>
-                                <input type="tel" value={athlete.phone || ''} onChange={(e) => updateAthlete('phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="(00) 00000-0000" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.email')}</label>
-                                <input type="email" value={athlete.email || ''} onChange={(e) => updateAthlete('email', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="atleta@email.com" />
-                            </div>
-                        </div>
-
-                        {/* Guardian Info */}
-                        <div className="mt-6 pt-6 border-t border-slate-100">
-                            <h4 className="text-sm font-bold text-slate-700 mb-4">{t('enrollmentForm.field.guardianSection')}</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.guardianName')}</label>
-                                    <input type="text" value={athlete.guardian_name || ''} onChange={(e) => updateAthlete('guardian_name', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.guardianPhone')}</label>
-                                    <input type="tel" value={athlete.guardian_phone || ''} onChange={(e) => updateAthlete('guardian_phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                            {/* Guardian Info */}
+                            <div className="mt-6 pt-6 border-t border-slate-100">
+                                <h4 className="text-sm font-bold text-slate-700 mb-4">{t('enrollmentForm.field.guardianSection')}</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.guardianName')}</label>
+                                        <input type="text" value={athlete.guardian_name || ''} onChange={(e) => updateAthlete('guardian_name', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.guardianPhone')}</label>
+                                        <input type="tel" value={athlete.guardian_phone || ''} onChange={(e) => updateAthlete('guardian_phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Right Column - Enrollment Data */}
