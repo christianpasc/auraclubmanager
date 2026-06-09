@@ -500,25 +500,25 @@ const GameForm: React.FC = () => {
                                                         <line x1="8.2" y1="11.8" x2="4.2" y2="15.8" stroke="currentColor" strokeWidth="1.1"/>
                                                         <line x1="7.1" y1="8.3" x2="2.5" y2="5.8" stroke="currentColor" strokeWidth="1.1"/>
                                                     </svg>
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Gols</span>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('gameForm.lineup.col.goals')}</span>
                                                 </div>
                                             </th>
                                             <th className="hidden md:table-cell px-3 py-3 text-center w-20">
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <Share2 className="w-5 h-5 text-blue-500" />
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Assist.</span>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('gameForm.lineup.col.assists')}</span>
                                                 </div>
                                             </th>
                                             <th className="hidden md:table-cell px-3 py-3 text-center w-20">
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="w-4 h-[22px] bg-yellow-400 rounded-[3px] shadow-sm border border-yellow-500" />
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Amarelo</span>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('gameForm.lineup.col.yellowCard')}</span>
                                                 </div>
                                             </th>
                                             <th className="hidden md:table-cell px-3 py-3 text-center w-20">
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="w-4 h-[22px] bg-red-500 rounded-[3px] shadow-sm border border-red-600" />
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Vermelho</span>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('gameForm.lineup.col.redCard')}</span>
                                                 </div>
                                             </th>
                                             <th className="px-3 py-3 text-center font-bold w-12"></th>
@@ -566,7 +566,7 @@ const GameForm: React.FC = () => {
                                                             className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm"
                                                         >
                                                             <option value="">{t('gameForm.field.select')}</option>
-                                                            {positions.map(p => <option key={p} value={p}>{p}</option>)}
+                                                            {positions.map(p => <option key={p} value={p}>{t(`positions.${p}`) || p}</option>)}
                                                         </select>
                                                     </td>
                                                     <td className="px-3 py-3 text-center">
