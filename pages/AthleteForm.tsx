@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, Shirt, Activity, History, Save, ArrowLeft, Loader2,
-    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus
+    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus, Plus
 } from 'lucide-react';
 import {
     athleteService, wardrobeService, physiologyService, trainingHistoryService,
@@ -217,7 +217,7 @@ const AthleteForm: React.FC = () => {
                 </div>
 
                 <div className="p-6">
-                    {activeTab === 'general' && <GeneralTab t={t} athlete={athlete} setAthlete={setAthlete} onPhotoUpload={handlePhotoUpload} uploadingPhoto={uploadingPhoto} ageCategories={ageCategories} categoryHint={categoryHint} setCategoryHint={setCategoryHint} currentGroupName={currentGroupName} />}
+                    {activeTab === 'general' && <GeneralTab t={t} athlete={athlete} setAthlete={setAthlete} onPhotoUpload={handlePhotoUpload} uploadingPhoto={uploadingPhoto} ageCategories={ageCategories} categoryHint={categoryHint} setCategoryHint={setCategoryHint} currentGroupName={currentGroupName} onCategoryCreated={cat => setAgeCategories(prev => [...prev, cat].sort((a, b) => a.sort_order - b.sort_order))} />}
                     {activeTab === 'wardrobe' && <WardrobeTab t={t} wardrobe={wardrobe} setWardrobe={setWardrobe} />}
                     {activeTab === 'history' && id && <AthleteHistoryDashboard athleteId={id} t={t} language={language} />}
                     {activeTab === 'physiology' && <PhysiologyTab t={t} physiology={physiology} setPhysiology={setPhysiology} />}
@@ -307,13 +307,17 @@ const GeneralTab: React.FC<{
     categoryHint: string | null;
     setCategoryHint: React.Dispatch<React.SetStateAction<string | null>>;
     currentGroupName: string | null;
-}> = ({ t, athlete, setAthlete, onPhotoUpload, uploadingPhoto, ageCategories, categoryHint, setCategoryHint, currentGroupName }) => {
+    onCategoryCreated: (cat: AgeCategory) => void;
+}> = ({ t, athlete, setAthlete, onPhotoUpload, uploadingPhoto, ageCategories, categoryHint, setCategoryHint, currentGroupName, onCategoryCreated }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const updateField = (field: keyof Athlete, value: any) => setAthlete(prev => ({ ...prev, [field]: value }));
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) onPhotoUpload(file);
     };
+    const [quickAddCat, setQuickAddCat] = useState(false);
+    const [newCatName, setNewCatName] = useState('');
+    const [creatingCat, setCreatingCat] = useState(false);
 
     return (
         <div className="space-y-8">
@@ -398,19 +402,76 @@ const GeneralTab: React.FC<{
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-primary" />{t('athleteForm.section.sports')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.category')}</label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-semibold text-slate-700">{t('trainingForm.field.category')}</label>
+                            <button type="button" onClick={() => { setQuickAddCat(v => !v); setNewCatName(''); }}
+                                className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium transition-colors">
+                                <Plus className="w-3 h-3" />
+                                Nova
+                            </button>
+                        </div>
                         <select value={athlete.category || ''} onChange={(e) => { updateField('category', e.target.value); setCategoryHint(null); }} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                             <option value="">{t('trainingForm.field.select')}</option>
-                            {(ageCategories.length > 0
-                                ? ageCategories.map(c => c.name)
-                                : ['Sub-7','Sub-9','Sub-11','Sub-13','Sub-15','Sub-17','Sub-20','Profissional']
-                            ).map(c => <option key={c} value={c}>{c}</option>)}
+                            {(() => {
+                                const base = ageCategories.length > 0
+                                    ? ageCategories.map(c => c.name)
+                                    : ['Sub-7','Sub-9','Sub-11','Sub-13','Sub-15','Sub-17','Sub-20','Profissional'];
+                                const current = athlete.category;
+                                const options = current && !base.includes(current) ? [current, ...base] : base;
+                                return options.map(c => <option key={c} value={c}>{c}</option>);
+                            })()}
                         </select>
                         {categoryHint && (
                             <button type="button" onClick={() => { updateField('category', categoryHint); setCategoryHint(null); }}
                                 className="mt-1 text-xs text-primary hover:underline">
                                 Sugerido pela data de nascimento: {categoryHint} →
                             </button>
+                        )}
+                        {quickAddCat && (
+                            <div className="mt-2 flex gap-2">
+                                <input autoFocus value={newCatName} onChange={e => setNewCatName(e.target.value)}
+                                    placeholder="Nome da categoria"
+                                    className="flex-1 px-3 py-1.5 text-sm border border-primary/40 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                    onKeyDown={async e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (!newCatName.trim() || creatingCat) return;
+                                            setCreatingCat(true);
+                                            try {
+                                                const cat = await ageCategoryService.create({ name: newCatName.trim(), sort_order: ageCategories.length + 1, min_birth_year: null, max_birth_year: null });
+                                                onCategoryCreated(cat);
+                                                updateField('category', cat.name);
+                                                setCategoryHint(null);
+                                                setQuickAddCat(false);
+                                                setNewCatName('');
+                                            } catch { /* ignore */ }
+                                            finally { setCreatingCat(false); }
+                                        }
+                                        if (e.key === 'Escape') setQuickAddCat(false);
+                                    }}
+                                />
+                                <button type="button" disabled={!newCatName.trim() || creatingCat}
+                                    onClick={async () => {
+                                        if (!newCatName.trim() || creatingCat) return;
+                                        setCreatingCat(true);
+                                        try {
+                                            const cat = await ageCategoryService.create({ name: newCatName.trim(), sort_order: ageCategories.length + 1, min_birth_year: null, max_birth_year: null });
+                                            onCategoryCreated(cat);
+                                            updateField('category', cat.name);
+                                            setCategoryHint(null);
+                                            setQuickAddCat(false);
+                                            setNewCatName('');
+                                        } catch { /* ignore */ }
+                                        finally { setCreatingCat(false); }
+                                    }}
+                                    className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary-dark disabled:opacity-40 flex items-center gap-1 transition-colors">
+                                    {creatingCat ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                                    Criar
+                                </button>
+                                <button type="button" onClick={() => setQuickAddCat(false)} className="px-2 py-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         )}
                     </div>
                     <div>
