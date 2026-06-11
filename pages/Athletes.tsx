@@ -7,6 +7,9 @@ import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
 import { athleteService, Athlete } from '../services/athleteService';
 import { subscriptionService, PlanLimits } from '../services/subscriptionService';
+import { ageCategoryService, AgeCategory } from '../services/ageCategoryService';
+import { groupService, Group } from '../services/groupService';
+import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 
@@ -14,6 +17,7 @@ interface Filters {
   category: string;
   position: string;
   status: string;
+  group: string;
 }
 
 const Athletes: React.FC = () => {
@@ -27,14 +31,18 @@ const Athletes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<Filters>({ category: '', position: '', status: '' });
+  const [filters, setFilters] = useState<Filters>({ category: '', position: '', status: '', group: '' });
+  const [dbCategories, setDbCategories] = useState<AgeCategory[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [athleteGroupMap, setAthleteGroupMap] = useState<Map<string, string>>(new Map());
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; athlete: Athlete | null; loading: boolean }>({
     isOpen: false,
     athlete: null,
     loading: false,
   });
 
-  const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
+  const FALLBACK_CATEGORIES = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
+  const categories = dbCategories.length > 0 ? dbCategories.map(c => c.name) : FALLBACK_CATEGORIES;
 
   const positionOptions: { value: string; key: string }[] = [
     { value: 'Goleiro',          key: 'athlete.position.goalkeeper'  },
@@ -71,6 +79,12 @@ const Athletes: React.FC = () => {
 
   useEffect(() => {
     loadAthletes();
+    ageCategoryService.list().then(setDbCategories).catch(() => {});
+    groupService.list().then(setGroups).catch(() => {});
+    supabase.from('athlete_groups').select('athlete_id, group_id').is('left_at', null)
+        .then(({ data }) => {
+            if (data) setAthleteGroupMap(new Map(data.map((r: any) => [r.athlete_id, r.group_id])));
+        }, () => {});
   }, []);
 
   const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
@@ -125,12 +139,13 @@ const Athletes: React.FC = () => {
     const matchesCategory = !filters.category || a.category === filters.category;
     const matchesPosition = !filters.position || a.position === filters.position;
     const matchesStatus = !filters.status || a.status === filters.status;
-    return matchesSearch && matchesCategory && matchesPosition && matchesStatus;
+    const matchesGroup = !filters.group || athleteGroupMap.get(a.id) === filters.group;
+    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesGroup;
   });
 
-  const activeFiltersCount = [filters.category, filters.position, filters.status].filter(Boolean).length;
+  const activeFiltersCount = [filters.category, filters.position, filters.status, filters.group].filter(Boolean).length;
 
-  const clearFilters = () => setFilters({ category: '', position: '', status: '' });
+  const clearFilters = () => setFilters({ category: '', position: '', status: '', group: '' });
 
   const getStatusVariant = (status?: string) => {
     switch (status) {
@@ -210,7 +225,7 @@ const Athletes: React.FC = () => {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1.5">{t('athletes.category')}</label>
               <div className="relative">
@@ -253,6 +268,22 @@ const Athletes: React.FC = () => {
                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
+            {groups.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Turma</label>
+                <div className="relative">
+                  <select
+                    value={filters.group}
+                    onChange={(e) => setFilters({ ...filters, group: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none pr-8"
+                  >
+                    <option value="">Todas as turmas</option>
+                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

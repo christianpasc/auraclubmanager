@@ -1,15 +1,18 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, Shirt, Activity, History, Save, ArrowLeft, Loader2,
-    Phone, MapPin, Shield, Users, Heart, Camera, X
+    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus
 } from 'lucide-react';
 import {
     athleteService, wardrobeService, physiologyService, trainingHistoryService,
     Athlete, AthleteWardrobe, AthletePhysiology, AthleteTrainingHistory
 } from '../services/athleteService';
 import { storageService } from '../services/storageService';
+import { ageCategoryService, AgeCategory } from '../services/ageCategoryService';
+import { guardianService, Guardian } from '../services/guardianService';
+import { groupService } from '../services/groupService';
 import { useLanguage } from '../contexts/LanguageContext';
 import AthleteHistoryDashboard from '../components/AthleteHistoryDashboard';
 
@@ -31,6 +34,13 @@ const AthleteForm: React.FC = () => {
     const [wardrobe, setWardrobe] = useState<Partial<AthleteWardrobe>>({});
     const [physiology, setPhysiology] = useState<Partial<AthletePhysiology>>({});
     const [trainingHistory, setTrainingHistory] = useState<AthleteTrainingHistory[]>([]);
+    const [ageCategories, setAgeCategories] = useState<AgeCategory[]>([]);
+    const [linkedGuardians, setLinkedGuardians] = useState<{ guardian: Guardian; relationship: string; is_primary: boolean }[]>([]);
+    const [allGuardians, setAllGuardians] = useState<Guardian[]>([]);
+    const [guardianSearch, setGuardianSearch] = useState('');
+    const [addRelationship, setAddRelationship] = useState('pai');
+    const [currentGroupName, setCurrentGroupName] = useState<string | null>(null);
+    const [categoryHint, setCategoryHint] = useState<string | null>(null);
 
     const tabs = [
         { id: 'general' as TabType, label: t('athleteForm.tab.general'), icon: User },
@@ -39,9 +49,33 @@ const AthleteForm: React.FC = () => {
         { id: 'physiology' as TabType, label: t('athleteForm.tab.physiology'), icon: Activity },
     ];
 
+    const refreshLinkedGuardians = useCallback(async (athleteId: string) => {
+        const linked = await guardianService.getAthleteGuardians(athleteId);
+        setLinkedGuardians(linked);
+    }, []);
+
     useEffect(() => {
-        if (id) loadAthlete(id);
+        ageCategoryService.list().then(setAgeCategories).catch(() => {});
+        guardianService.list().then(setAllGuardians).catch(() => {});
+        if (id) {
+            loadAthlete(id);
+            refreshLinkedGuardians(id).catch(() => {});
+            groupService.getAthleteCurrentGroup(id).then(g => setCurrentGroupName(g?.group_name ?? null)).catch(() => {});
+        }
     }, [id]);
+
+    // Auto-suggest category when birth_date changes
+    useEffect(() => {
+        if (!athlete.birth_date || ageCategories.length === 0) return;
+        const suggested = ageCategoryService.matchCategory(athlete.birth_date, ageCategories);
+        if (suggested && !athlete.category) {
+            setAthlete(prev => ({ ...prev, category: suggested }));
+        } else if (suggested && suggested !== athlete.category) {
+            setCategoryHint(suggested);
+        } else {
+            setCategoryHint(null);
+        }
+    }, [athlete.birth_date, ageCategories]);
 
     const loadAthlete = async (athleteId: string) => {
         setLoading(true);
@@ -116,6 +150,23 @@ const AthleteForm: React.FC = () => {
         }
     };
 
+    const handleLinkGuardian = async (guardianId: string) => {
+        if (!id) return;
+        try {
+            await guardianService.linkAthlete(guardianId, id, addRelationship, linkedGuardians.length === 0);
+            await refreshLinkedGuardians(id);
+            setGuardianSearch('');
+        } catch (e: any) { setError(e.message ?? 'Erro ao vincular responsável'); }
+    };
+
+    const handleUnlinkGuardian = async (guardianId: string) => {
+        if (!id) return;
+        try {
+            await guardianService.unlinkAthlete(guardianId, id);
+            setLinkedGuardians(prev => prev.filter(g => g.guardian.id !== guardianId));
+        } catch (e: any) { setError(e.message ?? 'Erro ao desvincular responsável'); }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -166,12 +217,81 @@ const AthleteForm: React.FC = () => {
                 </div>
 
                 <div className="p-6">
-                    {activeTab === 'general' && <GeneralTab t={t} athlete={athlete} setAthlete={setAthlete} onPhotoUpload={handlePhotoUpload} uploadingPhoto={uploadingPhoto} />}
+                    {activeTab === 'general' && <GeneralTab t={t} athlete={athlete} setAthlete={setAthlete} onPhotoUpload={handlePhotoUpload} uploadingPhoto={uploadingPhoto} ageCategories={ageCategories} categoryHint={categoryHint} setCategoryHint={setCategoryHint} currentGroupName={currentGroupName} />}
                     {activeTab === 'wardrobe' && <WardrobeTab t={t} wardrobe={wardrobe} setWardrobe={setWardrobe} />}
                     {activeTab === 'history' && id && <AthleteHistoryDashboard athleteId={id} t={t} language={language} />}
                     {activeTab === 'physiology' && <PhysiologyTab t={t} physiology={physiology} setPhysiology={setPhysiology} />}
                 </div>
             </div>
+
+            {/* Guardian linking — only when editing */}
+            {isEditing && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary" />
+                        Responsáveis Vinculados
+                    </h2>
+
+                    {linkedGuardians.length === 0 ? (
+                        <p className="text-sm text-slate-400 mb-4">Nenhum responsável vinculado a este atleta.</p>
+                    ) : (
+                        <div className="space-y-2 mb-4">
+                            {linkedGuardians.map(({ guardian, relationship, is_primary }) => (
+                                <div key={guardian.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                                        {guardian.full_name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-slate-800 truncate">{guardian.full_name}</p>
+                                        <p className="text-xs text-slate-400">{relationship}{is_primary ? ' · Principal' : ''}</p>
+                                    </div>
+                                    {guardian.phone && <span className="text-xs text-slate-400 hidden sm:block">{guardian.phone}</span>}
+                                    <button onClick={() => handleUnlinkGuardian(guardian.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="border-t pt-4">
+                        <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Vincular responsável</p>
+                        <div className="flex gap-2 mb-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input value={guardianSearch} onChange={e => setGuardianSearch(e.target.value)}
+                                    placeholder="Buscar responsável..."
+                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                            </div>
+                            <select value={addRelationship} onChange={e => setAddRelationship(e.target.value)}
+                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                {['pai', 'mãe', 'avô', 'avó', 'responsável legal', 'outro'].map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                            {allGuardians
+                                .filter(g => !linkedGuardians.some(l => l.guardian.id === g.id) &&
+                                    (!guardianSearch || g.full_name.toLowerCase().includes(guardianSearch.toLowerCase())))
+                                .slice(0, 20)
+                                .map(g => (
+                                    <button key={g.id} onClick={() => handleLinkGuardian(g.id)}
+                                        className="w-full flex items-center gap-3 p-2.5 hover:bg-primary/5 rounded-lg transition-colors text-left">
+                                        <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
+                                            {g.full_name.charAt(0)}
+                                        </div>
+                                        <span className="text-sm text-slate-700 flex-1 truncate">{g.full_name}</span>
+                                        {g.phone && <span className="text-xs text-slate-400 hidden sm:block">{g.phone}</span>}
+                                        <UserPlus className="w-4 h-4 text-primary opacity-60 flex-shrink-0" />
+                                    </button>
+                                ))}
+                            {allGuardians.filter(g => !linkedGuardians.some(l => l.guardian.id === g.id) &&
+                                (!guardianSearch || g.full_name.toLowerCase().includes(guardianSearch.toLowerCase()))).length === 0 && (
+                                <p className="text-xs text-slate-400 p-2">Nenhum responsável disponível. <button onClick={() => navigate('/guardians/new')} className="text-primary hover:underline">Cadastrar novo</button></p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -183,7 +303,11 @@ const GeneralTab: React.FC<{
     setAthlete: React.Dispatch<React.SetStateAction<Partial<Athlete>>>;
     onPhotoUpload: (file: File) => void;
     uploadingPhoto: boolean;
-}> = ({ t, athlete, setAthlete, onPhotoUpload, uploadingPhoto }) => {
+    ageCategories: AgeCategory[];
+    categoryHint: string | null;
+    setCategoryHint: React.Dispatch<React.SetStateAction<string | null>>;
+    currentGroupName: string | null;
+}> = ({ t, athlete, setAthlete, onPhotoUpload, uploadingPhoto, ageCategories, categoryHint, setCategoryHint, currentGroupName }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const updateField = (field: keyof Athlete, value: any) => setAthlete(prev => ({ ...prev, [field]: value }));
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,13 +399,19 @@ const GeneralTab: React.FC<{
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">{t('trainingForm.field.category')}</label>
-                        <select value={athlete.category || ''} onChange={(e) => updateField('category', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                        <select value={athlete.category || ''} onChange={(e) => { updateField('category', e.target.value); setCategoryHint(null); }} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                             <option value="">{t('trainingForm.field.select')}</option>
-                            {['Sub-7','Sub-9','Sub-11','Sub-13','Sub-15','Sub-17','Sub-20'].map(c => (
-                                <option key={c} value={c}>{c}</option>
-                            ))}
-                            <option value="Profissional">{t('athlete.category.professional')}</option>
+                            {(ageCategories.length > 0
+                                ? ageCategories.map(c => c.name)
+                                : ['Sub-7','Sub-9','Sub-11','Sub-13','Sub-15','Sub-17','Sub-20','Profissional']
+                            ).map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
+                        {categoryHint && (
+                            <button type="button" onClick={() => { updateField('category', categoryHint); setCategoryHint(null); }}
+                                className="mt-1 text-xs text-primary hover:underline">
+                                Sugerido pela data de nascimento: {categoryHint} →
+                            </button>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.position')}</label>
@@ -343,9 +473,10 @@ const GeneralTab: React.FC<{
                 </div>
             </div>
 
-            {/* Guardian */}
+            {/* Guardian legacy fields */}
             <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-primary" />{t('athleteForm.section.guardian')}</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2"><Users className="w-5 h-5 text-primary" />{t('athleteForm.section.guardian')}</h3>
+                <p className="text-xs text-slate-400 mb-4">Campos legados — use "Responsáveis Vinculados" abaixo para gerenciar vínculos formais.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.guardianName')}</label>
@@ -365,6 +496,14 @@ const GeneralTab: React.FC<{
                     </div>
                 </div>
             </div>
+
+            {/* Current group — read only info */}
+            {currentGroupName && (
+                <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span className="text-sm text-slate-700">Turma atual: <strong>{currentGroupName}</strong></span>
+                </div>
+            )}
         </div>
     );
 };

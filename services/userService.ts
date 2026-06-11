@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 
+export type TenantRole = 'owner' | 'coordinator' | 'coach' | 'guardian' | 'athlete' | 'admin' | 'manager' | 'member';
+
 export interface UserProfile {
     id: string;
     email: string;
@@ -163,7 +165,7 @@ export const userService = {
     async inviteUserToTenant(
         email: string,
         tenantId: string,
-        role: 'admin' | 'manager' | 'member' = 'member',
+        role: TenantRole = 'member',
         permissions?: Record<string, boolean>
     ): Promise<{ success: boolean; error?: string }> {
         try {
@@ -197,17 +199,17 @@ export const userService = {
      * Get default permissions based on role
      */
     getDefaultPermissions(role: string): Record<string, boolean> {
-        const basePermissions = {
-            view_dashboard: true,
-            view_athletes: true,
+        const noAccess = {
+            view_dashboard: false,
+            view_athletes: false,
             manage_athletes: false,
-            view_enrollments: true,
+            view_enrollments: false,
             manage_enrollments: false,
-            view_trainings: true,
+            view_trainings: false,
             manage_trainings: false,
-            view_competitions: true,
+            view_competitions: false,
             manage_competitions: false,
-            view_games: true,
+            view_games: false,
             manage_games: false,
             view_finance: false,
             manage_finance: false,
@@ -217,17 +219,26 @@ export const userService = {
             manage_users: false,
         };
 
+        const viewOnly = {
+            ...noAccess,
+            view_dashboard: true,
+            view_athletes: true,
+            view_enrollments: true,
+            view_trainings: true,
+            view_competitions: true,
+            view_games: true,
+        };
+
         switch (role) {
-            case 'admin':
             case 'owner':
-                // Admin has all permissions
-                return Object.fromEntries(
-                    Object.keys(basePermissions).map(key => [key, true])
-                );
+            case 'admin':
+                return Object.fromEntries(Object.keys(noAccess).map(k => [k, true]));
+
+            case 'coordinator':
             case 'manager':
-                // Manager can manage most things except users and some settings
+                // Gerencia operações, sem billing/configurações de conta
                 return {
-                    ...basePermissions,
+                    ...viewOnly,
                     manage_athletes: true,
                     manage_enrollments: true,
                     manage_trainings: true,
@@ -235,19 +246,54 @@ export const userService = {
                     manage_games: true,
                     view_finance: true,
                     view_monthly_fees: true,
+                    manage_monthly_fees: true,
+                    manage_users: false,
+                    manage_settings: false,
                 };
+
+            case 'coach':
+                // Treinos, atletas e jogos — sem financeiro
+                return {
+                    ...viewOnly,
+                    manage_athletes: false,
+                    manage_trainings: true,
+                    manage_games: true,
+                    view_finance: false,
+                    view_monthly_fees: false,
+                };
+
+            case 'guardian':
+                // Responsável: vê dashboard e atletas vinculados
+                return {
+                    ...noAccess,
+                    view_dashboard: true,
+                    view_athletes: true,
+                    view_trainings: true,
+                    view_games: true,
+                };
+
+            case 'athlete':
+                // Atleta: vê apenas o próprio perfil e calendário
+                return {
+                    ...noAccess,
+                    view_dashboard: true,
+                    view_trainings: true,
+                    view_games: true,
+                };
+
             case 'member':
             default:
-                // Member has view-only access
-                return basePermissions;
+                return viewOnly;
         }
     },
 };
 
 export const AVAILABLE_ROLES = [
-    { value: 'admin', label: 'Administrador', description: 'Acesso total ao sistema' },
-    { value: 'manager', label: 'Gerente', description: 'Gerencia operações do dia-a-dia' },
-    { value: 'member', label: 'Membro', description: 'Acesso de visualização apenas' },
+    { value: 'coordinator', label: 'Coordenador',  description: 'Gerencia operações do dia-a-dia, sem acesso a billing' },
+    { value: 'coach',       label: 'Treinador',    description: 'Acesso a treinos, atletas e jogos' },
+    { value: 'guardian',    label: 'Responsável',  description: 'Vê apenas atletas vinculados e calendário' },
+    { value: 'athlete',     label: 'Atleta',       description: 'Vê apenas o próprio perfil e calendário' },
+    { value: 'member',      label: 'Membro',       description: 'Acesso de visualização apenas' },
 ];
 
 export const PERMISSION_GROUPS = [

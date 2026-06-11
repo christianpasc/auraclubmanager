@@ -19,6 +19,11 @@ import {
   AlertTriangle,
   X,
   Radar,
+  Layers,
+  Heart,
+  Tag,
+  CalendarRange,
+  UsersRound,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,6 +44,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentTenant, isSchool } = useTenant();
   const { subscriptionInfo } = useSubscription();
   const [financeOpen, setFinanceOpen] = useState(location.pathname.startsWith('/finance'));
+  const [estruturaOpen, setEstruturaOpen] = useState(
+    ['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))
+  );
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
@@ -192,6 +200,49 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                    {t('sidebar.monthlyFees')}
                 </NavLink>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Estrutura com Submenu */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setEstruturaOpen(!estruturaOpen)}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
+              ['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))
+                ? 'bg-white/10 text-white font-semibold'
+                : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Layers className="w-5 h-5" />
+              <span className="text-sm">Estrutura</span>
+            </div>
+            {estruturaOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+
+          {estruturaOpen && (
+            <div className="pl-11 space-y-1 mt-1">
+              <NavLink to="/groups"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <UsersRound className="w-3.5 h-3.5" />
+                Turmas
+              </NavLink>
+              <NavLink to="/guardians"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Heart className="w-3.5 h-3.5" />
+                Responsáveis
+              </NavLink>
+              <NavLink to="/seasons"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <CalendarRange className="w-3.5 h-3.5" />
+                Temporadas
+              </NavLink>
+              <NavLink to="/age-categories"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Tag className="w-3.5 h-3.5" />
+                Categorias
+              </NavLink>
             </div>
           )}
         </div>

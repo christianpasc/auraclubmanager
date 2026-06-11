@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, ChevronDown, Mail, Shield, Check } from 'lucide-react';
-import { userService, AVAILABLE_ROLES, PERMISSION_GROUPS } from '../services/userService';
+import { userService, AVAILABLE_ROLES, PERMISSION_GROUPS, TenantRole } from '../services/userService';
 import { tenantService, TenantUser } from '../services/tenantService';
 import { useTenant } from '../contexts/TenantContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,7 +23,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     const isEditing = !!editingUser;
 
     const [email, setEmail] = useState('');
-    const [role, setRole] = useState<string>('member');
+    const [role, setRole] = useState<TenantRole>('member');
     const [permissions, setPermissions] = useState<Record<string, boolean>>({});
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         }
     }, [isOpen, editingUser]);
 
-    const handleRoleChange = (newRole: string) => {
+    const handleRoleChange = (newRole: TenantRole) => {
         setRole(newRole);
         // Update permissions based on new role
         setPermissions(userService.getDefaultPermissions(newRole));
@@ -83,7 +83,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 const result = await userService.inviteUserToTenant(
                     email.trim(),
                     currentTenant.id,
-                    role as 'admin' | 'manager' | 'member',
+                    role,
                     permissions
                 );
 
@@ -171,7 +171,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                         name="role"
                                         value={r.value}
                                         checked={role === r.value}
-                                        onChange={() => handleRoleChange(r.value)}
+                                        onChange={() => handleRoleChange(r.value as TenantRole)}
                                         className="hidden"
                                     />
                                     <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${role === r.value ? 'border-primary bg-primary' : 'border-slate-300'

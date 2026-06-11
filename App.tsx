@@ -25,6 +25,12 @@ import EnrollmentForm from './pages/EnrollmentForm';
 import MonthlyFees from './pages/MonthlyFees';
 import Prospects from './pages/Prospects';
 import ProspectForm from './pages/ProspectForm';
+import Seasons from './pages/Seasons';
+import AgeCategories from './pages/AgeCategories';
+import Groups from './pages/Groups';
+import GroupForm from './pages/GroupForm';
+import Guardians from './pages/Guardians';
+import GuardianForm from './pages/GuardianForm';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -203,6 +209,14 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/prospects/:id" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
             <Route path="/finance" element={<ProtectedLayout><Gated feature="finance"><Finance /></Gated></ProtectedLayout>} />
             <Route path="/finance/fees" element={<ProtectedLayout><SchoolOnlyRoute><MonthlyFees /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/seasons" element={<ProtectedLayout><Seasons /></ProtectedLayout>} />
+            <Route path="/age-categories" element={<ProtectedLayout><AgeCategories /></ProtectedLayout>} />
+            <Route path="/groups" element={<ProtectedLayout><Groups /></ProtectedLayout>} />
+            <Route path="/groups/new" element={<ProtectedLayout><GroupForm /></ProtectedLayout>} />
+            <Route path="/groups/:id" element={<ProtectedLayout><GroupForm /></ProtectedLayout>} />
+            <Route path="/guardians" element={<ProtectedLayout><Guardians /></ProtectedLayout>} />
+            <Route path="/guardians/new" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
+            <Route path="/guardians/:id" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
             <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
             <Route path="*" element={
               <ProtectedLayout>
