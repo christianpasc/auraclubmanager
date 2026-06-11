@@ -64,10 +64,16 @@ export const subscriptionService = {
             ? new Date(tenant.subscription_ends_at)
             : null;
 
-        // Trust the DB status='active' as primary source of truth.
-        // This prevents users manually marked as active from being shown 'trial expired'
-        // just because subscription_ends_at has lapsed.
-        const hasActiveSubscription = dbStatus === 'active';
+        // Trust the DB status='active' as primary source of truth, but add a
+        // safety-net: if subscription_ends_at is more than 7 days in the past the
+        // renewal webhook never fired (or payment failed silently) and the user
+        // should be blocked. Plans without an end date (manual activations with
+        // no stripe subscription) are always trusted as-is.
+        const GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+        const isSubExpiredByDate =
+            subscriptionEndsAt !== null &&
+            subscriptionEndsAt.getTime() < now.getTime() - GRACE_MS;
+        const hasActiveSubscription = dbStatus === 'active' && !isSubExpiredByDate;
 
         // Use trial_ends_at stored in DB; fall back to created_at + 7d for old rows
         const trialEndsAt: Date = tenant.trial_ends_at

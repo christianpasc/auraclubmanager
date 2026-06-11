@@ -170,22 +170,13 @@ const Plans: React.FC = () => {
         const priceId = stripeConfig.getPriceId(plan);
 
         if (!priceId) {
-            try {
-                setSubscribing(plan.id!);
-                await subscriptionService.activateSubscription(currentTenant.id, plan.id!, plan.interval);
-                await refreshSubscription();
-                setSuccessMessage(getText(
-                    'Plano ativado com sucesso! (Simulação - sem Stripe Price ID configurado)',
-                    'Plan activated successfully! (Simulation - no Stripe Price ID configured)',
-                    '¡Plan activado con éxito! (Simulación - sin Stripe Price ID configurado)',
-                    'Offre activée avec succès ! (Simulation - aucun Stripe Price ID configuré)',
-                    'Plano ativado com sucesso! (Simulação - sem Stripe Price ID configurado)'
-                ));
-            } catch (error: any) {
-                setErrorMessage(error.message || getText('Erro ao ativar plano', 'Error activating plan', 'Error al activar plan', 'Erreur lors de l\'activation de l\'offre', 'Erro ao ativar plano'));
-            } finally {
-                setSubscribing(null);
-            }
+            setErrorMessage(getText(
+                'Este plano não está disponível para compra no momento. Entre em contato com o suporte.',
+                'This plan is not available for purchase at this time. Please contact support.',
+                'Este plan no está disponible para su compra en este momento. Contacta con soporte.',
+                'Ce forfait n\'est pas disponible à l\'achat pour le moment. Contactez le support.',
+                'Este plano não está disponível para compra de momento. Contacte o suporte.'
+            ));
             return;
         }
 
