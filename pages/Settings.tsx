@@ -400,11 +400,28 @@ const Settings: React.FC = () => {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'owner':   return t('settings.users.role.owner');
-      case 'admin':   return t('settings.users.role.admin');
-      case 'manager': return t('settings.users.role.manager');
-      case 'member':  return t('settings.users.role.member');
+      case 'owner':       return t('settings.users.role.owner');
+      case 'admin':       return t('settings.users.role.admin');
+      case 'coordinator': return t('settings.users.role.coordinator');
+      case 'coach':       return t('settings.users.role.coach');
+      case 'guardian':    return t('settings.users.role.guardian');
+      case 'athlete':     return t('settings.users.role.athlete');
+      case 'manager':     return t('settings.users.role.manager');
+      case 'member':      return t('settings.users.role.member');
       default: return role;
+    }
+  };
+
+  const getRoleBadgeClass = (role: string, isOwner: boolean) => {
+    if (isOwner) return 'bg-amber-100 text-amber-700';
+    switch (role) {
+      case 'admin':       return 'bg-purple-100 text-purple-700';
+      case 'coordinator': return 'bg-blue-100 text-blue-700';
+      case 'coach':       return 'bg-green-100 text-green-700';
+      case 'guardian':    return 'bg-rose-100 text-rose-700';
+      case 'athlete':     return 'bg-cyan-100 text-cyan-700';
+      case 'manager':     return 'bg-indigo-100 text-indigo-700';
+      default:            return 'bg-slate-100 text-slate-600';
     }
   };
 
@@ -1075,7 +1092,7 @@ const Settings: React.FC = () => {
                           {t('settings.users.pending')}
                         </span>
                       )}
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase ${tu.is_owner ? 'bg-amber-100 text-amber-700' : tu.role === 'admin' ? 'bg-purple-100 text-purple-700' : tu.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase ${getRoleBadgeClass(tu.role, tu.is_owner)}`}>
                         {tu.is_owner ? t('settings.users.role.owner') : getRoleLabel(tu.role)}
                       </span>
                       {!tu.is_owner && (

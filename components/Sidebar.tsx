@@ -24,6 +24,11 @@ import {
   Tag,
   CalendarRange,
   UsersRound,
+  Globe,
+  Mail,
+  ShoppingBag,
+  Building2,
+  CalendarDays,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -216,7 +221,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           >
             <div className="flex items-center gap-3">
               <Layers className="w-5 h-5" />
-              <span className="text-sm">Estrutura</span>
+              <span className="text-sm">{t('sidebar.structure')}</span>
             </div>
             {estruturaOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -226,26 +231,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <NavLink to="/groups"
                 className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
                 <UsersRound className="w-3.5 h-3.5" />
-                Turmas
+                {t('sidebar.groups')}
               </NavLink>
               <NavLink to="/guardians"
                 className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
                 <Heart className="w-3.5 h-3.5" />
-                Responsáveis
+                {t('sidebar.guardians')}
               </NavLink>
               <NavLink to="/seasons"
                 className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
                 <CalendarRange className="w-3.5 h-3.5" />
-                Temporadas
+                {t('sidebar.seasons')}
               </NavLink>
               <NavLink to="/age-categories"
                 className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
                 <Tag className="w-3.5 h-3.5" />
-                Categorias
+                {t('sidebar.ageCategories')}
               </NavLink>
             </div>
           )}
         </div>
+
+        {/* Site do Clube */}
+        <SidebarItem icon={Globe} label={t('sidebar.clubSite')} path="/club-site" />
+        <SidebarItem icon={Mail} label={t('sidebar.invitations')} path="/invitations" />
+        <SidebarItem icon={ShoppingBag} label={t('sidebar.store')} path="/store" />
+        <SidebarItem icon={Building2} label={t('sidebar.sponsors')} path="/sponsors" />
+        <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" />
 
         {bottomItems.map((item) => (
           <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />

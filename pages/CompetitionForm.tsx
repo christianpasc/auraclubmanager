@@ -14,20 +14,7 @@ import {
 } from '../services/competitionService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface StandingRow {
-    team: string;
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goalsFor: number;
-    goalsAgainst: number;
-    goalDiff: number;
-    points: number;
-}
+import { computeStandings, StandingRow } from '../utils/standings';
 
 interface Matchup {
     leg1: Partial<Game>;
@@ -89,27 +76,6 @@ function generateKnockout(teamNames: string[], format: 4 | 8 | 16, idaEvolta = f
     return fixtures;
 }
 
-function computeStandings(teamNames: string[], games: Partial<Game>[]): StandingRow[] {
-    const rows: Record<string, StandingRow> = {};
-    for (const t of teamNames)
-        rows[t] = { team: t, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 };
-    for (const g of games) {
-        if (g.status !== 'finished' || g.home_score == null || g.away_score == null) continue;
-        if (!g.home_team || !g.away_team || g.home_team === 'A definir' || g.away_team === 'A definir') continue;
-        const h = g.home_team, a = g.away_team;
-        if (!rows[h]) rows[h] = { team: h, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 };
-        if (!rows[a]) rows[a] = { team: a, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0 };
-        rows[h].played++; rows[a].played++;
-        rows[h].goalsFor += g.home_score; rows[h].goalsAgainst += g.away_score;
-        rows[a].goalsFor += g.away_score; rows[a].goalsAgainst += g.home_score;
-        if (g.home_score > g.away_score) { rows[h].wins++; rows[h].points += 3; rows[a].losses++; }
-        else if (g.home_score < g.away_score) { rows[a].wins++; rows[a].points += 3; rows[h].losses++; }
-        else { rows[h].draws++; rows[a].draws++; rows[h].points++; rows[a].points++; }
-    }
-    return Object.values(rows)
-        .map(r => ({ ...r, goalDiff: r.goalsFor - r.goalsAgainst }))
-        .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor);
-}
 
 const KNOCKOUT_ROUNDS = new Set(['Oitavas de Final', 'Quartas de Final', 'Semifinal', 'Final', '3º Lugar']);
 const KNOCKOUT_ORDER = ['Oitavas de Final', 'Quartas de Final', 'Semifinal', 'Final', '3º Lugar'];
@@ -892,22 +858,6 @@ const CompetitionForm: React.FC = () => {
                             <div><label className="block text-sm font-semibold text-slate-700 mb-2">{t('common.status')}</label><select value={competition.status || 'upcoming'} onChange={e => updateCompetition('status', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">{competitionStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
                             <div><label className="block text-sm font-semibold text-slate-700 mb-2">{t('competitionForm.field.organizer')}</label><input type="text" value={competition.organizer || ''} onChange={e => updateCompetition('organizer', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" /></div>
                             <div className="md:col-span-2"><label className="block text-sm font-semibold text-slate-700 mb-2">{t('competitionForm.field.description')}</label><textarea value={competition.description || ''} onChange={e => updateCompetition('description', e.target.value)} rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" /></div>
-                            {(competition.status === 'finished' || competition.final_position) && (
-                                <div className="md:col-span-2 pt-5 border-t border-slate-100">
-                                    <h4 className="text-sm font-bold text-slate-700 mb-4">🏅 {t('competitionForm.section.finalResult')}</h4>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.finalPosition')}</label><input type="number" min="1" value={competition.final_position || ''} onChange={e => updateCompetition('final_position', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center" /></div>
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.totalTeams')}</label><input type="number" min="1" value={competition.total_teams || ''} onChange={e => updateCompetition('total_teams', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center" /></div>
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.goalsFor')}</label><input type="number" min="0" value={competition.goals_for ?? ''} onChange={e => updateCompetition('goals_for', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center" /></div>
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.goalsAgainst')}</label><input type="number" min="0" value={competition.goals_against ?? ''} onChange={e => updateCompetition('goals_against', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center" /></div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.wins')}</label><input type="number" min="0" value={competition.wins ?? ''} onChange={e => updateCompetition('wins', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-center font-semibold text-green-700" /></div>
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.draws')}</label><input type="number" min="0" value={competition.draws ?? ''} onChange={e => updateCompetition('draws', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-center font-semibold text-slate-600" /></div>
-                                        <div><label className="block text-xs font-semibold text-slate-500 mb-1">{t('competitionForm.field.losses')}</label><input type="number" min="0" value={competition.losses ?? ''} onChange={e => updateCompetition('losses', e.target.value ? parseInt(e.target.value) : undefined)} className="w-full px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-center font-semibold text-red-700" /></div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
 

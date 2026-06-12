@@ -31,6 +31,15 @@ import Groups from './pages/Groups';
 import GroupForm from './pages/GroupForm';
 import Guardians from './pages/Guardians';
 import GuardianForm from './pages/GuardianForm';
+import ClubSiteEditor from './pages/ClubSiteEditor';
+import PublicSite from './pages/PublicSite';
+import InvitationManager from './pages/InvitationManager';
+import PublicInviteResponse from './pages/PublicInviteResponse';
+import Store from './pages/Store';
+import ProductForm from './pages/ProductForm';
+import PublicStore from './pages/PublicStore';
+import SponsorManager from './pages/SponsorManager';
+import FacilityManager from './pages/FacilityManager';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -217,6 +226,13 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/guardians" element={<ProtectedLayout><Guardians /></ProtectedLayout>} />
             <Route path="/guardians/new" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
             <Route path="/guardians/:id" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
+            <Route path="/club-site" element={<ProtectedLayout><ClubSiteEditor /></ProtectedLayout>} />
+            <Route path="/invitations" element={<ProtectedLayout><InvitationManager /></ProtectedLayout>} />
+            <Route path="/store" element={<ProtectedLayout><Store /></ProtectedLayout>} />
+            <Route path="/store/products/new" element={<ProtectedLayout><ProductForm /></ProtectedLayout>} />
+            <Route path="/store/products/:id" element={<ProtectedLayout><ProductForm /></ProtectedLayout>} />
+            <Route path="/sponsors" element={<ProtectedLayout><SponsorManager /></ProtectedLayout>} />
+            <Route path="/facilities" element={<ProtectedLayout><FacilityManager /></ProtectedLayout>} />
             <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
             <Route path="*" element={
               <ProtectedLayout>
@@ -246,15 +262,24 @@ const OnboardingGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+// Public routes — no auth wrapper needed
+const PublicRoutes: React.FC = () => (
+  <Routes>
+    <Route path="/site/:slug" element={<PublicSite />} />
+    <Route path="/invite/:token" element={<PublicInviteResponse />} />
+    <Route path="/shop/:slug" element={<PublicStore />} />
+    <Route path="*" element={<PublicSite />} />
+  </Routes>
+);
+
 // Router wrapper that decides which route set to use
 const AppRouter: React.FC = () => {
   const location = useLocation();
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
+  const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/');
 
-  if (isAuthRoute) {
-    return <AuthRoutes />;
-  }
-
+  if (isAuthRoute) return <AuthRoutes />;
+  if (isPublicRoute) return <PublicRoutes />;
   return <ProtectedRoutes />;
 };
 

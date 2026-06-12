@@ -14,6 +14,7 @@ import {
 import { athleteService, Athlete } from '../services/athleteService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
+import { notifyLineup } from '../services/notificationService';
 
 type TabType = 'general' | 'lineup' | 'tactical';
 
@@ -227,6 +228,11 @@ const GameForm: React.FC = () => {
                     };
                 });
                 await gamePlayerService.upsertMany(gameId, playersToSave);
+
+                notifyLineup(
+                    { id: gameId, home_team: game.home_team, away_team: game.away_team, game_date: game.game_date, game_time: game.game_time },
+                    playersToSave.map(p => ({ athlete_id: p.athlete_id, is_starter: p.is_starter ?? false, position: p.position }))
+                ).catch(console.error);
             }
 
             setSaved(true);
