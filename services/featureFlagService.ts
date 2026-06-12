@@ -7,7 +7,12 @@ export type ModuleKey =
     | 'finance'
     | 'competitions'
     | 'scouting'
-    | 'tactical';
+    | 'tactical'
+    | 'assessments'
+    | 'development_plans'
+    | 'drill_library'
+    | 'video_analysis'
+    | 'performance_stats';
 
 export interface PlanModule {
     key: ModuleKey;
@@ -25,7 +30,12 @@ export const PLAN_MODULES: PlanModule[] = [
     { key: 'finance',      labelPt: 'Financeiro',           description: 'Controle financeiro completo',           emoji: '💰' },
     { key: 'competitions', labelPt: 'Competições',          description: 'Gerenciar torneios e competições',       emoji: '🥇' },
     { key: 'scouting',     labelPt: 'Prospecção',           description: 'Sistema de scouting de novos atletas',   emoji: '🔭', clubOnly: true },
-    { key: 'tactical',     labelPt: 'Mesa Tática',          description: 'Lousa tática interativa',                emoji: '📊' },
+    { key: 'tactical',          labelPt: 'Mesa Tática',                description: 'Lousa tática interativa',                              emoji: '📊' },
+    { key: 'assessments',       labelPt: 'Avaliações Técnicas',        description: 'Avaliar habilidades dos atletas por dimensão',          emoji: '📋', clubOnly: true },
+    { key: 'development_plans', labelPt: 'Planos de Desenvolvimento',  description: 'PDI com metas individuais por atleta',                  emoji: '🎯', clubOnly: true },
+    { key: 'drill_library',     labelPt: 'Biblioteca de Treinos',      description: 'Exercícios e planos de sessão categorizados',           emoji: '📚', clubOnly: true },
+    { key: 'video_analysis',    labelPt: 'Análise de Vídeo',           description: 'Upload, recorte e marcação de vídeos com controle de acesso', emoji: '🎬', clubOnly: true },
+    { key: 'performance_stats', labelPt: 'Estatísticas de Desempenho', description: 'Estatísticas por atleta e por jogo',                   emoji: '📊', clubOnly: true },
 ];
 
 export type ModuleFeatures = Partial<Record<ModuleKey, boolean>>;

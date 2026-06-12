@@ -29,6 +29,10 @@ import {
   ShoppingBag,
   Building2,
   CalendarDays,
+  ClipboardList,
+  Target,
+  BookOpen,
+  Video,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -258,6 +262,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <SidebarItem icon={ShoppingBag} label={t('sidebar.store')} path="/store" />
         <SidebarItem icon={Building2} label={t('sidebar.sponsors')} path="/sponsors" />
         <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" />
+        <SidebarItem icon={ClipboardList} label={t('sidebar.assessments')} path="/assessments" />
+        <SidebarItem icon={Target} label={t('sidebar.developmentPlans')} path="/development-plans" />
+        <SidebarItem icon={BookOpen} label={t('sidebar.drillLibrary')} path="/drills" />
+        <SidebarItem icon={Video} label={t('sidebar.videos')} path="/videos" />
 
         {bottomItems.map((item) => (
           <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />

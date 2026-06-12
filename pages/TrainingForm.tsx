@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Calendar, Save, ArrowLeft, Loader2, Users, Clock, MapPin, Plus, Trash2, UserPlus,
-    Dumbbell, ListChecks, GripVertical
+    Dumbbell, ListChecks, GripVertical, BookOpen, Search, Zap,
 } from 'lucide-react';
+import { drillService, Drill, DrillCategory, INTENSITY_LABELS, INTENSITY_COLORS } from '../services/drillService';
 import TacticalBoardModal from '../components/TacticalBoardModal';
 import {
     trainingService, trainingParticipantService, trainingActivityService,
@@ -15,7 +16,7 @@ import { athleteService, Athlete } from '../services/athleteService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
-type TabType = 'general' | 'athletes' | 'activities';
+type TabType = 'general' | 'athletes' | 'activities' | 'drills';
 
 const TrainingForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -41,6 +42,13 @@ const TrainingForm: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [tacticalBoardIdx, setTacticalBoardIdx] = useState<number | null>(null);
 
+    const [allDrills,       setAllDrills]       = useState<Drill[]>([]);
+    const [drillCategories, setDrillCategories] = useState<DrillCategory[]>([]);
+    const [selectedDrillIds, setSelectedDrillIds] = useState<string[]>([]);
+    const [drillSearch,     setDrillSearch]     = useState('');
+    const [drillFilterCat,  setDrillFilterCat]  = useState('');
+    const [drillFilterInt,  setDrillFilterInt]  = useState('');
+
     const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
 
     useEffect(() => {
@@ -50,18 +58,26 @@ const TrainingForm: React.FC = () => {
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            const athletesData = await athleteService.getAll();
+            const [athletesData, drillsData, drillCatsData] = await Promise.all([
+                athleteService.getAll(),
+                drillService.getAll(),
+                drillService.getCategories(),
+            ]);
             setAthletes(athletesData.filter(a => a.status === 'active'));
+            setAllDrills(drillsData);
+            setDrillCategories(drillCatsData);
 
             if (id) {
-                const [trainingData, participantsData, activitiesData] = await Promise.all([
+                const [trainingData, participantsData, activitiesData, trainingDrillsData] = await Promise.all([
                     trainingService.getById(id),
                     trainingParticipantService.getByTraining(id),
                     trainingActivityService.getByTraining(id),
+                    drillService.getByTraining(id),
                 ]);
                 setTraining(trainingData);
                 setParticipants(participantsData);
                 setActivities(activitiesData);
+                setSelectedDrillIds(trainingDrillsData.map(td => td.drill_id));
             }
         } catch (err) {
             setError(t('trainingForm.error.loading'));
@@ -178,6 +194,7 @@ const TrainingForm: React.FC = () => {
                     tactical_board: a.tactical_board || null,
                 }));
                 await trainingActivityService.upsertMany(trainingId, activitiesToSave);
+                await drillService.attachToTraining(trainingId, selectedDrillIds);
             }
 
             setSaved(true);
@@ -204,7 +221,25 @@ const TrainingForm: React.FC = () => {
         { id: 'general' as TabType, label: t('trainingForm.tab.general'), icon: Calendar },
         { id: 'athletes' as TabType, label: t('trainingForm.tab.athletes'), icon: Users },
         { id: 'activities' as TabType, label: t('trainingForm.tab.activities'), icon: ListChecks },
+        { id: 'drills' as TabType, label: 'Exercícios', icon: BookOpen },
     ];
+
+    const toggleDrill = (drillId: string) => {
+        setSelectedDrillIds(prev =>
+            prev.includes(drillId) ? prev.filter(id => id !== drillId) : [...prev, drillId]
+        );
+    };
+
+    const filteredDrills = allDrills.filter(d => {
+        if (drillFilterCat && d.category_id !== drillFilterCat) return false;
+        if (drillFilterInt && d.intensity  !== drillFilterInt)  return false;
+        if (drillSearch) {
+            const q = drillSearch.toLowerCase();
+            return d.name.toLowerCase().includes(q)
+                || (d.tags ?? []).some(t => t.toLowerCase().includes(q));
+        }
+        return true;
+    });
 
     const getPhaseLabel = (phase?: string) => {
         const phaseKeyMap: Record<string, string> = { warmup: 'training.phase.warmup', main: 'training.phase.main', cooldown: 'training.phase.cooldown', tactical: 'training.phase.tactical', physical: 'training.phase.physical', technical: 'training.phase.technical' };
@@ -643,6 +678,91 @@ const TrainingForm: React.FC = () => {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* ── Drills tab ── */}
+            {activeTab === 'drills' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+                    <div className="flex flex-wrap gap-3">
+                        <div className="relative flex-1 min-w-48">
+                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
+                            <input value={drillSearch} onChange={e => setDrillSearch(e.target.value)}
+                                placeholder="Buscar exercício ou tag..."
+                                className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm w-full"/>
+                        </div>
+                        <select value={drillFilterCat} onChange={e => setDrillFilterCat(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <option value="">Todas categorias</option>
+                            {drillCategories.map(c => <option key={c.id} value={c.id!}>{c.name}</option>)}
+                        </select>
+                        <select value={drillFilterInt} onChange={e => setDrillFilterInt(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                            <option value="">Todas intensidades</option>
+                            {Object.entries(INTENSITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        </select>
+                    </div>
+
+                    {selectedDrillIds.length > 0 && (
+                        <p className="text-xs text-indigo-600 font-medium">
+                            {selectedDrillIds.length} exercício{selectedDrillIds.length !== 1 ? 's' : ''} selecionado{selectedDrillIds.length !== 1 ? 's' : ''}
+                        </p>
+                    )}
+
+                    {allDrills.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                            <BookOpen className="w-10 h-10 mb-2 opacity-30"/>
+                            <p className="text-sm">Biblioteca vazia — crie exercícios em <strong>Biblioteca de Exercícios</strong></p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {filteredDrills.map(drill => {
+                                const selected = selectedDrillIds.includes(drill.id!);
+                                const catColor = drill.category?.color ?? '#6366f1';
+                                return (
+                                    <button key={drill.id} onClick={() => toggleDrill(drill.id!)}
+                                        className={`text-left rounded-xl border-2 p-4 transition-all ${selected
+                                            ? 'border-indigo-500 bg-indigo-50'
+                                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                                        }`}>
+                                        <div className="flex items-start gap-2 mb-2">
+                                            {drill.category && (
+                                                <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: catColor }}/>
+                                            )}
+                                            <p className="font-semibold text-sm text-slate-800 leading-tight">{drill.name}</p>
+                                            {selected && (
+                                                <span className="ml-auto shrink-0 w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center">
+                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            {drill.intensity && (
+                                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${INTENSITY_COLORS[drill.intensity]}`}>
+                                                    <Zap className="w-2.5 h-2.5 inline mr-0.5"/>{INTENSITY_LABELS[drill.intensity]}
+                                                </span>
+                                            )}
+                                            {drill.duration_minutes && (
+                                                <span className="text-xs text-slate-400">{drill.duration_minutes}min</span>
+                                            )}
+                                            {drill.category && (
+                                                <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: catColor + '20', color: catColor }}>
+                                                    {drill.category.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {drill.tags && drill.tags.length > 0 && (
+                                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                                {drill.tags.slice(0, 3).map((tag, i) => (
+                                                    <span key={i} className="text-xs text-slate-400">#{tag}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

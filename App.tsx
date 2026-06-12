@@ -40,6 +40,16 @@ import ProductForm from './pages/ProductForm';
 import PublicStore from './pages/PublicStore';
 import SponsorManager from './pages/SponsorManager';
 import FacilityManager from './pages/FacilityManager';
+import Assessments from './pages/Assessments';
+import AssessmentForm from './pages/AssessmentForm';
+import AssessmentTemplates from './pages/AssessmentTemplates';
+import AthleteEvolution from './pages/AthleteEvolution';
+import DevelopmentPlans from './pages/DevelopmentPlans';
+import DevelopmentPlanForm from './pages/DevelopmentPlanForm';
+import DrillLibrary from './pages/DrillLibrary';
+import VideoLibrary from './pages/VideoLibrary';
+import VideoPlayer from './pages/VideoPlayer';
+import PerformanceDashboard from './pages/PerformanceDashboard';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -233,6 +243,18 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/store/products/:id" element={<ProtectedLayout><ProductForm /></ProtectedLayout>} />
             <Route path="/sponsors" element={<ProtectedLayout><SponsorManager /></ProtectedLayout>} />
             <Route path="/facilities" element={<ProtectedLayout><FacilityManager /></ProtectedLayout>} />
+            <Route path="/athletes/:id/evolution" element={<ProtectedLayout><Gated feature="assessments"><AthleteEvolution /></Gated></ProtectedLayout>} />
+            <Route path="/development-plans" element={<ProtectedLayout><Gated feature="development_plans"><DevelopmentPlans /></Gated></ProtectedLayout>} />
+            <Route path="/development-plans/new" element={<ProtectedLayout><Gated feature="development_plans"><DevelopmentPlanForm /></Gated></ProtectedLayout>} />
+            <Route path="/development-plans/:id" element={<ProtectedLayout><Gated feature="development_plans"><DevelopmentPlanForm /></Gated></ProtectedLayout>} />
+            <Route path="/drills" element={<ProtectedLayout><Gated feature="drill_library"><DrillLibrary /></Gated></ProtectedLayout>} />
+            <Route path="/videos" element={<ProtectedLayout><Gated feature="video_analysis"><VideoLibrary /></Gated></ProtectedLayout>} />
+            <Route path="/videos/:id" element={<ProtectedLayout><Gated feature="video_analysis"><VideoPlayer /></Gated></ProtectedLayout>} />
+            <Route path="/athletes/:id/stats" element={<ProtectedLayout><Gated feature="performance_stats"><PerformanceDashboard /></Gated></ProtectedLayout>} />
+            <Route path="/assessments" element={<ProtectedLayout><Gated feature="assessments"><Assessments /></Gated></ProtectedLayout>} />
+            <Route path="/assessments/new" element={<ProtectedLayout><Gated feature="assessments"><AssessmentForm /></Gated></ProtectedLayout>} />
+            <Route path="/assessments/:id" element={<ProtectedLayout><Gated feature="assessments"><AssessmentForm /></Gated></ProtectedLayout>} />
+            <Route path="/assessment-templates" element={<ProtectedLayout><Gated feature="assessments"><AssessmentTemplates /></Gated></ProtectedLayout>} />
             <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
             <Route path="*" element={
               <ProtectedLayout>

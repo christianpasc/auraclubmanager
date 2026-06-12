@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, Shirt, Activity, History, Save, ArrowLeft, Loader2,
-    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus, Plus
+    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus, Plus, TrendingUp, BarChart2
 } from 'lucide-react';
 import {
     athleteService, wardrobeService, physiologyService, trainingHistoryService,
@@ -187,10 +187,26 @@ const AthleteForm: React.FC = () => {
                         <p className="text-sm text-slate-500">{isEditing ? t('athleteForm.editSubtitle') : t('athleteForm.newSubtitle')}</p>
                     </div>
                 </div>
-                <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50">
-                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    {t('common.save')}
-                </button>
+                <div className="flex items-center gap-2">
+                    {isEditing && (
+                        <>
+                            <button onClick={() => navigate(`/athletes/${id}/evolution`)}
+                                className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-all text-sm">
+                                <TrendingUp className="w-4 h-4"/>
+                                Evolução
+                            </button>
+                            <button onClick={() => navigate(`/athletes/${id}/stats`)}
+                                className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-all text-sm">
+                                <BarChart2 className="w-4 h-4"/>
+                                Estatísticas
+                            </button>
+                        </>
+                    )}
+                    <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50">
+                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        {t('common.save')}
+                    </button>
+                </div>
             </div>
 
             {error && (
