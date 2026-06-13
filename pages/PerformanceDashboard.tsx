@@ -7,6 +7,7 @@ import {
 import { performanceStatService, STAT_KEYS } from '../services/performanceStatService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { gameService, Game } from '../services/competitionService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GameRow {
   game_id: string;
@@ -25,6 +26,7 @@ const StatCard: React.FC<{ label: string; value: number; sub?: string; color?: s
 );
 
 const PerformanceDashboard: React.FC = () => {
+  const { t }    = useLanguage();
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -100,12 +102,12 @@ const PerformanceDashboard: React.FC = () => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">{athlete.full_name}</h1>
-          <p className="text-slate-500 text-sm flex items-center gap-1"><BarChart2 className="w-3.5 h-3.5"/> Estatísticas de Desempenho</p>
+          <p className="text-slate-500 text-sm flex items-center gap-1"><BarChart2 className="w-3.5 h-3.5"/> {t('performance.title')}</p>
         </div>
         <div className="ml-auto flex gap-2">
           <button onClick={() => navigate(`/athletes/${id}/evolution`)}
             className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
-            <TrendingUp className="w-4 h-4"/> Evolução
+            <TrendingUp className="w-4 h-4"/> {t('evolution.button')}
           </button>
         </div>
       </div>
@@ -113,14 +115,14 @@ const PerformanceDashboard: React.FC = () => {
       {!hasData ? (
         <div className="flex flex-col items-center justify-center py-24 text-slate-400">
           <Trophy className="w-12 h-12 mb-3 opacity-30"/>
-          <p className="font-medium">Nenhuma estatística registrada</p>
-          <p className="text-sm mt-1">Registre estatísticas na tab <strong>Estatísticas</strong> de um jogo</p>
+          <p className="font-medium">{t('performance.noStats')}</p>
+          <p className="text-sm mt-1">{t('performance.registerStats')}</p>
         </div>
       ) : (
         <>
           {/* Aggregate cards */}
           <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Totais acumulados</h2>
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('performance.aggregateTitle')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
               {STAT_KEYS.map((s, i) => (
                 <StatCard
@@ -137,7 +139,7 @@ const PerformanceDashboard: React.FC = () => {
           {gameRows.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-slate-700">Evolução por jogo</h2>
+                <h2 className="text-sm font-semibold text-slate-700">{t('performance.byGameTitle')}</h2>
                 <div className="flex flex-wrap gap-2">
                   {STAT_KEYS.map(s => (
                     <button key={s.key}
@@ -156,7 +158,7 @@ const PerformanceDashboard: React.FC = () => {
               </div>
 
               {chartKeys.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">Selecione pelo menos uma estatística acima.</p>
+                <p className="text-sm text-slate-400 text-center py-8">{t('performance.selectStat')}</p>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>

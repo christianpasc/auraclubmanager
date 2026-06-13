@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { evolutionService, PerformanceReview, DimensionSeries } from '../services/evolutionService';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AthleteInfo { id: string; full_name: string; photo_url?: string | null; }
 
@@ -41,6 +42,7 @@ interface ReviewModalProps {
   onClose: () => void;
 }
 const ReviewModal: React.FC<ReviewModalProps> = ({ initial, athleteId, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [periodStart,   setPeriodStart]   = useState(initial.period_start ?? '');
   const [periodEnd,     setPeriodEnd]     = useState(initial.period_end ?? '');
   const [summary,       setSummary]       = useState(initial.summary ?? '');
@@ -67,36 +69,36 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ initial, athleteId, onSave, o
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? 'Editar Revisão' : 'Nova Revisão'}</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? t('evolution.modal.editTitle') : t('evolution.modal.newTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 overflow-y-auto space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Início do período</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('evolution.periodStart')}</label>
               <input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Fim do período</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('evolution.periodEnd')}</label>
               <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Resumo geral</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('evolution.summary')}</label>
             <textarea value={summary} onChange={e => setSummary(e.target.value)} rows={3}
               placeholder="Avaliação geral do período..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Pontos fortes</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('evolution.strengths')}</label>
             <textarea value={strengths} onChange={e => setStrengths(e.target.value)} rows={2}
               placeholder="O que o atleta faz bem..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Pontos a melhorar</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('evolution.improvements')}</label>
             <textarea value={improvements} onChange={e => setImprovements(e.target.value)} rows={2}
               placeholder="O que precisa desenvolver..."
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
@@ -104,10 +106,10 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ initial, athleteId, onSave, o
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -119,6 +121,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ initial, athleteId, onSave, o
 const AthleteEvolution: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [loading,   setLoading]   = useState(true);
   const [athlete,   setAthlete]   = useState<AthleteInfo | null>(null);
@@ -184,13 +187,13 @@ const AthleteEvolution: React.FC = () => {
         )}
         <div>
           <h1 className="text-xl font-bold text-slate-800">{athlete?.full_name}</h1>
-          <p className="text-sm text-slate-500">Evolução de desempenho</p>
+          <p className="text-sm text-slate-500">{t('evolution.title')}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-        {([['chart', 'Gráfico de Evolução'], ['reviews', 'Revisões Periódicas']] as const).map(([k, l]) => (
+        {([['chart', t('evolution.tab.chart')], ['reviews', t('evolution.tab.reviews')]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === k ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
             {k === 'chart' ? <TrendingUp className="w-4 h-4"/> : <ClipboardList className="w-4 h-4"/>}
@@ -205,16 +208,16 @@ const AthleteEvolution: React.FC = () => {
           {!hasData ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-400">
               <TrendingUp className="w-12 h-12 mb-3 opacity-30"/>
-              <p className="font-medium">Ainda sem avaliações registradas</p>
-              <p className="text-sm mt-1">Registre 2 ou mais avaliações para ver a evolução do atleta.</p>
+              <p className="font-medium">{t('evolution.noData')}</p>
+              <p className="text-sm mt-1">{t('evolution.noDataAction')}</p>
               <button onClick={() => navigate('/assessments/new')}
                 className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                Criar avaliação
+                {t('assessments.create')}
               </button>
             </div>
           ) : (
             <>
-              <h2 className="text-sm font-semibold text-slate-600 mb-4">Média por dimensão (escala 0–10)</h2>
+              <h2 className="text-sm font-semibold text-slate-600 mb-4">{t('evolution.chart.label')}</h2>
               <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
@@ -252,7 +255,7 @@ const AthleteEvolution: React.FC = () => {
                       <p className="text-2xl font-bold text-slate-800 mt-1">{last?.avg ?? '—'}</p>
                       {delta !== null && (
                         <p className={`text-xs mt-0.5 ${delta >= 0 ? 'text-green-600' : 'text-rose-500'}`}>
-                          {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)} vs anterior
+                          {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)} {t('evolution.chart.previous')}
                         </p>
                       )}
                     </div>
@@ -270,14 +273,14 @@ const AthleteEvolution: React.FC = () => {
           <div className="flex justify-end">
             <button onClick={() => setModal({ athlete_id: id })}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-              <Plus className="w-4 h-4"/> Nova Revisão
+              <Plus className="w-4 h-4"/> {t('evolution.newReview')}
             </button>
           </div>
 
           {reviews.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-400 bg-white rounded-xl border border-slate-200">
               <ClipboardList className="w-12 h-12 mb-3 opacity-30"/>
-              <p className="font-medium">Nenhuma revisão registrada</p>
+              <p className="font-medium">{t('evolution.reviews.empty')}</p>
             </div>
           ) : (
             reviews.map(r => (
@@ -298,13 +301,13 @@ const AthleteEvolution: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {r.strengths && (
                     <div className="bg-green-50 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-green-700 mb-1">Pontos fortes</p>
+                      <p className="text-xs font-semibold text-green-700 mb-1">{t('evolution.strengths')}</p>
                       <p className="text-sm text-green-800 whitespace-pre-line">{r.strengths}</p>
                     </div>
                   )}
                   {r.improvements && (
                     <div className="bg-amber-50 rounded-lg p-3">
-                      <p className="text-xs font-semibold text-amber-700 mb-1">A melhorar</p>
+                      <p className="text-xs font-semibold text-amber-700 mb-1">{t('evolution.improvements')}</p>
                       <p className="text-sm text-amber-800 whitespace-pre-line">{r.improvements}</p>
                     </div>
                   )}

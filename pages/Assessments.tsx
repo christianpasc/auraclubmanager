@@ -4,12 +4,14 @@ import { Plus, Loader2, Pencil, Trash2, ClipboardList, Search } from 'lucide-rea
 import { assessmentService, Assessment, DIMENSION_COLORS } from '../services/assessmentService';
 import { supabase } from '../lib/supabase';
 import { getCurrentTenantIdSync } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AthleteOption { id: string; full_name: string; }
 interface GroupOption   { id: string; name: string; }
 
 const Assessments: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [athletes,    setAthletes]    = useState<AthleteOption[]>([]);
   const [groups,      setGroups]      = useState<GroupOption[]>([]);
@@ -55,17 +57,17 @@ const Assessments: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Avaliações</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Histórico de avaliações técnicas dos atletas.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('assessments.list.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('assessments.list.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/assessment-templates')}
             className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
-            Modelos
+            {t('assessments.templatesButton')}
           </button>
           <button onClick={() => navigate('/assessments/new')}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-            <Plus className="w-4 h-4"/> Nova Avaliação
+            <Plus className="w-4 h-4"/> {t('assessments.newButton')}
           </button>
         </div>
       </div>
@@ -74,12 +76,12 @@ const Assessments: React.FC = () => {
       <div className="flex flex-wrap gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar atleta..."
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('assessments.search')}
             className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm w-48"/>
         </div>
         <select value={filterAthlete} onChange={e => setFilterAthlete(e.target.value)}
           className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-          <option value="">Todos atletas</option>
+          <option value="">{t('plans.allAthletes')}</option>
           {athletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
         </select>
         <select value={filterGroup} onChange={e => setFilterGroup(e.target.value)}
@@ -96,11 +98,11 @@ const Assessments: React.FC = () => {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <ClipboardList className="w-12 h-12 mb-3 opacity-30"/>
-          <p className="font-medium">{assessments.length === 0 ? 'Nenhuma avaliação registrada' : 'Nenhum resultado encontrado'}</p>
+          <p className="font-medium">{assessments.length === 0 ? t('assessments.empty') : t('common.noResults')}</p>
           {assessments.length === 0 && (
             <button onClick={() => navigate('/assessments/new')}
               className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-              Criar primeira avaliação
+              {t('assessments.createFirst')}
             </button>
           )}
         </div>
@@ -109,10 +111,10 @@ const Assessments: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
-                <th className="text-left px-5 py-3">Atleta</th>
-                <th className="text-left px-5 py-3 hidden sm:table-cell">Data</th>
-                <th className="text-left px-5 py-3 hidden md:table-cell">Treinador</th>
-                <th className="text-left px-5 py-3 hidden lg:table-cell">Observações</th>
+                <th className="text-left px-5 py-3">{t('common.athlete')}</th>
+                <th className="text-left px-5 py-3 hidden sm:table-cell">{t('common.date')}</th>
+                <th className="text-left px-5 py-3 hidden md:table-cell">{t('assessments.coach')}</th>
+                <th className="text-left px-5 py-3 hidden lg:table-cell">{t('common.notes')}</th>
                 <th className="px-5 py-3"/>
               </tr>
             </thead>

@@ -6,6 +6,7 @@ import {
 import { invitationService, Invitation } from '../services/invitationService';
 import { gameService, Game } from '../services/competitionService';
 import { useTenant } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 
 type StatusFilter = 'all' | 'pending' | 'accepted' | 'declined';
@@ -59,6 +60,7 @@ function parseCSV(text: string): { name: string; email: string; phone: string }[
 }
 
 const InvitationManager: React.FC = () => {
+  const { t } = useLanguage();
   const { currentTenant } = useTenant();
 
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -214,8 +216,8 @@ const InvitationManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Convites</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Convide pessoas para jogos e eventos sem necessidade de cadastro.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('invitations.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('invitations.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {pendingWithEmail > 0 && (
@@ -224,7 +226,7 @@ const InvitationManager: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg text-sm hover:bg-indigo-50 transition-colors"
             >
               <Send className="w-4 h-4" />
-              Enviar todos ({pendingWithEmail})
+              {t('invitations.sendAll')} ({pendingWithEmail})
             </button>
           )}
           <button
@@ -232,7 +234,7 @@ const InvitationManager: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Novo Convite
+            {t('invitations.newButton')}
           </button>
         </div>
       </div>
@@ -246,7 +248,7 @@ const InvitationManager: React.FC = () => {
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${statusFilter === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
-              {s === 'all' ? 'Todos' : STATUS_LABELS[s]}
+              {s === 'all' ? t('common.all') : t(`invitations.status.${s}`)}
             </button>
           ))}
         </div>
@@ -256,7 +258,7 @@ const InvitationManager: React.FC = () => {
             onChange={e => setGameFilter(e.target.value)}
             className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
           >
-            <option value="">Todos os jogos</option>
+            <option value="">{t('common.all')}</option>
             {games.map(g => <option key={g.id} value={g.id}>{gameLabel(g)}</option>)}
           </select>
         )}
@@ -270,7 +272,7 @@ const InvitationManager: React.FC = () => {
             <div key={s} className="bg-white rounded-xl border border-slate-200 p-4">
               <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${STATUS_CLASSES[s]} mb-2`}>
                 <StatusIcon status={s} />
-                {STATUS_LABELS[s]}
+                {t(`invitations.status.${s}`)}
               </div>
               <p className="text-2xl font-bold text-slate-800">{count}</p>
             </div>
@@ -287,18 +289,18 @@ const InvitationManager: React.FC = () => {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <Users className="w-10 h-10 mb-3 opacity-40" />
-            <p className="font-medium">Nenhum convite encontrado</p>
-            <p className="text-sm mt-1">Clique em "Novo Convite" para começar.</p>
+            <p className="font-medium">{t('invitations.empty')}</p>
+            <p className="text-sm mt-1">{t('invitations.emptyAction')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Nome</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Contato</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Evento</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Respondido</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('common.name')}</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('invitations.contact')}</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('invitations.event')}</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('common.status')}</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('invitations.responded')}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -321,7 +323,7 @@ const InvitationManager: React.FC = () => {
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[inv.status || 'pending']}`}>
                       <StatusIcon status={inv.status || 'pending'} />
-                      {STATUS_LABELS[inv.status || 'pending']}
+                      {t(`invitations.status.${inv.status || 'pending'}`)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-400 text-xs">
@@ -377,7 +379,7 @@ const InvitationManager: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-800">Novo Convite</h2>
+              <h2 className="text-lg font-semibold text-slate-800">{t('invitations.modal.title')}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -389,33 +391,33 @@ const InvitationManager: React.FC = () => {
                 onClick={() => setModalTab('single')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${modalTab === 'single' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
               >
-                Individual
+                {t('invitations.modal.single')}
               </button>
               <button
                 onClick={() => setModalTab('csv')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${modalTab === 'csv' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
               >
                 <Upload className="w-3.5 h-3.5 inline mr-1" />
-                CSV / Lista
+                {t('invitations.modal.csv')}
               </button>
             </div>
 
             <div className="px-6 py-4 space-y-4">
               {/* Common fields: game/event */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Jogo (opcional)</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('invitations.modal.game')}</label>
                 <select
                   value={form.game_id}
                   onChange={e => handleGameSelect(e.target.value)}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="">Nenhum (evento livre)</option>
+                  <option value="">{t('invitations.modal.noGame')}</option>
                   {games.map(g => <option key={g.id} value={g.id}>{gameLabel(g)}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Título do evento</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('invitations.modal.eventTitle')}</label>
                   <input
                     value={form.event_title}
                     onChange={e => setForm(f => ({ ...f, event_title: e.target.value }))}
@@ -424,7 +426,7 @@ const InvitationManager: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Data / hora</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('invitations.modal.dateTime')}</label>
                   <input
                     type="datetime-local"
                     value={form.event_date}
@@ -434,7 +436,7 @@ const InvitationManager: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Mensagem pessoal (opcional)</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('invitations.modal.message')}</label>
                 <textarea
                   value={form.message}
                   onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -444,7 +446,7 @@ const InvitationManager: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Expira em (opcional)</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('invitations.modal.expires')}</label>
                 <input
                   type="datetime-local"
                   value={form.expires_at}
@@ -457,7 +459,7 @@ const InvitationManager: React.FC = () => {
               {modalTab === 'single' && (
                 <div className="space-y-3 pt-2 border-t border-slate-100">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
                     <input
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -467,7 +469,7 @@ const InvitationManager: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.email')}</label>
                       <input
                         type="email"
                         value={form.email}
@@ -477,7 +479,7 @@ const InvitationManager: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Telefone</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.phone')}</label>
                       <input
                         value={form.phone}
                         onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -494,7 +496,7 @@ const InvitationManager: React.FC = () => {
                 <div className="space-y-3 pt-2 border-t border-slate-100">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                      Cole a lista (nome, email, telefone)
+                      {t('invitations.modal.csvLabel')}
                     </label>
                     <textarea
                       value={csvText}
@@ -507,7 +509,7 @@ const InvitationManager: React.FC = () => {
                       onClick={handleParseCSV}
                       className="mt-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200"
                     >
-                      Analisar ({csvText.trim().split('\n').filter(l => l.trim()).length} linhas)
+                      {t('invitations.modal.parse')} ({csvText.trim().split('\n').filter(l => l.trim()).length})
                     </button>
                   </div>
                   {csvParsed.length > 0 && (
@@ -539,7 +541,7 @@ const InvitationManager: React.FC = () => {
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={modalTab === 'single' ? handleSaveSingle : handleSaveCSV}
@@ -547,7 +549,7 @@ const InvitationManager: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {modalTab === 'csv' ? `Criar ${csvParsed.length} convites` : 'Criar convite'}
+                {modalTab === 'csv' ? `${t('invitations.create')} (${csvParsed.length})` : t('invitations.create')}
               </button>
             </div>
           </div>

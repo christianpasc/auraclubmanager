@@ -4,6 +4,7 @@ import { Loader2, Save, ArrowLeft, ChevronDown } from 'lucide-react';
 import { assessmentService, AssessmentTemplate, Skill, SkillCategory, DIMENSION_LABELS, DIMENSION_COLORS } from '../services/assessmentService';
 import { supabase } from '../lib/supabase';
 import { getCurrentTenantIdSync } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AthleteOption { id: string; full_name: string; }
 interface GroupOption   { id: string; name: string; }
@@ -17,6 +18,7 @@ interface ScoreRow {
 const AssessmentForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const isEdit = Boolean(id);
 
   const [loading,  setLoading]  = useState(true);
@@ -135,17 +137,17 @@ const AssessmentForm: React.FC = () => {
           <ArrowLeft className="w-5 h-5"/>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? 'Editar Avaliação' : 'Nova Avaliação'}</h1>
-          <p className="text-slate-500 text-sm">Avalie as habilidades do atleta por dimensão.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? t('assessments.editTitle') : t('assessments.newTitle')}</h1>
+          <p className="text-slate-500 text-sm">{t('assessments.subtitle')}</p>
         </div>
       </div>
 
       {/* Basic info */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-        <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Informações</h2>
+        <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">{t('assessments.section.info')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Atleta <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.athlete')} <span className="text-rose-500">*</span></label>
             <select value={athleteId} onChange={e => setAthleteId(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
               <option value="">Selecionar atleta...</option>
@@ -153,32 +155,32 @@ const AssessmentForm: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Data da avaliação</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.date')}</label>
             <input type="date" value={assessedAt} onChange={e => setAssessedAt(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Modelo de avaliação</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.template')}</label>
             <div className="relative">
               <select value={templateId} onChange={e => setTemplateId(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm appearance-none">
-                <option value="">Todas as skills</option>
+                <option value="">{t('assessments.allSkills')}</option>
                 {templates.map(t => <option key={t.id} value={t.id!}>{t.name}</option>)}
               </select>
               <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none"/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Turma</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.group')}</label>
             <select value={groupId} onChange={e => setGroupId(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Sem turma</option>
+              <option value="">{t('assessments.noGroup')}</option>
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Observações gerais</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.notes')}</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
         </div>
@@ -187,8 +189,8 @@ const AssessmentForm: React.FC = () => {
       {/* Score cards */}
       {activeSkills.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
-          <p className="text-amber-700 text-sm font-medium">Nenhuma skill disponível.</p>
-          <p className="text-amber-600 text-xs mt-1">Cadastre skills em <a href="#/assessment-templates" className="underline">Modelos de Avaliação</a> para começar.</p>
+          <p className="text-amber-700 text-sm font-medium">{t('assessments.noSkills')}</p>
+          <p className="text-amber-600 text-xs mt-1">{t('assessments.noSkillsAction')}</p>
         </div>
       ) : (
         <div className="space-y-5">
@@ -250,11 +252,11 @@ const AssessmentForm: React.FC = () => {
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pb-8">
-        <button onClick={() => navigate('/assessments')} className="px-5 py-2.5 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+        <button onClick={() => navigate('/assessments')} className="px-5 py-2.5 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
         <button onClick={submit} disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
-          {isEdit ? 'Salvar alterações' : 'Salvar avaliação'}
+          {isEdit ? t('assessments.saveChanges') : t('assessments.save')}
         </button>
       </div>
     </div>

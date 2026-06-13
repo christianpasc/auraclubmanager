@@ -8,8 +8,10 @@ import {
   DIMENSION_LABELS,
   DIMENSION_COLORS,
 } from '../services/assessmentService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AssessmentTemplates: React.FC = () => {
+  const { t } = useLanguage();
   const [templates, setTemplates]   = useState<AssessmentTemplate[]>([]);
   const [skills,    setSkills]      = useState<Skill[]>([]);
   const [categories, setCategories] = useState<SkillCategory[]>([]);
@@ -48,8 +50,8 @@ const AssessmentTemplates: React.FC = () => {
   // ── Template CRUD ──
   const saveTpl = async () => {
     if (!tplModal) return;
-    if (!tplModal.name?.trim()) { setTplErr('Nome é obrigatório.'); return; }
-    if (!tplModal.skill_ids?.length) { setTplErr('Selecione ao menos 1 skill.'); return; }
+    if (!tplModal.name?.trim()) { setTplErr(t('errors.nameRequired')); return; }
+    if (!tplModal.skill_ids?.length) { setTplErr(t('errors.selectSkill')); return; }
     setTplSaving(true); setTplErr(null);
     try {
       if (tplModal.id) {
@@ -80,7 +82,7 @@ const AssessmentTemplates: React.FC = () => {
   // ── Skill CRUD ──
   const saveSkill = async () => {
     if (!skillModal) return;
-    if (!skillModal.name?.trim()) { setSkillErr('Nome é obrigatório.'); return; }
+    if (!skillModal.name?.trim()) { setSkillErr(t('errors.nameRequired')); return; }
     setSkillSaving(true); setSkillErr(null);
     try {
       if (skillModal.id) {
@@ -111,8 +113,8 @@ const AssessmentTemplates: React.FC = () => {
   // ── Category CRUD ──
   const saveCat = async () => {
     if (!catModal) return;
-    if (!catModal.name?.trim()) { setCatErr('Nome é obrigatório.'); return; }
-    if (!catModal.dimension)    { setCatErr('Selecione uma dimensão.'); return; }
+    if (!catModal.name?.trim()) { setCatErr(t('errors.nameRequired')); return; }
+    if (!catModal.dimension)    { setCatErr(t('errors.selectDimension')); return; }
     setCatSaving(true); setCatErr(null);
     try {
       if (catModal.id) {
@@ -144,12 +146,12 @@ const AssessmentTemplates: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Modelos de Avaliação</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Configure skills e modelos de avaliação reutilizáveis.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('assessments.templates.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('assessments.templates.subtitle')}</p>
         </div>
         <button onClick={() => setTplModal({ skill_ids: [] })}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-          <Plus className="w-4 h-4"/> Novo Modelo
+          <Plus className="w-4 h-4"/> {t('assessments.newTemplate')}
         </button>
       </div>
 
@@ -157,15 +159,15 @@ const AssessmentTemplates: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200">
         <button onClick={() => setExpandedSkills(e => !e)}
           className="w-full flex items-center justify-between px-5 py-4 text-left">
-          <span className="font-semibold text-slate-700">Skills Cadastradas ({skills.length})</span>
+          <span className="font-semibold text-slate-700">{t('assessments.skills.title')} ({skills.length})</span>
           <div className="flex items-center gap-2">
             <button onClick={e => { e.stopPropagation(); setSkillModal({ scale_min: 1, scale_max: 10, sort_order: 0 }); }}
               className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">
-              <Plus className="w-3 h-3"/> Skill
+              <Plus className="w-3 h-3"/> {t('assessments.addSkill')}
             </button>
             <button onClick={e => { e.stopPropagation(); setCatModal({ sort_order: 0 }); }}
               className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200">
-              <Plus className="w-3 h-3"/> Categoria
+              <Plus className="w-3 h-3"/> {t('assessments.addCategory')}
             </button>
             {expandedSkills ? <ChevronUp className="w-4 h-4 text-slate-400"/> : <ChevronDown className="w-4 h-4 text-slate-400"/>}
           </div>
@@ -199,7 +201,7 @@ const AssessmentTemplates: React.FC = () => {
             })}
             {uncategorized.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Sem categoria</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase mb-2">{t('assessments.noCategory')}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {uncategorized.map(skill => (
                     <div key={skill.id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-sm">
@@ -214,7 +216,7 @@ const AssessmentTemplates: React.FC = () => {
               </div>
             )}
             {skills.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-4">Nenhuma skill cadastrada ainda. Clique em "+ Skill" para começar.</p>
+              <p className="text-sm text-slate-400 text-center py-4">{t('assessments.skills.empty')}</p>
             )}
           </div>
         )}
@@ -224,8 +226,8 @@ const AssessmentTemplates: React.FC = () => {
       {templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">
           <ClipboardList className="w-12 h-12 mb-3 opacity-30"/>
-          <p className="font-medium">Nenhum modelo criado ainda</p>
-          <p className="text-sm mt-1">Crie skills primeiro, depois monte um modelo.</p>
+          <p className="font-medium">{t('assessments.templates.empty')}</p>
+          <p className="text-sm mt-1">{t('assessments.templates.emptyAction')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -259,24 +261,24 @@ const AssessmentTemplates: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
-              <h2 className="text-lg font-semibold text-slate-800">{tplModal.id ? 'Editar Modelo' : 'Novo Modelo'}</h2>
+              <h2 className="text-lg font-semibold text-slate-800">{tplModal.id ? t('assessments.modal.editTemplate') : t('assessments.modal.templateTitle')}</h2>
               <button onClick={() => setTplModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
             </div>
             <div className="p-6 overflow-y-auto space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
                 <input value={tplModal.name || ''} onChange={e => setTplModal(p => ({ ...p!, name: e.target.value }))}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
                 <textarea value={tplModal.description || ''} onChange={e => setTplModal(p => ({ ...p!, description: e.target.value }))}
                   rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-2">Skills incluídas <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 mb-2">{t('assessments.skillsIncluded')} <span className="text-rose-500">*</span></label>
                 {skills.length === 0 ? (
-                  <p className="text-sm text-slate-400">Nenhuma skill disponível. Cadastre skills primeiro.</p>
+                  <p className="text-sm text-slate-400">{t('assessments.noSkillsAvailable')}</p>
                 ) : (
                   <div className="space-y-3">
                     {skillsByCategory.map(({ cat, skills: cs }) => (
@@ -317,10 +319,10 @@ const AssessmentTemplates: React.FC = () => {
               {tplErr && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{tplErr}</p>}
             </div>
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 shrink-0">
-              <button onClick={() => setTplModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+              <button onClick={() => setTplModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
               <button onClick={saveTpl} disabled={tplSaving}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                {tplSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+                {tplSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
               </button>
             </div>
           </div>
@@ -332,37 +334,37 @@ const AssessmentTemplates: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-800">{skillModal.id ? 'Editar Skill' : 'Nova Skill'}</h2>
+              <h2 className="text-lg font-semibold text-slate-800">{skillModal.id ? t('assessments.modal.editSkill') : t('assessments.modal.skillTitle')}</h2>
               <button onClick={() => setSkillModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
             </div>
             <div className="p-6 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
                 <input value={skillModal.name || ''} onChange={e => setSkillModal(p => ({ ...p!, name: e.target.value }))}
                   placeholder="ex: Condução de bola"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.category')}</label>
                 <select value={skillModal.category_id || ''} onChange={e => setSkillModal(p => ({ ...p!, category_id: e.target.value || null }))}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                  <option value="">Sem categoria</option>
+                  <option value="">{t('assessments.noCategory')}</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({DIMENSION_LABELS[c.dimension]})</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
                 <textarea value={skillModal.description || ''} onChange={e => setSkillModal(p => ({ ...p!, description: e.target.value }))}
                   rows={2} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Escala mínima</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.scaleMin')}</label>
                   <input type="number" value={skillModal.scale_min ?? 1} onChange={e => setSkillModal(p => ({ ...p!, scale_min: Number(e.target.value) }))}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Escala máxima</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.scaleMax')}</label>
                   <input type="number" value={skillModal.scale_max ?? 10} onChange={e => setSkillModal(p => ({ ...p!, scale_max: Number(e.target.value) }))}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
                 </div>
@@ -370,10 +372,10 @@ const AssessmentTemplates: React.FC = () => {
               {skillErr && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{skillErr}</p>}
             </div>
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-              <button onClick={() => setSkillModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+              <button onClick={() => setSkillModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
               <button onClick={saveSkill} disabled={skillSaving}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                {skillSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+                {skillSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
               </button>
             </div>
           </div>
@@ -385,18 +387,18 @@ const AssessmentTemplates: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-800">{catModal.id ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+              <h2 className="text-lg font-semibold text-slate-800">{catModal.id ? t('assessments.modal.editCategory') : t('assessments.modal.categoryTitle')}</h2>
               <button onClick={() => setCatModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
             </div>
             <div className="p-6 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
                 <input value={catModal.name || ''} onChange={e => setCatModal(p => ({ ...p!, name: e.target.value }))}
                   placeholder="ex: Técnico"
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Dimensão <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('assessments.dimension')} <span className="text-rose-500">*</span></label>
                 <select value={catModal.dimension || ''} onChange={e => setCatModal(p => ({ ...p!, dimension: e.target.value as any }))}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
                   <option value="">Selecionar...</option>
@@ -406,10 +408,10 @@ const AssessmentTemplates: React.FC = () => {
               {catErr && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{catErr}</p>}
             </div>
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-              <button onClick={() => setCatModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+              <button onClick={() => setCatModal(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
               <button onClick={saveCat} disabled={catSaving}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                {catSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+                {catSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
               </button>
             </div>
           </div>

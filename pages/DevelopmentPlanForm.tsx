@@ -9,6 +9,7 @@ import {
 import { assessmentService, Skill } from '../services/assessmentService';
 import { supabase } from '../lib/supabase';
 import { getCurrentTenantIdSync } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AthleteOption { id: string; full_name: string; }
 
@@ -23,13 +24,11 @@ const emptyGoal = (): DevelopmentGoal & { localId: string } => ({
   notes: null,
 });
 
-const GOAL_STATUS_LABELS = {
-  pending: 'Pendente', in_progress: 'Em andamento', achieved: 'Alcançada', cancelled: 'Cancelada',
-} as const;
 
 const DevelopmentPlanForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const isEdit = Boolean(id);
 
   const [loading,  setLoading]  = useState(true);
@@ -84,11 +83,11 @@ const DevelopmentPlanForm: React.FC = () => {
     setGoals(prev => prev.map(g => g.localId === localId ? { ...g, ...patch } : g));
 
   const submit = async (andShare = false) => {
-    if (!title.trim())   { setErr('Título é obrigatório.'); return; }
-    if (!athleteId)      { setErr('Selecione um atleta.'); return; }
-    if (!startDate)      { setErr('Data de início é obrigatória.'); return; }
+    if (!title.trim())   { setErr(t('errors.titleRequired')); return; }
+    if (!athleteId)      { setErr(t('errors.selectAthlete')); return; }
+    if (!startDate)      { setErr(t('errors.startDateRequired')); return; }
     const validGoals = goals.filter(g => g.description?.trim() || g.skill_id);
-    if (!validGoals.length) { setErr('Adicione pelo menos 1 meta.'); return; }
+    if (!validGoals.length) { setErr(t('errors.addGoal')); return; }
 
     andShare ? setSharing(true) : setSaving(true);
     setErr(null);
@@ -139,16 +138,16 @@ const DevelopmentPlanForm: React.FC = () => {
           <ArrowLeft className="w-5 h-5"/>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? 'Editar PDI' : 'Novo Plano de Desenvolvimento'}</h1>
-          <p className="text-slate-500 text-sm">Defina metas de evolução por skill e prazo.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{isEdit ? t('plans.editTitle') : t('plans.newTitle')}</h1>
+          <p className="text-slate-500 text-sm">{t('plans.planSubtitle')}</p>
         </div>
       </div>
 
       {/* Plan info */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Informações do Plano</h2>
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">{t('plans.section.info')}</h2>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Atleta <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.athlete')} <span className="text-rose-500">*</span></label>
           <select value={athleteId} onChange={e => setAthleteId(e.target.value)}
             disabled={isEdit}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm disabled:bg-slate-50">
@@ -157,29 +156,29 @@ const DevelopmentPlanForm: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Título do PDI <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('plans.planTitle')} <span className="text-rose-500">*</span></label>
           <input value={title} onChange={e => setTitle(e.target.value)}
             placeholder="ex: Desenvolvimento técnico Sub-17 — 2º semestre"
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
           <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Início <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.start')} <span className="text-rose-500">*</span></label>
             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Término</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.end')}</label>
             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.status')}</label>
             <select value={status} onChange={e => setStatus(e.target.value as any)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
               {Object.entries(PLAN_STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -191,10 +190,10 @@ const DevelopmentPlanForm: React.FC = () => {
       {/* Goals */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Metas ({goals.filter(g => g.description?.trim() || g.skill_id).length})</h2>
+          <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">{t('plans.section.goals')} ({goals.filter(g => g.description?.trim() || g.skill_id).length})</h2>
           <button onClick={addGoal}
             className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium">
-            <Plus className="w-4 h-4"/> Adicionar meta
+            <Plus className="w-4 h-4"/> {t('plans.addGoal')}
           </button>
         </div>
 
@@ -211,15 +210,15 @@ const DevelopmentPlanForm: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Skill vinculada</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('plans.linkedSkill')}</label>
                   <select value={goal.skill_id ?? ''} onChange={e => updateGoal(goal.localId, { skill_id: e.target.value || null })}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs bg-white">
-                    <option value="">Sem skill específica</option>
+                    <option value="">{t('plans.noSkill')}</option>
                     {skills.map(s => <option key={s.id} value={s.id!}>{s.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Nota alvo</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('plans.targetScore')}</label>
                   <input type="number" min="0" max="10" step="0.5"
                     value={goal.target_score ?? ''} onChange={e => updateGoal(goal.localId, { target_score: e.target.value ? Number(e.target.value) : null })}
                     placeholder="ex: 7.5"
@@ -227,22 +226,25 @@ const DevelopmentPlanForm: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Descrição da meta</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1">{t('plans.goalDescription')}</label>
                 <input value={goal.description ?? ''} onChange={e => updateGoal(goal.localId, { description: e.target.value })}
                   placeholder="O que o atleta deve alcançar..."
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"/>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Prazo</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('plans.deadline')}</label>
                   <input type="date" value={goal.deadline ?? ''} onChange={e => updateGoal(goal.localId, { deadline: e.target.value || null })}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs bg-white"/>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.status')}</label>
                   <select value={goal.status ?? 'pending'} onChange={e => updateGoal(goal.localId, { status: e.target.value as any })}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs bg-white">
-                    {Object.entries(GOAL_STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    <option value="pending">{t('goals.pending')}</option>
+                    <option value="in_progress">{t('goals.inProgress')}</option>
+                    <option value="achieved">{t('goals.achieved')}</option>
+                    <option value="cancelled">{t('goals.cancelled')}</option>
                   </select>
                 </div>
               </div>
@@ -252,20 +254,20 @@ const DevelopmentPlanForm: React.FC = () => {
       </div>
 
       {err && <p className="text-rose-600 text-sm bg-rose-50 rounded-xl px-4 py-3">{err}</p>}
-      {shared && <p className="text-green-700 text-sm bg-green-50 rounded-xl px-4 py-3">PDI compartilhado! Atleta e responsáveis foram notificados.</p>}
+      {shared && <p className="text-green-700 text-sm bg-green-50 rounded-xl px-4 py-3">{t('plans.shared')}</p>}
 
       {/* Actions */}
       <div className="flex flex-wrap justify-end gap-3 pb-8">
-        <button onClick={() => navigate('/development-plans')} className="px-5 py-2.5 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+        <button onClick={() => navigate('/development-plans')} className="px-5 py-2.5 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
         <button onClick={() => submit(false)} disabled={saving || sharing}
           className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
-          Salvar rascunho
+          {t('plans.saveDraft')}
         </button>
         <button onClick={() => submit(true)} disabled={saving || sharing}
           className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50">
           {sharing ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4"/>}
-          Salvar e compartilhar
+          {t('plans.saveAndShare')}
         </button>
       </div>
     </div>

@@ -265,7 +265,7 @@ const GameForm: React.FC = () => {
         { id: 'general'  as TabType, label: t('gameForm.tab.general'), icon: Calendar },
         { id: 'lineup'   as TabType, label: t('gameForm.tab.lineup'), icon: Users },
         { id: 'tactical' as TabType, label: t('gameForm.tab.tactical'), icon: LayoutDashboard },
-        { id: 'stats'    as TabType, label: 'Estatísticas', icon: BarChart2 },
+        { id: 'stats'    as TabType, label: t('gameForm.tab.stats'), icon: BarChart2 },
     ];
 
     const updateStat = (athleteId: string, key: string, value: number) => {
@@ -775,23 +775,23 @@ const GameForm: React.FC = () => {
             {activeTab === 'stats' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
                     {!isEditing ? (
-                        <p className="text-sm text-slate-500 text-center py-8">Salve o jogo primeiro para registrar estatísticas.</p>
+                        <p className="text-sm text-slate-500 text-center py-8">{t('gameForm.stats.saveFirst')}</p>
                     ) : players.length === 0 ? (
-                        <p className="text-sm text-slate-500 text-center py-8">Adicione atletas na tab <strong>Escalação</strong> para registrar estatísticas.</p>
+                        <p className="text-sm text-slate-500 text-center py-8">{t('gameForm.stats.addAthletes')}</p>
                     ) : (
                         <>
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-slate-500">{players.length} atleta{players.length !== 1 ? 's' : ''}</p>
                                 <button onClick={saveStats} disabled={statsSaving}
                                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                                    {statsSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar Estatísticas
+                                    {statsSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('gameForm.stats.save')}
                                 </button>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-slate-100">
-                                            <th className="text-left py-2 pr-4 text-xs font-medium text-slate-500 min-w-36">Atleta</th>
+                                            <th className="text-left py-2 pr-4 text-xs font-medium text-slate-500 min-w-36">{t('common.athlete')}</th>
                                             {STAT_KEYS.map(s => (
                                                 <th key={s.key} className="px-2 py-2 text-center text-xs font-medium text-slate-500 min-w-14" title={s.label}>{s.short}</th>
                                             ))}
@@ -802,7 +802,7 @@ const GameForm: React.FC = () => {
                                             <tr key={p.athlete_id} className="hover:bg-slate-50/50">
                                                 <td className="py-2 pr-4">
                                                     <p className="font-medium text-slate-700 truncate max-w-36">{p.athlete?.full_name}</p>
-                                                    {p.is_starter && <span className="text-xs text-indigo-500">Titular</span>}
+                                                    {p.is_starter && <span className="text-xs text-indigo-500">{t('common.starter')}</span>}
                                                 </td>
                                                 {STAT_KEYS.map(s => (
                                                     <td key={s.key} className="px-2 py-1 text-center">

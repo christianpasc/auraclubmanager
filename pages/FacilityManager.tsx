@@ -4,6 +4,7 @@ import {
   ChevronLeft, ChevronRight, MapPin, Users, DollarSign,
 } from 'lucide-react';
 import { facilityService, Facility, Booking, BOOKING_STATUS_LABELS } from '../services/facilityService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ── Calendar helpers ──────────────────────────────────────────────────────────
 const SLOT_H = 56; // px per hour
@@ -39,6 +40,7 @@ interface BookingModalProps {
   onClose: () => void;
 }
 const BookingModal: React.FC<BookingModalProps> = ({ facilities, initial, onSave, onDelete, onClose }) => {
+  const { t } = useLanguage();
   const startD = initial.start_at ? new Date(initial.start_at) : new Date();
   const endD   = initial.end_at   ? new Date(initial.end_at)   : new Date(startD.getTime() + 3600000);
 
@@ -90,17 +92,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ facilities, initial, onSave
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? 'Editar Reserva' : 'Nova Reserva'}</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? t('facility.booking.editTitle') : t('facility.booking.newTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Título <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.title')} <span className="text-rose-500">*</span></label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="ex: Treino Sub-17"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Instalação <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('facility.field')} <span className="text-rose-500">*</span></label>
             <select value={facilityId} onChange={e => handleFacility(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
               <option value="">Selecionar...</option>
@@ -109,37 +111,37 @@ const BookingModal: React.FC<BookingModalProps> = ({ facilities, initial, onSave
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Data</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.date')}</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Início</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.start')}</label>
               <input type="time" value={startTime} onChange={e => handleStart(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Fim</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.end')}</label>
               <input type="time" value={endTime} onChange={e => handleEnd(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.status')}</label>
               <select value={status} onChange={e => setStatus(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 {Object.entries(BOOKING_STATUS_LABELS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Custo (R$)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('facility.cost')}</label>
               <input type="number" min="0" step="0.01" value={cost} onChange={e => setCost(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Observações</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.notes')}</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
@@ -155,10 +157,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ facilities, initial, onSave
             )}
           </div>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
             <button onClick={submit} disabled={saving}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+              {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
             </button>
           </div>
         </div>
@@ -174,6 +176,7 @@ interface FacilityModalProps {
   onClose: () => void;
 }
 const FacilityModal: React.FC<FacilityModalProps> = ({ initial, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [name,        setName]        = useState(initial.name || '');
   const [description, setDescription] = useState(initial.description || '');
   const [location,    setLocation]    = useState(initial.location || '');
@@ -185,7 +188,7 @@ const FacilityModal: React.FC<FacilityModalProps> = ({ initial, onSave, onClose 
   const [err,         setErr]         = useState<string|null>(null);
 
   const submit = async () => {
-    if (!name.trim()) { setErr('Nome é obrigatório.'); return; }
+    if (!name.trim()) { setErr(t('errors.nameRequired')); return; }
     setSaving(true); setErr(null);
     try {
       await onSave({
@@ -204,39 +207,39 @@ const FacilityModal: React.FC<FacilityModalProps> = ({ initial, onSave, onClose 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? 'Editar Instalação' : 'Nova Instalação'}</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? t('facility.facility.editTitle') : t('facility.facility.newTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="ex: Campo Principal"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Capacidade (pessoas)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('facility.capacity')}</label>
               <input type="number" min="0" value={capacity} onChange={e => setCapacity(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Taxa/hora (R$)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('facility.hourlyRate')}</label>
               <input type="number" min="0" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Localização</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('facility.location')}</label>
             <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Endereço ou sala"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-2">Cor no calendário</label>
+            <label className="block text-xs font-medium text-slate-600 mb-2">{t('facility.calendarColor')}</label>
             <div className="flex gap-2">
               {COLORS.map(c => (
                 <button key={c} onClick={() => setColor(c)}
@@ -250,15 +253,15 @@ const FacilityModal: React.FC<FacilityModalProps> = ({ initial, onSave, onClose 
               className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}>
               <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-5' : 'translate-x-1'}`}/>
             </button>
-            <span className="text-sm text-slate-600">{isActive ? 'Ativa' : 'Inativa'}</span>
+            <span className="text-sm text-slate-600">{isActive ? t('facility.active') : t('facility.inactive')}</span>
           </div>
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -268,6 +271,7 @@ const FacilityModal: React.FC<FacilityModalProps> = ({ initial, onSave, onClose 
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 const FacilityManager: React.FC = () => {
+  const { t } = useLanguage();
   const [tab, setTab]             = useState<'calendar'|'facilities'>('calendar');
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [bookings,   setBookings]   = useState<Booking[]>([]);
@@ -388,8 +392,8 @@ const FacilityManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Instalações</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Gerencie reservas e espaços do clube.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('facility.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('facility.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -406,14 +410,14 @@ const FacilityManager: React.FC = () => {
             }}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
             <Plus className="w-4 h-4"/>
-            {tab === 'facilities' ? 'Nova Instalação' : 'Nova Reserva'}
+            {tab === 'facilities' ? t('facility.newFacility') : t('facility.newBooking')}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-        {([['calendar','Calendário'],['facilities','Instalações']] as const).map(([k,l]) => (
+        {([['calendar', t('facility.tab.calendar')],['facilities', t('facility.tab.facilities')]] as const).map(([k,l]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === k ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
             {k === 'calendar' ? <CalendarDays className="w-4 h-4"/> : <MapPin className="w-4 h-4"/>}
@@ -436,13 +440,13 @@ const FacilityManager: React.FC = () => {
                   <span className="text-sm font-medium text-slate-700 min-w-[160px] text-center">{fmtWeekLabel()}</span>
                   <button onClick={() => setWeekStart(w => addDays(w, 7))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"><ChevronRight className="w-4 h-4"/></button>
                   <button onClick={() => setWeekStart(mondayOf(new Date()))} className="px-3 py-1 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 ml-1">
-                    Hoje
+                    {t('facility.today')}
                   </button>
                 </div>
                 {facilities.length > 0 && (
                   <select value={filterFac} onChange={e => setFilterFac(e.target.value)}
                     className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700">
-                    <option value="">Todas as instalações</option>
+                    <option value="">{t('facility.allFacilities')}</option>
                     {facilities.map(f => <option key={f.id} value={f.id!}>{f.name}</option>)}
                   </select>
                 )}
@@ -451,11 +455,11 @@ const FacilityManager: React.FC = () => {
               {facilities.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                   <CalendarDays className="w-12 h-12 mb-3 opacity-30"/>
-                  <p className="font-medium">Nenhuma instalação cadastrada</p>
-                  <p className="text-sm mt-1">Crie uma instalação antes de fazer reservas.</p>
+                  <p className="font-medium">{t('facility.empty')}</p>
+                  <p className="text-sm mt-1">{t('facility.emptyAction')}</p>
                   <button onClick={() => { setTab('facilities'); setFacilityModal({}); }}
                     className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-                    Cadastrar instalação
+                    {t('facility.createFirst')}
                   </button>
                 </div>
               ) : (
@@ -528,7 +532,7 @@ const FacilityManager: React.FC = () => {
             facilities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                 <MapPin className="w-12 h-12 mb-3 opacity-30"/>
-                <p className="font-medium">Nenhuma instalação cadastrada</p>
+                <p className="font-medium">{t('facility.empty')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

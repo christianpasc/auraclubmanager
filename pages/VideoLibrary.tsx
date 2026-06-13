@@ -7,6 +7,7 @@ import {
 import { videoService, Video as VideoRecord, isMinorFromBirthDate } from '../services/videoService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { getCurrentTenantIdSync } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('pt-BR') : '—';
@@ -18,6 +19,7 @@ interface UploadModalProps {
   onClose: () => void;
 }
 const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) => {
+  const { t } = useLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file,         setFile]         = useState<File | null>(null);
   const [title,        setTitle]        = useState('');
@@ -68,7 +70,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">Enviar Vídeo</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{t('videos.modal.uploadTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 space-y-4">
@@ -79,30 +81,30 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
             <Video className="w-8 h-8 mx-auto mb-2 text-slate-300"/>
             {file
               ? <p className="text-sm font-medium text-slate-700">{file.name}</p>
-              : <p className="text-sm text-slate-400">Clique para selecionar um vídeo</p>
+              : <p className="text-sm text-slate-400">{t('videos.selectFile')}</p>
             }
-            <p className="text-xs text-slate-400 mt-1">MP4, WebM, MOV — até 500 MB</p>
+            <p className="text-xs text-slate-400 mt-1">{t('videos.fileTypes')}</p>
             <input ref={fileRef} type="file" accept="video/*" onChange={handleFile} className="hidden"/>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Título <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.title')} <span className="text-rose-500">*</span></label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Atleta vinculado</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.athlete')}</label>
             <select value={athleteId} onChange={e => setAthleteId(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Nenhum</option>
+              <option value="">{t('videos.noAthlete')}</option>
               {athletes.map(a => (
                 <option key={a.id} value={a.id!}>
-                  {a.full_name}{isMinorFromBirthDate(a.birth_date) ? ' (menor)' : ''}
+                  {a.full_name}{isMinorFromBirthDate(a.birth_date) ? ` ${t('videos.minor')}` : ''}
                 </option>
               ))}
             </select>
@@ -112,12 +114,12 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
             <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5"/>
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-800">Atleta menor de idade — LGPD</p>
-                <p className="text-xs text-amber-600 mt-0.5">O upload de vídeo requer consentimento explícito do responsável legal.</p>
+                <p className="text-sm font-medium text-amber-800">{t('videos.lgpd.minorTitle')}</p>
+                <p className="text-xs text-amber-600 mt-0.5">{t('videos.lgpd.minorMessage')}</p>
                 <label className="flex items-center gap-2 mt-2 cursor-pointer">
                   <input type="checkbox" checked={consentGiven} onChange={e => setConsentGiven(e.target.checked)}
                     className="rounded text-indigo-600"/>
-                  <span className="text-xs text-amber-800 font-medium">Confirmo que tenho consentimento do responsável</span>
+                  <span className="text-xs text-amber-800 font-medium">{t('videos.lgpd.consent')}</span>
                 </label>
               </div>
             </div>
@@ -126,7 +128,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)}
               className="rounded text-indigo-600"/>
-            <span className="text-sm text-slate-600">Vídeo privado (acesso restrito ao clube)</span>
+            <span className="text-sm text-slate-600">{t('videos.private')}</span>
           </label>
 
           {uploading && (
@@ -135,16 +137,16 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
                 <div className="h-full bg-indigo-500 rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}/>
               </div>
-              <p className="text-xs text-slate-500 text-center">Enviando…</p>
+              <p className="text-xs text-slate-500 text-center">{t('common.uploading')}</p>
             </div>
           )}
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-          <button onClick={onClose} disabled={uploading} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50">Cancelar</button>
+          <button onClick={onClose} disabled={uploading} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 disabled:opacity-50">{t('common.cancel')}</button>
           <button onClick={submit} disabled={uploading}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Enviar
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -158,6 +160,7 @@ interface VideoCardProps {
   onDelete: () => void;
 }
 const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const isMinor  = isMinorFromBirthDate(video.athlete?.birth_date);
 
@@ -183,7 +186,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
         )}
         {isMinor && !video.consent_given && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-amber-500 text-white text-xs px-2 py-0.5 rounded">
-            <AlertTriangle className="w-3 h-3"/> Sem consentimento
+            <AlertTriangle className="w-3 h-3"/> {t('videos.lgpd.noConsent')}
           </div>
         )}
       </div>
@@ -193,7 +196,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
         {video.athlete && (
           <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
             <User className="w-3 h-3"/>{video.athlete.full_name}
-            {isMinor && <span className="text-amber-500">(menor)</span>}
+            {isMinor && <span className="text-amber-500">{t('videos.minor')}</span>}
           </p>
         )}
         <div className="flex items-center justify-between mt-3">
@@ -210,6 +213,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 const VideoLibrary: React.FC = () => {
+  const { t } = useLanguage();
   const [videos,      setVideos]      = useState<VideoRecord[]>([]);
   const [athletes,    setAthletes]    = useState<Athlete[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -249,12 +253,12 @@ const VideoLibrary: React.FC = () => {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Biblioteca de Vídeos</h1>
+          <h1 className="text-2xl font-bold text-slate-800">{t('videos.title')}</h1>
           <p className="text-slate-500 text-sm mt-0.5">{videos.length} vídeo{videos.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setShowUpload(true)}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-          <Plus className="w-4 h-4"/> Enviar Vídeo
+          <Plus className="w-4 h-4"/> {t('videos.uploadButton')}
         </button>
       </div>
 
@@ -262,12 +266,12 @@ const VideoLibrary: React.FC = () => {
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por título..."
+            placeholder={t('videos.search')}
             className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm w-56"/>
         </div>
         <select value={filterAthlete} onChange={e => setFilterAthlete(e.target.value)}
           className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-          <option value="">Todos atletas</option>
+          <option value="">{t('videos.allAthletes')}</option>
           {athletes.map(a => <option key={a.id} value={a.id!}>{a.full_name}</option>)}
         </select>
       </div>
@@ -277,11 +281,11 @@ const VideoLibrary: React.FC = () => {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <Video className="w-12 h-12 mb-3 opacity-30"/>
-          <p className="font-medium">{videos.length === 0 ? 'Nenhum vídeo ainda' : 'Nenhum resultado'}</p>
+          <p className="font-medium">{videos.length === 0 ? t('videos.empty') : t('common.noResults')}</p>
           {videos.length === 0 && (
             <button onClick={() => setShowUpload(true)}
               className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-              Enviar primeiro vídeo
+              {t('videos.uploadFirst')}
             </button>
           )}
         </div>

@@ -7,6 +7,7 @@ import {
   sponsorService, Sponsor, SponsorshipPackage, SponsorshipSale,
   SPONSOR_CATEGORIES, SALE_STATUS_LABELS, SALE_STATUS_CLASSES,
 } from '../services/sponsorService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type Tab = 'sponsors' | 'packages' | 'sales';
 
@@ -19,6 +20,7 @@ interface SponsorModalProps {
   onClose: () => void;
 }
 const SponsorModal: React.FC<SponsorModalProps> = ({ initial = {}, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', logo_url: '', website_url: '', description: '', category: '', sort_order: '0', is_active: true, ...initial });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -26,7 +28,7 @@ const SponsorModal: React.FC<SponsorModalProps> = ({ initial = {}, onSave, onClo
   const set = (k: keyof typeof form, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = async () => {
-    if (!form.name.trim()) { setErr('Nome é obrigatório.'); return; }
+    if (!form.name.trim()) { setErr(t('errors.nameRequired')); return; }
     setSaving(true); setErr(null);
     try {
       await onSave({
@@ -42,35 +44,35 @@ const SponsorModal: React.FC<SponsorModalProps> = ({ initial = {}, onSave, onClo
   };
 
   return (
-    <ModalShell title={initial.id ? 'Editar Patrocinador' : 'Novo Patrocinador'} onClose={onClose}>
+    <ModalShell title={initial.id ? t('sponsor.modal.editSponsor') : t('sponsor.modal.sponsorTitle')} onClose={onClose}>
       <div className="space-y-3 p-6">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
           <input value={form.name} onChange={e => set('name', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Nome da empresa" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.category')}</label>
             <select value={form.category} onChange={e => set('category', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Sem categoria</option>
+              <option value="">{t('sponsor.noCategory')}</option>
               {SPONSOR_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Ordem</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.order')}</label>
             <input type="number" value={form.sort_order} onChange={e => set('sort_order', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">URL do Logo</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.logoUrl')}</label>
           <input value={form.logo_url} onChange={e => set('logo_url', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Website</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.website')}</label>
           <input value={form.website_url} onChange={e => set('website_url', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
           <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} className="input resize-none" />
         </div>
         <div className="flex items-center gap-2">
@@ -78,7 +80,7 @@ const SponsorModal: React.FC<SponsorModalProps> = ({ initial = {}, onSave, onClo
             className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${form.is_active ? 'bg-indigo-600' : 'bg-slate-200'}`}>
             <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${form.is_active ? 'translate-x-5' : 'translate-x-1'}`} />
           </button>
-          <span className="text-sm text-slate-600">{form.is_active ? 'Ativo (visível no site)' : 'Inativo'}</span>
+          <span className="text-sm text-slate-600">{form.is_active ? t('sponsor.active') : t('sponsor.inactive')}</span>
         </div>
         {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
       </div>
@@ -94,6 +96,7 @@ interface PackageModalProps {
   onClose: () => void;
 }
 const PackageModal: React.FC<PackageModalProps> = ({ initial = {}, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', description: '', price: '', benefits: '', is_active: true, ...initial, price: initial.price != null ? String(initial.price) : '' });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -101,7 +104,7 @@ const PackageModal: React.FC<PackageModalProps> = ({ initial = {}, onSave, onClo
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = async () => {
-    if (!form.name.trim()) { setErr('Nome é obrigatório.'); return; }
+    if (!form.name.trim()) { setErr(t('errors.nameRequired')); return; }
     setSaving(true); setErr(null);
     try {
       await onSave({
@@ -115,22 +118,22 @@ const PackageModal: React.FC<PackageModalProps> = ({ initial = {}, onSave, onClo
   };
 
   return (
-    <ModalShell title={initial.id ? 'Editar Cota' : 'Nova Cota'} onClose={onClose}>
+    <ModalShell title={initial.id ? t('sponsor.modal.editPackage') : t('sponsor.modal.packageTitle')} onClose={onClose}>
       <div className="space-y-3 p-6">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
           <input value={form.name} onChange={e => set('name', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="ex: Cota Ouro" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Valor (R$)</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.value')}</label>
           <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="0,00" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
           <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} className="input resize-none" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Benefícios</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.benefits')}</label>
           <textarea value={form.benefits} onChange={e => set('benefits', e.target.value)} rows={3} className="input resize-none" placeholder="Lista de benefícios incluídos..." />
         </div>
         {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
@@ -149,6 +152,7 @@ interface SaleModalProps {
   onClose: () => void;
 }
 const SaleModal: React.FC<SaleModalProps> = ({ sponsors, packages, initial = {}, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     sponsor_id: initial.sponsor_id || '',
     package_id: initial.package_id || '',
@@ -170,9 +174,9 @@ const SaleModal: React.FC<SaleModalProps> = ({ sponsors, packages, initial = {},
   };
 
   const submit = async () => {
-    if (!form.sponsor_id) { setErr('Selecione um patrocinador.'); return; }
+    if (!form.sponsor_id) { setErr(t('errors.selectSponsor')); return; }
     const amount = parseFloat(form.amount);
-    if (isNaN(amount) || amount <= 0) { setErr('Valor inválido.'); return; }
+    if (isNaN(amount) || amount <= 0) { setErr(t('errors.invalidValue')); return; }
     setSaving(true); setErr(null);
     try {
       await onSave({
@@ -188,10 +192,10 @@ const SaleModal: React.FC<SaleModalProps> = ({ sponsors, packages, initial = {},
   };
 
   return (
-    <ModalShell title={initial.id ? 'Editar Contrato' : 'Novo Contrato'} onClose={onClose}>
+    <ModalShell title={initial.id ? t('sponsor.modal.editSale') : t('sponsor.modal.saleTitle')} onClose={onClose}>
       <div className="space-y-3 p-6">
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Patrocinador <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.field')} <span className="text-rose-500">*</span></label>
           <select value={form.sponsor_id} onChange={e => set('sponsor_id', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
             <option value="">Selecionar...</option>
             {sponsors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -199,35 +203,35 @@ const SaleModal: React.FC<SaleModalProps> = ({ sponsors, packages, initial = {},
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Cota (opcional)</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.package')}</label>
             <select value={form.package_id} onChange={e => autoFillPrice(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Personalizado</option>
+              <option value="">{t('sponsor.custom')}</option>
               {packages.map(p => <option key={p.id} value={p.id}>{p.name}{p.price ? ` (${FMT(p.price)})` : ''}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Valor (R$) <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('sponsor.value')} <span className="text-rose-500">*</span></label>
             <input type="number" min="0" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Início</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.start')}</label>
             <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Fim</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.end')}</label>
             <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.status')}</label>
           <select value={form.status} onChange={e => set('status', e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
             {Object.entries(SALE_STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Observações</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.notes')}</label>
           <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="input resize-none" />
         </div>
         {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
@@ -250,19 +254,23 @@ const ModalShell: React.FC<{ title: string; onClose: () => void; children: React
   </div>
 );
 
-const ModalFooter: React.FC<{ onClose: () => void; onSave: () => void; saving: boolean }> = ({ onClose, onSave, saving }) => (
-  <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-    <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
-    <button onClick={onSave} disabled={saving}
-      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-      Salvar
-    </button>
-  </div>
-);
+const ModalFooter: React.FC<{ onClose: () => void; onSave: () => void; saving: boolean }> = ({ onClose, onSave, saving }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
+      <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
+      <button onClick={onSave} disabled={saving}
+        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        {t('common.save')}
+      </button>
+    </div>
+  );
+};
 
 // ── Main component ────────────────────────────────────────────────────────────
 const SponsorManager: React.FC = () => {
+  const { t } = useLanguage();
   const [tab, setTab] = useState<Tab>('sponsors');
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [packages, setPackages] = useState<SponsorshipPackage[]>([]);
@@ -345,9 +353,9 @@ const SponsorManager: React.FC = () => {
   const totalRevenue = sales.filter(s => s.status === 'active').reduce((sum, s) => sum + (s.amount || 0), 0);
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'sponsors', label: 'Patrocinadores', icon: <Building2 className="w-4 h-4" /> },
-    { key: 'packages', label: 'Cotas', icon: <Package className="w-4 h-4" /> },
-    { key: 'sales', label: 'Contratos', icon: <TrendingUp className="w-4 h-4" /> },
+    { key: 'sponsors', label: t('sponsor.tab.sponsors'), icon: <Building2 className="w-4 h-4" /> },
+    { key: 'packages', label: t('sponsor.tab.packages'), icon: <Package className="w-4 h-4" /> },
+    { key: 'sales', label: t('sponsor.tab.sales'), icon: <TrendingUp className="w-4 h-4" /> },
   ];
 
   return (
@@ -355,16 +363,16 @@ const SponsorManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Patrocínios</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Gerencie patrocinadores, cotas e contratos.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('sponsor.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('sponsor.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <div className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-center">
-            <p className="text-xs text-slate-400">Ativos</p>
+            <p className="text-xs text-slate-400">{t('sponsor.stats.active')}</p>
             <p className="text-lg font-bold text-slate-800">{sponsors.filter(s => s.is_active).length}</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-center">
-            <p className="text-xs text-slate-400">Receita ativa</p>
+            <p className="text-xs text-slate-400">{t('sponsor.stats.activeRevenue')}</p>
             <p className="text-lg font-bold text-emerald-600">{FMT(totalRevenue)}</p>
           </div>
         </div>
@@ -388,7 +396,7 @@ const SponsorManager: React.FC = () => {
           }}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
           <Plus className="w-4 h-4" />
-          {tab === 'sponsors' ? 'Novo Patrocinador' : tab === 'packages' ? 'Nova Cota' : 'Novo Contrato'}
+          {tab === 'sponsors' ? t('sponsor.newSponsor') : tab === 'packages' ? t('sponsor.newPackage') : t('sponsor.newSale')}
         </button>
       </div>
 
@@ -399,7 +407,7 @@ const SponsorManager: React.FC = () => {
           {/* Sponsors Tab */}
           {tab === 'sponsors' && (
             sponsors.length === 0 ? (
-              <Empty icon={<Building2 className="w-10 h-10 opacity-30" />} msg="Nenhum patrocinador cadastrado" />
+              <Empty icon={<Building2 className="w-10 h-10 opacity-30" />} msg={t('sponsor.sponsors.empty')} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sponsors.map(s => (
@@ -439,7 +447,7 @@ const SponsorManager: React.FC = () => {
           {/* Packages Tab */}
           {tab === 'packages' && (
             packages.length === 0 ? (
-              <Empty icon={<Package className="w-10 h-10 opacity-30" />} msg="Nenhuma cota de patrocínio cadastrada" />
+              <Empty icon={<Package className="w-10 h-10 opacity-30" />} msg={t('sponsor.packages.empty')} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {packages.map(p => (
@@ -465,17 +473,17 @@ const SponsorManager: React.FC = () => {
           {/* Sales Tab */}
           {tab === 'sales' && (
             sales.length === 0 ? (
-              <Empty icon={<TrendingUp className="w-10 h-10 opacity-30" />} msg="Nenhum contrato de patrocínio registrado" />
+              <Empty icon={<TrendingUp className="w-10 h-10 opacity-30" />} msg={t('sponsor.sales.empty')} />
             ) : (
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="text-left px-4 py-3 text-slate-500 font-medium">Patrocinador</th>
-                      <th className="text-left px-4 py-3 text-slate-500 font-medium">Cota</th>
-                      <th className="text-left px-4 py-3 text-slate-500 font-medium">Valor</th>
-                      <th className="text-left px-4 py-3 text-slate-500 font-medium">Vigência</th>
-                      <th className="text-left px-4 py-3 text-slate-500 font-medium">Status</th>
+                      <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('sponsor.field')}</th>
+                      <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('sponsor.tab.packages')}</th>
+                      <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('sponsor.value')}</th>
+                      <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('sponsor.validity')}</th>
+                      <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('common.status')}</th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
@@ -493,7 +501,7 @@ const SponsorManager: React.FC = () => {
                               <span className="font-medium text-slate-800">{sp?.name || '—'}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-slate-500">{pkg?.name || <span className="text-slate-300 italic">Personalizado</span>}</td>
+                          <td className="px-4 py-3 text-slate-500">{pkg?.name || <span className="text-slate-300 italic">{t('sponsor.custom')}</span>}</td>
                           <td className="px-4 py-3 font-semibold text-slate-800">{FMT(s.amount)}</td>
                           <td className="px-4 py-3 text-slate-400 text-xs">
                             {s.start_date ? new Date(s.start_date + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}

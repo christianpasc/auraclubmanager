@@ -6,6 +6,7 @@ import {
 import {
   drillService, Drill, DrillCategory, INTENSITY_LABELS, INTENSITY_COLORS,
 } from '../services/drillService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const CATEGORY_COLORS = [
   '#6366f1','#14b8a6','#f59e0b','#ec4899','#22c55e','#ef4444','#3b82f6','#8b5cf6',
@@ -19,6 +20,7 @@ interface DrillModalProps {
   onClose: () => void;
 }
 const DrillModal: React.FC<DrillModalProps> = ({ initial, categories, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [name,        setName]        = useState(initial.name ?? '');
   const [categoryId,  setCategoryId]  = useState(initial.category_id ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
@@ -31,7 +33,7 @@ const DrillModal: React.FC<DrillModalProps> = ({ initial, categories, onSave, on
   const [err,         setErr]         = useState<string | null>(null);
 
   const submit = async () => {
-    if (!name.trim()) { setErr('Nome é obrigatório.'); return; }
+    if (!name.trim()) { setErr(t('errors.nameRequired')); return; }
     setSaving(true); setErr(null);
     try {
       const payload = {
@@ -60,26 +62,26 @@ const DrillModal: React.FC<DrillModalProps> = ({ initial, categories, onSave, on
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? 'Editar Exercício' : 'Novo Exercício'}</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? t('drills.modal.editTitle') : t('drills.modal.newTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 overflow-y-auto space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="ex: Rondo 4x1"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.category')}</label>
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                <option value="">Sem categoria</option>
+                <option value="">{t('drills.noCategory')}</option>
                 {categories.map(c => <option key={c.id} value={c.id!}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Intensidade</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.intensity')}</label>
               <select value={intensity} onChange={e => setIntensity(e.target.value as any)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
                 {Object.entries(INTENSITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -87,32 +89,32 @@ const DrillModal: React.FC<DrillModalProps> = ({ initial, categories, onSave, on
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Duração (min)</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.duration')}</label>
             <input type="number" min="1" value={duration} onChange={e => setDuration(e.target.value)}
               placeholder="ex: 15"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descrição / Como executar</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.description')}</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Objetivos (1 por linha)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.objectives')}</label>
               <textarea value={objectives} onChange={e => setObjectives(e.target.value)} rows={3}
                 placeholder="Condução de bola&#10;Visão periférica"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Materiais (1 por linha)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.equipment')}</label>
               <textarea value={equipment} onChange={e => setEquipment(e.target.value)} rows={3}
                 placeholder="Cones&#10;Coletes"
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Tags (separadas por vírgula)</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('drills.tags')}</label>
             <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)}
               placeholder="ex: posse, pressão, técnico"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
@@ -120,10 +122,10 @@ const DrillModal: React.FC<DrillModalProps> = ({ initial, categories, onSave, on
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -138,13 +140,14 @@ interface CatModalProps {
   onClose: () => void;
 }
 const CatModal: React.FC<CatModalProps> = ({ initial, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [name,    setName]    = useState(initial.name ?? '');
   const [color,   setColor]   = useState(initial.color ?? CATEGORY_COLORS[0]);
   const [saving,  setSaving]  = useState(false);
   const [err,     setErr]     = useState<string | null>(null);
 
   const submit = async () => {
-    if (!name.trim()) { setErr('Nome é obrigatório.'); return; }
+    if (!name.trim()) { setErr(t('errors.nameRequired')); return; }
     setSaving(true); setErr(null);
     try {
       const result = initial.id
@@ -158,17 +161,17 @@ const CatModal: React.FC<CatModalProps> = ({ initial, onSave, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? 'Editar Categoria' : 'Nova Categoria'}</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{initial.id ? t('drills.modal.editCategory') : t('drills.modal.categoryTitle')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Nome</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="ex: Posse de Bola"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-2">Cor</label>
+            <label className="block text-xs font-medium text-slate-600 mb-2">{t('drills.color')}</label>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_COLORS.map(c => (
                 <button key={c} onClick={() => setColor(c)}
@@ -180,10 +183,10 @@ const CatModal: React.FC<CatModalProps> = ({ initial, onSave, onClose }) => {
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -259,6 +262,7 @@ const DrillCard: React.FC<DrillCardProps> = ({ drill, onEdit, onDelete }) => {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 const DrillLibrary: React.FC = () => {
+  const { t } = useLanguage();
   const [drills,     setDrills]     = useState<Drill[]>([]);
   const [categories, setCategories] = useState<DrillCategory[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -319,17 +323,17 @@ const DrillLibrary: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Biblioteca de Exercícios</h1>
+          <h1 className="text-2xl font-bold text-slate-800">{t('drills.title')}</h1>
           <p className="text-slate-500 text-sm mt-0.5">{drills.length} exercício{drills.length !== 1 ? 's' : ''} cadastrado{drills.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setCatModal({})}
             className="px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
-            + Categoria
+            {t('drills.addCategory')}
           </button>
           <button onClick={() => setDrillModal({ intensity: 'medium', objectives: [], equipment: [], tags: [] })}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-            <Plus className="w-4 h-4"/> Novo Exercício
+            <Plus className="w-4 h-4"/> {t('drills.newButton')}
           </button>
         </div>
       </div>
@@ -339,17 +343,17 @@ const DrillLibrary: React.FC = () => {
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por nome, tag ou objetivo..."
+            placeholder={t('drills.search')}
             className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm w-64"/>
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
           className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-          <option value="">Todas categorias</option>
+          <option value="">{t('drills.allCategories')}</option>
           {categories.map(c => <option key={c.id} value={c.id!}>{c.name}</option>)}
         </select>
         <select value={filterIntensity} onChange={e => setFilterIntensity(e.target.value)}
           className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-          <option value="">Todas intensidades</option>
+          <option value="">{t('drills.allIntensities')}</option>
           {Object.entries(INTENSITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </div>
@@ -359,11 +363,11 @@ const DrillLibrary: React.FC = () => {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <BookOpen className="w-12 h-12 mb-3 opacity-30"/>
-          <p className="font-medium">{drills.length === 0 ? 'Biblioteca vazia' : 'Nenhum resultado'}</p>
+          <p className="font-medium">{drills.length === 0 ? t('drills.empty') : t('common.noResults')}</p>
           {drills.length === 0 && (
             <button onClick={() => setDrillModal({ intensity: 'medium', objectives: [], equipment: [], tags: [] })}
               className="mt-4 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
-              Criar primeiro exercício
+              {t('drills.createFirst')}
             </button>
           )}
         </div>

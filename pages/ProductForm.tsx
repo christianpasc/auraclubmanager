@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Save, Loader2, Package } from 'lucide-react';
 import { storeService, Product, ProductVariant, PRODUCT_CATEGORIES } from '../services/storeService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface VariantRow {
   localId: string;
@@ -22,6 +23,7 @@ const emptyVariant = (): VariantRow => ({
 });
 
 const ProductForm: React.FC = () => {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -128,42 +130,42 @@ const ProductForm: React.FC = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-2xl font-bold text-slate-800">
-          {isEditing ? 'Editar Produto' : 'Novo Produto'}
+          {isEditing ? t('store.product.editTitle') : t('store.product.newTitle')}
         </h1>
       </div>
 
       {/* Basic Info */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <h2 className="font-semibold text-slate-700 flex items-center gap-2">
-          <Package className="w-4 h-4" /> Informações
+          <Package className="w-4 h-4" /> {t('store.product.info')}
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Nome <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.name')} <span className="text-rose-500">*</span></label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome do produto"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.category')}</label>
             <select value={category} onChange={e => setCategory(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Sem categoria</option>
+              <option value="">{t('store.noCategory')}</option>
               {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Preço base (R$) <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('store.basePrice')} <span className="text-rose-500">*</span></label>
             <input type="number" min="0" step="0.01" value={basePrice} onChange={e => setBasePrice(e.target.value)}
               placeholder="0,00" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.description')}</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
               placeholder="Descrição do produto..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none" />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">URL da imagem</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('store.imageUrl')}</label>
             <input value={imageUrl} onChange={e => setImageUrl(e.target.value)}
               placeholder="https://..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
           </div>
@@ -172,7 +174,7 @@ const ProductForm: React.FC = () => {
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-indigo-600' : 'bg-slate-200'}`}>
               <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
-            <span className="text-sm text-slate-600">{isActive ? 'Visível na loja' : 'Oculto'}</span>
+            <span className="text-sm text-slate-600">{isActive ? t('store.visible') : t('store.hidden')}</span>
           </div>
         </div>
       </div>
@@ -180,25 +182,25 @@ const ProductForm: React.FC = () => {
       {/* Variants */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-slate-700">Variantes</h2>
+          <h2 className="font-semibold text-slate-700">{t('store.product.variants')}</h2>
           <button onClick={() => setVariants(prev => [...prev, emptyVariant()])}
             className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800">
-            <Plus className="w-3.5 h-3.5" /> Adicionar variante
+            <Plus className="w-3.5 h-3.5" /> {t('store.product.addVariant')}
           </button>
         </div>
         <p className="text-xs text-slate-400">
-          Deixe em branco para produto sem variantes (tamanho único). Cada variante pode ter preço e estoque independentes.
+          {t('store.product.variantsHint')}
         </p>
 
         {variants.length === 0 ? (
           <div className="text-center py-6 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-lg">
-            Sem variantes — preço e estoque únicos
+            {t('store.product.noVariants')}
           </div>
         ) : (
           <div className="space-y-2">
             {/* Header */}
             <div className="grid grid-cols-[1fr_80px_80px_80px_90px_32px] gap-2 text-xs font-medium text-slate-500 px-1">
-              <span>Nome / Variante</span><span>Tamanho</span><span>Cor</span><span>Estoque</span><span>Preço (R$)</span><span />
+              <span>{t('store.product.variantName')}</span><span>{t('store.product.size')}</span><span>{t('store.product.color')}</span><span>{t('common.stock')}</span><span>{t('store.product.price')}</span><span />
             </div>
             {variants.map(v => (
               <div key={v.localId} className="grid grid-cols-[1fr_80px_80px_80px_90px_32px] gap-2 items-center">
@@ -225,11 +227,11 @@ const ProductForm: React.FC = () => {
       {/* Error + Save */}
       {error && <p className="text-rose-600 text-sm bg-rose-50 rounded-lg px-4 py-2">{error}</p>}
       <div className="flex justify-end gap-3">
-        <button onClick={() => navigate('/store')} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+        <button onClick={() => navigate('/store')} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
         <button onClick={handleSave} disabled={saving}
           className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Salvar produto
+          {t('store.product.save')}
         </button>
       </div>
     </div>

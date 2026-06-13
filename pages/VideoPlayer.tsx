@@ -5,6 +5,7 @@ import {
   ShieldAlert, AlertTriangle,
 } from 'lucide-react';
 import { videoService, Video as VideoRecord, VideoClip, isMinorFromBirthDate } from '../services/videoService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const fmtTime = (s: number) => {
   const m = Math.floor(s / 60);
@@ -22,6 +23,7 @@ interface ClipModalProps {
   onClose: () => void;
 }
 const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, duration, onSave, onClose }) => {
+  const { t } = useLanguage();
   const [title,    setTitle]    = useState(initial.title ?? '');
   const [start,    setStart]    = useState(initial.start_time ?? currentTime);
   const [end,      setEnd]      = useState(initial.end_time ?? Math.min(currentTime + 10, duration));
@@ -30,7 +32,7 @@ const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, du
   const [err,      setErr]      = useState<string | null>(null);
 
   const submit = async () => {
-    if (!title.trim()) { setErr('Título é obrigatório.'); return; }
+    if (!title.trim()) { setErr(t('errors.titleRequired')); return; }
     if (start >= end)  { setErr('O início deve ser anterior ao fim.'); return; }
     setSaving(true); setErr(null);
     try {
@@ -51,26 +53,26 @@ const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, du
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-indigo-500"/> {initial.id ? 'Editar Clip' : 'Novo Clip'}
+            <Scissors className="w-4 h-4 text-indigo-500"/> {initial.id ? t('videos.modal.editClip') : t('videos.modal.clipTitle')}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Título <span className="text-rose-500">*</span></label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('common.title')} <span className="text-rose-500">*</span></label>
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="ex: Gol do Marcelo"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Início (seg)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.startTime')}</label>
               <input type="number" step="0.1" min={0} max={duration}
                 value={start} onChange={e => setStart(parseFloat(e.target.value))}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
               <p className="text-xs text-slate-400 mt-1">{fmtTime(start)}</p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Fim (seg)</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.endTime')}</label>
               <input type="number" step="0.1" min={0} max={duration}
                 value={end} onChange={e => setEnd(parseFloat(e.target.value))}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
@@ -78,7 +80,7 @@ const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, du
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Tags (separadas por vírgula)</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.tags')}</label>
             <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)}
               placeholder="ex: gol, pressão alta, contra-ataque"
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"/>
@@ -86,10 +88,10 @@ const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, du
           {err && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{err}</p>}
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">{t('common.cancel')}</button>
           <button onClick={submit} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Salvar
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} {t('common.save')}
           </button>
         </div>
       </div>
@@ -99,6 +101,7 @@ const ClipModal: React.FC<ClipModalProps> = ({ initial, videoId, currentTime, du
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 const VideoPlayer: React.FC = () => {
+  const { t }     = useLanguage();
   const { id }    = useParams<{ id: string }>();
   const navigate  = useNavigate();
   const videoRef  = useRef<HTMLVideoElement>(null);
@@ -164,8 +167,8 @@ const VideoPlayer: React.FC = () => {
   if (!video) {
     return (
       <div className="text-center py-20 text-slate-400">
-        <p>Vídeo não encontrado.</p>
-        <button onClick={() => navigate('/videos')} className="mt-4 text-sm text-indigo-600 hover:underline">Voltar</button>
+        <p>{t('videos.notFound')}</p>
+        <button onClick={() => navigate('/videos')} className="mt-4 text-sm text-indigo-600 hover:underline">{t('common.back')}</button>
       </div>
     );
   }
@@ -183,7 +186,7 @@ const VideoPlayer: React.FC = () => {
           {video.athlete && (
             <p className="text-sm text-slate-500 flex items-center gap-1">
               {video.athlete.full_name}
-              {isMinor && <span className="text-amber-500 text-xs">(menor)</span>}
+              {isMinor && <span className="text-amber-500 text-xs">{t('videos.minor')}</span>}
             </p>
           )}
         </div>
@@ -194,15 +197,15 @@ const VideoPlayer: React.FC = () => {
         <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5"/>
           <div>
-            <p className="text-sm font-medium text-amber-800">Consentimento pendente — LGPD</p>
-            <p className="text-xs text-amber-600 mt-0.5">Este vídeo envolve um atleta menor de idade sem consentimento registrado.</p>
+            <p className="text-sm font-medium text-amber-800">{t('videos.lgpd.pendingTitle')}</p>
+            <p className="text-xs text-amber-600 mt-0.5">{t('videos.lgpd.pendingMessage')}</p>
             <button
               onClick={async () => {
                 await videoService.giveConsent(video.id!);
                 setVideo(v => v ? { ...v, consent_given: true } : v);
               }}
               className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-800 underline hover:no-underline">
-              <ShieldAlert className="w-3 h-3"/> Registrar consentimento agora
+              <ShieldAlert className="w-3 h-3"/> {t('videos.lgpd.registerConsent')}
             </button>
           </div>
         </div>
@@ -229,7 +232,7 @@ const VideoPlayer: React.FC = () => {
           {/* Timeline / clip markers */}
           {duration > 0 && clips.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <p className="text-xs font-medium text-slate-500 mb-2">Linha do tempo</p>
+              <p className="text-xs font-medium text-slate-500 mb-2">{t('videos.timeline')}</p>
               <div className="relative h-5 bg-slate-100 rounded-full overflow-hidden">
                 {clips.map(c => {
                   const left  = (c.start_time / duration) * 100;
@@ -252,19 +255,19 @@ const VideoPlayer: React.FC = () => {
         {/* Clips panel */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Clips ({clips.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-700">{t('videos.clipsTitle')} ({clips.length})</h2>
             <button
               onClick={() => setClipModal({ video_id: id! })}
               className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700">
-              <Plus className="w-3 h-3"/> Novo Clip
+              <Plus className="w-3 h-3"/> {t('videos.newClip')}
             </button>
           </div>
 
           {clips.length === 0 ? (
             <div className="bg-white rounded-xl border border-slate-100 p-8 text-center text-slate-400">
               <Scissors className="w-8 h-8 mx-auto mb-2 opacity-30"/>
-              <p className="text-sm">Nenhum clip marcado</p>
-              <p className="text-xs mt-1">Selecione um intervalo de tempo no vídeo</p>
+              <p className="text-sm">{t('videos.noClips')}</p>
+              <p className="text-xs mt-1">{t('videos.selectTimeRange')}</p>
             </div>
           ) : (
             <div className="space-y-2">

@@ -221,7 +221,7 @@ const TrainingForm: React.FC = () => {
         { id: 'general' as TabType, label: t('trainingForm.tab.general'), icon: Calendar },
         { id: 'athletes' as TabType, label: t('trainingForm.tab.athletes'), icon: Users },
         { id: 'activities' as TabType, label: t('trainingForm.tab.activities'), icon: ListChecks },
-        { id: 'drills' as TabType, label: 'Exercícios', icon: BookOpen },
+        { id: 'drills' as TabType, label: t('trainingForm.tab.drills'), icon: BookOpen },
     ];
 
     const toggleDrill = (drillId: string) => {
@@ -688,17 +688,17 @@ const TrainingForm: React.FC = () => {
                         <div className="relative flex-1 min-w-48">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
                             <input value={drillSearch} onChange={e => setDrillSearch(e.target.value)}
-                                placeholder="Buscar exercício ou tag..."
+                                placeholder={t('trainingForm.drills.search')}
                                 className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm w-full"/>
                         </div>
                         <select value={drillFilterCat} onChange={e => setDrillFilterCat(e.target.value)}
                             className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                            <option value="">Todas categorias</option>
+                            <option value="">{t('trainingForm.drills.allCategories')}</option>
                             {drillCategories.map(c => <option key={c.id} value={c.id!}>{c.name}</option>)}
                         </select>
                         <select value={drillFilterInt} onChange={e => setDrillFilterInt(e.target.value)}
                             className="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                            <option value="">Todas intensidades</option>
+                            <option value="">{t('trainingForm.drills.allIntensities')}</option>
                             {Object.entries(INTENSITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
                     </div>
@@ -712,7 +712,7 @@ const TrainingForm: React.FC = () => {
                     {allDrills.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                             <BookOpen className="w-10 h-10 mb-2 opacity-30"/>
-                            <p className="text-sm">Biblioteca vazia — crie exercícios em <strong>Biblioteca de Exercícios</strong></p>
+                            <p className="text-sm">{t('trainingForm.drills.empty')}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

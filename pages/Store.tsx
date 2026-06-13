@@ -9,12 +9,14 @@ import {
   ORDER_STATUS_LABELS, ORDER_STATUS_CLASSES, PRODUCT_CATEGORIES,
 } from '../services/storeService';
 import { useTenant } from '../contexts/TenantContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type Tab = 'products' | 'orders';
 
 const FMT = (n: number) => `R$ ${n.toFixed(2).replace('.', ',')}`;
 
 const Store: React.FC = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { currentTenant } = useTenant();
 
@@ -72,20 +74,20 @@ const Store: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Loja</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Gerencie produtos e pedidos do clube.</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('store.title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('store.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {publicStoreUrl && (
             <a href={publicStoreUrl} target="_blank" rel="noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
-              <ExternalLink className="w-3.5 h-3.5" /> Visualizar loja
+              <ExternalLink className="w-3.5 h-3.5" /> {t('store.viewStore')}
             </a>
           )}
           {tab === 'products' && (
             <button onClick={() => navigate('/store/products/new')}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-              <Plus className="w-4 h-4" /> Novo Produto
+              <Plus className="w-4 h-4" /> {t('store.newProduct')}
             </button>
           )}
         </div>
@@ -93,10 +95,10 @@ const Store: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-        {(['products', 'orders'] as Tab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === t ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-            {t === 'products' ? <><Package className="w-4 h-4" /> Produtos</> : <><ClipboardList className="w-4 h-4" /> Pedidos</>}
+        {(['products', 'orders'] as Tab[]).map(tabKey => (
+          <button key={tabKey} onClick={() => setTab(tabKey)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === tabKey ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+            {tabKey === 'products' ? <><Package className="w-4 h-4" /> {t('store.tab.products')}</> : <><ClipboardList className="w-4 h-4" /> {t('store.tab.orders')}</>}
           </button>
         ))}
       </div>
@@ -108,8 +110,8 @@ const Store: React.FC = () => {
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <ShoppingBag className="w-12 h-12 mb-3 opacity-30" />
-            <p className="font-medium">Nenhum produto cadastrado</p>
-            <p className="text-sm mt-1">Clique em "Novo Produto" para começar.</p>
+            <p className="font-medium">{t('store.products.empty')}</p>
+            <p className="text-sm mt-1">{t('store.products.emptyAction')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -130,7 +132,7 @@ const Store: React.FC = () => {
                     <p className="text-indigo-600 font-medium text-sm mt-1">{FMT(p.base_price)}</p>
                     {stock !== null && (
                       <p className={`text-xs mt-1 ${stock === 0 ? 'text-rose-500' : 'text-slate-400'}`}>
-                        {stock === 0 ? 'Sem estoque' : `${stock} em estoque`}
+                        {stock === 0 ? t('store.outOfStock') : `${stock} em estoque`}
                         {p.variants && p.variants.length > 1 && ` · ${p.variants.length} variantes`}
                       </p>
                     )}
@@ -166,17 +168,17 @@ const Store: React.FC = () => {
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <ClipboardList className="w-12 h-12 mb-3 opacity-30" />
-            <p className="font-medium">Nenhum pedido recebido</p>
+            <p className="font-medium">{t('store.orders.empty')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Data</th>
-                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Comprador</th>
-                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Total</th>
-                  <th className="text-left px-4 py-3 text-slate-500 font-medium">Status</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('common.date')}</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('store.buyer')}</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('store.total')}</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-medium">{t('common.status')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
