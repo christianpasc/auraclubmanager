@@ -25,6 +25,24 @@ export interface FinancialFlowData {
     expenses: number;
 }
 
+export interface AssessmentSummary {
+    recentCount: number;
+    avgByDimension: { dimension: string; label: string; avg: number }[];
+}
+
+export interface AthleteStatusItem {
+    status: string;
+    count: number;
+}
+
+export interface InvitationGameSummary {
+    gameLabel: string;
+    accepted: number;
+    declined: number;
+    pending: number;
+    total: number;
+}
+
 export const dashboardService = {
     async getStats(): Promise<DashboardStats> {
         // Get total athletes count
@@ -202,5 +220,136 @@ export const dashboardService = {
         }
 
         return flowData;
+    },
+
+    async getAssessmentSummary(): Promise<AssessmentSummary> {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data: assessments } = await supabase
+            .from('assessments')
+            .select('id, created_at');
+
+        if (!assessments || assessments.length === 0) {
+            return { recentCount: 0, avgByDimension: [] };
+        }
+
+        const recentCount = assessments.filter(
+            a => new Date(a.created_at) >= thirtyDaysAgo
+        ).length;
+
+        const { data: scores } = await supabase
+            .from('assessment_scores')
+            .select(`
+                score,
+                skill:skills(
+                    scale_min,
+                    scale_max,
+                    category:skill_categories(dimension)
+                )
+            `)
+            .in('assessment_id', assessments.map(a => a.id));
+
+        const byDimension: Record<string, { sum: number; count: number }> = {};
+        for (const row of scores || []) {
+            const skill = row.skill as any;
+            const dim = skill?.category?.dimension;
+            if (!dim || row.score == null) continue;
+            const min = Number(skill.scale_min ?? 0);
+            const max = Number(skill.scale_max ?? 10);
+            const normalized = max > min ? ((Number(row.score) - min) / (max - min)) * 10 : Number(row.score);
+            if (!byDimension[dim]) byDimension[dim] = { sum: 0, count: 0 };
+            byDimension[dim].sum += normalized;
+            byDimension[dim].count++;
+        }
+
+        const DIMENSION_LABELS: Record<string, string> = {
+            technical: 'Técnico',
+            tactical: 'Tático',
+            physical: 'Físico',
+            psychological: 'Psicológico',
+        };
+
+        const avgByDimension = Object.entries(byDimension).map(([dimension, { sum, count }]) => ({
+            dimension,
+            label: DIMENSION_LABELS[dimension] || dimension,
+            avg: Math.round((sum / count) * 10) / 10,
+        }));
+
+        return { recentCount, avgByDimension };
+    },
+
+    async getStorePendingOrders(): Promise<number> {
+        const { count } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+        return count || 0;
+    },
+
+    async getRecentGameResults(limit: number = 3): Promise<UpcomingGame[]> {
+        const today = new Date().toISOString().split('T')[0];
+        const { data, error } = await supabase
+            .from('games')
+            .select('*, competition:competitions(id, name, type)')
+            .lt('game_date', today)
+            .not('home_score', 'is', null)
+            .order('game_date', { ascending: false })
+            .limit(limit);
+        if (error) throw error;
+        return (data || []) as UpcomingGame[];
+    },
+
+    async getAthleteStatusDistribution(): Promise<AthleteStatusItem[]> {
+        const { data } = await supabase
+            .from('athletes')
+            .select('status');
+
+        const counts: Record<string, number> = {};
+        for (const a of data || []) {
+            const s = a.status || 'active';
+            counts[s] = (counts[s] || 0) + 1;
+        }
+
+        return Object.entries(counts).map(([status, count]) => ({ status, count }));
+    },
+
+    async getInvitationSummary(): Promise<InvitationGameSummary[]> {
+        const { data } = await supabase
+            .from('invitations')
+            .select('game_id, status, game:games(home_team, away_team, game_date)')
+            .not('game_id', 'is', null);
+
+        if (!data) return [];
+
+        const byGame: Record<string, { label: string; date: string; accepted: number; declined: number; pending: number }> = {};
+
+        for (const inv of data) {
+            const game = inv.game as any;
+            if (!inv.game_id || !game) continue;
+            if (!byGame[inv.game_id]) {
+                byGame[inv.game_id] = {
+                    label: `${game.home_team || '?'} × ${game.away_team || '?'}`,
+                    date: game.game_date || '',
+                    accepted: 0,
+                    declined: 0,
+                    pending: 0,
+                };
+            }
+            if (inv.status === 'accepted') byGame[inv.game_id].accepted++;
+            else if (inv.status === 'declined') byGame[inv.game_id].declined++;
+            else byGame[inv.game_id].pending++;
+        }
+
+        return Object.values(byGame)
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, 4)
+            .map(({ label, accepted, declined, pending }) => ({
+                gameLabel: label,
+                accepted,
+                declined,
+                pending,
+                total: accepted + declined + pending,
+            }));
     },
 };

@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 mt-4">
+      <nav className="flex-1 px-3 space-y-1 mt-4 overflow-y-auto">
         {menuItems.map((item) => (
           <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
         ))}

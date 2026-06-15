@@ -548,30 +548,6 @@ const GeneralTab: React.FC<{
                 </div>
             </div>
 
-            {/* Guardian legacy fields */}
-            <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2"><Users className="w-5 h-5 text-primary" />{t('athleteForm.section.guardian')}</h3>
-                <p className="text-xs text-slate-400 mb-4">{t('athleteForm.section.guardianLegacyHint')}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.guardianName')}</label>
-                        <input type="text" value={athlete.guardian_name || ''} onChange={(e) => updateField('guardian_name', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.guardianCpf')}</label>
-                        <input type="text" value={athlete.guardian_cpf || ''} onChange={(e) => updateField('guardian_cpf', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.guardianPhone')}</label>
-                        <input type="tel" value={athlete.guardian_phone || ''} onChange={(e) => updateField('guardian_phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('athleteForm.field.guardianEmail')}</label>
-                        <input type="email" value={athlete.guardian_email || ''} onChange={(e) => updateField('guardian_email', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
-                    </div>
-                </div>
-            </div>
-
             {/* Current group — read only info */}
             {currentGroupName && (
                 <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
