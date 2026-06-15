@@ -57,6 +57,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.daysLeft':    '{n} dias restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
         'sidebar.development': 'Desenvolvimento',
+        'sidebar.sport': 'Esporte',
 
         // Common — pt-BR
         'common.save': 'Salvar', 'common.saving': 'Salvando...', 'common.saved': 'Salvo!',
@@ -1392,6 +1393,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.daysLeft':    '{n} days left',
         'sidebar.siteMarketing': 'Site & Marketing',
         'sidebar.development': 'Development',
+        'sidebar.sport': 'Sport',
 
         // Common
         'common.save': 'Save', 'common.saving': 'Saving...', 'common.saved': 'Saved!',
@@ -2724,6 +2726,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.daysLeft':    '{n} días restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
         'sidebar.development': 'Desarrollo',
+        'sidebar.sport': 'Deporte',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'Guardando...', 'common.saved': '¡Guardado!',
@@ -4022,6 +4025,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.daysLeft':    '{n} jours restants',
         'sidebar.siteMarketing': 'Site & Marketing',
         'sidebar.development': 'Développement',
+        'sidebar.sport': 'Sport',
 
         // Common
         'common.save': 'Enregistrer', 'common.saving': 'Enregistrement...', 'common.saved': 'Enregistré !',
@@ -5318,6 +5322,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.daysLeft':    '{n} dias restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
         'sidebar.development': 'Desenvolvimento',
+        'sidebar.sport': 'Desporto',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'A guardar...', 'common.saved': 'Guardado!',

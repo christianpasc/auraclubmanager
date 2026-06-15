@@ -69,11 +69,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
     { icon: Users, label: t('nav.athletes'), path: '/athletes' },
     ...(isSchool ? [{ icon: FileText, label: t('nav.enrollments'), path: '/enrollments' }] : []),
-    { icon: Trophy, label: t('nav.competitions'), path: '/competitions' },
-    { icon: Calendar, label: t('nav.games'), path: '/games' },
-    { icon: Dumbbell, label: t('nav.training'), path: '/training' },
     ...(!isSchool ? [{ icon: Radar, label: t('nav.prospects'), path: '/prospects' }] : []),
   ];
+
+  const sportPaths = ['/competitions', '/games', '/training'];
+  const [sportOpen, setSportOpen] = useState(
+    sportPaths.some(p => location.pathname.startsWith(p))
+  );
 
   const bottomItems = [
     { icon: CreditCard, label: t('nav.subscription'), path: '/subscription' },
@@ -175,6 +177,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {menuItems.map((item) => (
           <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
         ))}
+
+        {/* Esporte com Submenu */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setSportOpen(!sportOpen)}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
+              sportPaths.some(p => location.pathname.startsWith(p))
+                ? 'bg-white/10 text-white font-semibold'
+                : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Trophy className="w-5 h-5" />
+              <span className="text-sm">{t('sidebar.sport')}</span>
+            </div>
+            {sportOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+
+          {sportOpen && (
+            <div className="pl-11 space-y-1 mt-1">
+              <NavLink to="/competitions"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Trophy className="w-3.5 h-3.5" />
+                {t('nav.competitions')}
+              </NavLink>
+              <NavLink to="/games"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Calendar className="w-3.5 h-3.5" />
+                {t('nav.games')}
+              </NavLink>
+              <NavLink to="/training"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Dumbbell className="w-3.5 h-3.5" />
+                {t('nav.training')}
+              </NavLink>
+            </div>
+          )}
+        </div>
 
         {/* Financeiro com Submenu */}
         <div className="space-y-1">
