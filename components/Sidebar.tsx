@@ -56,6 +56,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [estruturaOpen, setEstruturaOpen] = useState(
     ['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))
   );
+  const siteMarketingPaths = ['/club-site', '/invitations', '/store', '/sponsors'];
+  const [siteOpen, setSiteOpen] = useState(
+    siteMarketingPaths.some(p => location.pathname.startsWith(p))
+  );
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
@@ -256,11 +260,49 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Site do Clube */}
-        <SidebarItem icon={Globe} label={t('sidebar.clubSite')} path="/club-site" />
-        <SidebarItem icon={Mail} label={t('sidebar.invitations')} path="/invitations" />
-        <SidebarItem icon={ShoppingBag} label={t('sidebar.store')} path="/store" />
-        <SidebarItem icon={Building2} label={t('sidebar.sponsors')} path="/sponsors" />
+        {/* Site & Marketing com Submenu */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setSiteOpen(!siteOpen)}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
+              siteMarketingPaths.some(p => location.pathname.startsWith(p))
+                ? 'bg-white/10 text-white font-semibold'
+                : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5" />
+              <span className="text-sm">{t('sidebar.siteMarketing')}</span>
+            </div>
+            {siteOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+
+          {siteOpen && (
+            <div className="pl-11 space-y-1 mt-1">
+              <NavLink to="/club-site"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Globe className="w-3.5 h-3.5" />
+                {t('sidebar.clubSite')}
+              </NavLink>
+              <NavLink to="/invitations"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Mail className="w-3.5 h-3.5" />
+                {t('sidebar.invitations')}
+              </NavLink>
+              <NavLink to="/store"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {t('sidebar.store')}
+              </NavLink>
+              <NavLink to="/sponsors"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Building2 className="w-3.5 h-3.5" />
+                {t('sidebar.sponsors')}
+              </NavLink>
+            </div>
+          )}
+        </div>
+
         <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" />
         <SidebarItem icon={ClipboardList} label={t('sidebar.assessments')} path="/assessments" />
         <SidebarItem icon={Target} label={t('sidebar.developmentPlans')} path="/development-plans" />

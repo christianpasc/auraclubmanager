@@ -55,8 +55,9 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.trialPeriod': 'Período de Teste',
         'sidebar.oneDayLeft':  '1 dia restante',
         'sidebar.daysLeft':    '{n} dias restantes',
+        'sidebar.siteMarketing': 'Site & Marketing',
 
-        // Common
+        // Common — pt-BR
         'common.save': 'Salvar', 'common.saving': 'Salvando...', 'common.saved': 'Salvo!',
         'common.cancel': 'Cancelar', 'common.delete': 'Remover', 'common.edit': 'Editar',
         'common.close': 'Fechar', 'common.back': 'Voltar', 'common.search': 'Buscar...',
@@ -1388,6 +1389,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.trialPeriod': 'Trial Period',
         'sidebar.oneDayLeft':  '1 day left',
         'sidebar.daysLeft':    '{n} days left',
+        'sidebar.siteMarketing': 'Site & Marketing',
 
         // Common
         'common.save': 'Save', 'common.saving': 'Saving...', 'common.saved': 'Saved!',
@@ -2718,6 +2720,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.trialPeriod': 'Período de Prueba',
         'sidebar.oneDayLeft':  '1 día restante',
         'sidebar.daysLeft':    '{n} días restantes',
+        'sidebar.siteMarketing': 'Site & Marketing',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'Guardando...', 'common.saved': '¡Guardado!',
@@ -4014,6 +4017,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.trialPeriod': 'Période d’essai',
         'sidebar.oneDayLeft':  '1 jour restant',
         'sidebar.daysLeft':    '{n} jours restants',
+        'sidebar.siteMarketing': 'Site & Marketing',
 
         // Common
         'common.save': 'Enregistrer', 'common.saving': 'Enregistrement...', 'common.saved': 'Enregistré !',
@@ -5308,6 +5312,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.trialPeriod': 'Período de Teste',
         'sidebar.oneDayLeft':  '1 dia restante',
         'sidebar.daysLeft':    '{n} dias restantes',
+        'sidebar.siteMarketing': 'Site & Marketing',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'A guardar...', 'common.saved': 'Guardado!',
