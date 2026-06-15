@@ -60,6 +60,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [siteOpen, setSiteOpen] = useState(
     siteMarketingPaths.some(p => location.pathname.startsWith(p))
   );
+  const developmentPaths = ['/assessments', '/assessment-templates', '/development-plans', '/drills', '/videos'];
+  const [devOpen, setDevOpen] = useState(
+    developmentPaths.some(p => location.pathname.startsWith(p))
+  );
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
@@ -304,10 +308,49 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" />
-        <SidebarItem icon={ClipboardList} label={t('sidebar.assessments')} path="/assessments" />
-        <SidebarItem icon={Target} label={t('sidebar.developmentPlans')} path="/development-plans" />
-        <SidebarItem icon={BookOpen} label={t('sidebar.drillLibrary')} path="/drills" />
-        <SidebarItem icon={Video} label={t('sidebar.videos')} path="/videos" />
+
+        {/* Desenvolvimento com Submenu */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setDevOpen(!devOpen)}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
+              developmentPaths.some(p => location.pathname.startsWith(p))
+                ? 'bg-white/10 text-white font-semibold'
+                : 'text-white/70 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Target className="w-5 h-5" />
+              <span className="text-sm">{t('sidebar.development')}</span>
+            </div>
+            {devOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+
+          {devOpen && (
+            <div className="pl-11 space-y-1 mt-1">
+              <NavLink to="/assessments"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <ClipboardList className="w-3.5 h-3.5" />
+                {t('sidebar.assessments')}
+              </NavLink>
+              <NavLink to="/development-plans"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Target className="w-3.5 h-3.5" />
+                {t('sidebar.developmentPlans')}
+              </NavLink>
+              <NavLink to="/drills"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <BookOpen className="w-3.5 h-3.5" />
+                {t('sidebar.drillLibrary')}
+              </NavLink>
+              <NavLink to="/videos"
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
+                <Video className="w-3.5 h-3.5" />
+                {t('sidebar.videos')}
+              </NavLink>
+            </div>
+          )}
+        </div>
 
         {bottomItems.map((item) => (
           <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />

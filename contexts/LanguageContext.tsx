@@ -56,6 +56,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.oneDayLeft':  '1 dia restante',
         'sidebar.daysLeft':    '{n} dias restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
+        'sidebar.development': 'Desenvolvimento',
 
         // Common — pt-BR
         'common.save': 'Salvar', 'common.saving': 'Salvando...', 'common.saved': 'Salvo!',
@@ -1390,6 +1391,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.oneDayLeft':  '1 day left',
         'sidebar.daysLeft':    '{n} days left',
         'sidebar.siteMarketing': 'Site & Marketing',
+        'sidebar.development': 'Development',
 
         // Common
         'common.save': 'Save', 'common.saving': 'Saving...', 'common.saved': 'Saved!',
@@ -2721,6 +2723,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.oneDayLeft':  '1 día restante',
         'sidebar.daysLeft':    '{n} días restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
+        'sidebar.development': 'Desarrollo',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'Guardando...', 'common.saved': '¡Guardado!',
@@ -4018,6 +4021,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.oneDayLeft':  '1 jour restant',
         'sidebar.daysLeft':    '{n} jours restants',
         'sidebar.siteMarketing': 'Site & Marketing',
+        'sidebar.development': 'Développement',
 
         // Common
         'common.save': 'Enregistrer', 'common.saving': 'Enregistrement...', 'common.saved': 'Enregistré !',
@@ -5313,6 +5317,7 @@ const translations: Record<Language, Record<string, string>> = {
         'sidebar.oneDayLeft':  '1 dia restante',
         'sidebar.daysLeft':    '{n} dias restantes',
         'sidebar.siteMarketing': 'Site & Marketing',
+        'sidebar.development': 'Desenvolvimento',
 
         // Common
         'common.save': 'Guardar', 'common.saving': 'A guardar...', 'common.saved': 'Guardado!',
