@@ -58,6 +58,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
 import Onboarding from './pages/Onboarding';
+import SchoolPlans from './pages/SchoolPlans';
 import FeatureGate from './components/FeatureGate';
 import { useAuth } from './contexts/AuthContext';
 import { ModuleKey } from './services/featureFlagService';
@@ -228,6 +229,7 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/prospects/:id" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
             <Route path="/finance" element={<ProtectedLayout><Gated feature="finance"><Finance /></Gated></ProtectedLayout>} />
             <Route path="/finance/fees" element={<ProtectedLayout><SchoolOnlyRoute><MonthlyFees /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/school-plans" element={<ProtectedLayout><SchoolPlans /></ProtectedLayout>} />
             <Route path="/seasons" element={<ProtectedLayout><Seasons /></ProtectedLayout>} />
             <Route path="/age-categories" element={<ProtectedLayout><AgeCategories /></ProtectedLayout>} />
             <Route path="/groups" element={<ProtectedLayout><Groups /></ProtectedLayout>} />

@@ -12,6 +12,8 @@ import { usePermissions } from '../hooks/usePermissions';
 import UserManagementModal from '../components/UserManagementModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { subscriptionService, PlanLimits } from '../services/subscriptionService';
+import { paymentProvider } from '../services/payment';
+import { stripeConfig } from '../lib/stripe';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
@@ -81,12 +83,20 @@ const Settings: React.FC = () => {
   const [newIncomeCategory, setNewIncomeCategory] = useState('');
   const [newExpenseCategory, setNewExpenseCategory] = useState('');
 
+  // Stripe Connect state
+  const [connectLoading, setConnectLoading] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [connectCurrency, setConnectCurrency] = useState('EUR');
+  const [savingCurrency, setSavingCurrency] = useState(false);
+  const [currencySaved, setCurrencySaved] = useState(false);
+
   // Load data on mount
   useEffect(() => {
     if (currentTenant) {
       setClubName(currentTenant.name || '');
       setClubLogo(currentTenant.logo_url || null);
       setOrganizationType(currentTenant.organization_type || 'school');
+      setConnectCurrency(currentTenant.stripe_connect_currency || 'EUR');
       const settings = currentTenant.settings as any;
       if (settings) {
         setAddress(settings.address || '');
@@ -129,6 +139,16 @@ const Settings: React.FC = () => {
     setSelectedLanguage(language);
     setSelectedCurrency(currency);
   }, [language, currency]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripeReturn = params.get('stripe_return');
+    if (stripeReturn === 'success' || stripeReturn === 'refresh') {
+      setActiveTab('payments');
+      refreshTenants();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const loadProfile = async () => {
     setProfileLoading(true);
@@ -412,6 +432,40 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleConnectStripe = async () => {
+    if (!currentTenant?.id) return;
+    setConnectLoading(true);
+    setConnectError(null);
+    try {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const returnUrl = `${baseUrl}?stripe_return=success`;
+      const refreshUrl = `${baseUrl}?stripe_return=refresh`;
+      const result = await paymentProvider.createOnboardingLink(currentTenant.id, returnUrl, refreshUrl);
+      window.location.href = result.url;
+    } catch (err: any) {
+      setConnectError(err.message || t('payment.onboardingError'));
+      setConnectLoading(false);
+    }
+  };
+
+  const handleSaveCurrency = async () => {
+    if (!currentTenant?.id) return;
+    setSavingCurrency(true);
+    try {
+      await supabase
+        .from('tenants')
+        .update({ stripe_connect_currency: connectCurrency })
+        .eq('id', currentTenant.id);
+      await refreshTenants();
+      setCurrencySaved(true);
+      setTimeout(() => setCurrencySaved(false), 3000);
+    } catch {
+      // silently ignore — UI will keep the value
+    } finally {
+      setSavingCurrency(false);
+    }
+  };
+
   const getRoleBadgeClass = (role: string, isOwner: boolean) => {
     if (isOwner) return 'bg-amber-100 text-amber-700';
     switch (role) {
@@ -426,12 +480,13 @@ const Settings: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'club',          icon: Building2, label: t('settings.tab.club') },
-    { id: 'preferences',   icon: Globe,     label: t('settings.tab.preferences') },
-    { id: 'profile',       icon: User,      label: t('settings.tab.profile') },
-    { id: 'notifications', icon: Bell,      label: t('settings.tab.notifications') },
-    { id: 'security',      icon: Shield,    label: t('settings.tab.security') },
-    { id: 'users',         icon: Users,     label: t('settings.tab.users') },
+    { id: 'club',          icon: Building2,  label: t('settings.tab.club') },
+    { id: 'preferences',   icon: Globe,      label: t('settings.tab.preferences') },
+    { id: 'profile',       icon: User,       label: t('settings.tab.profile') },
+    { id: 'notifications', icon: Bell,       label: t('settings.tab.notifications') },
+    { id: 'security',      icon: Shield,     label: t('settings.tab.security') },
+    { id: 'users',         icon: Users,      label: t('settings.tab.users') },
+    { id: 'payments',      icon: CreditCard, label: t('settings.tab.payments') },
   ];
 
   const countryOptions = [
@@ -1113,6 +1168,135 @@ const Settings: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Pagamentos (Stripe Connect) ────────────────────────────────── */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">{t('payment.title')}</h2>
+              <p className="text-sm text-slate-500 mt-1">{t('payment.subtitle')}</p>
+            </div>
+
+            {connectError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                {connectError}
+              </div>
+            )}
+
+            {/* Not connected */}
+            {!currentTenant?.stripe_connect_account_id && (
+              <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{t('payment.status.notConnected')}</p>
+                    <p className="text-sm text-slate-500">{t('payment.status.notConnectedHint')}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleConnectStripe}
+                  disabled={connectLoading}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 transition"
+                >
+                  {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  {t('payment.connect')}
+                  <span className="text-xs opacity-75 ml-1">({stripeConfig.mode})</span>
+                </button>
+              </div>
+            )}
+
+            {/* Pending */}
+            {currentTenant?.stripe_connect_account_id &&
+              (!currentTenant.stripe_connect_charges_enabled || !currentTenant.stripe_connect_payouts_enabled) && (
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{t('payment.status.pending')}</p>
+                    <p className="text-sm text-slate-500">{t('payment.status.pendingHint')}</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 text-sm">
+                  <span className={`flex items-center gap-1 font-medium ${currentTenant.stripe_connect_charges_enabled ? 'text-green-600' : 'text-slate-400'}`}>
+                    <Check className="w-4 h-4" />
+                    {t('payment.chargesLabel')}: {currentTenant.stripe_connect_charges_enabled ? t('payment.enabled') : t('payment.disabled')}
+                  </span>
+                  <span className={`flex items-center gap-1 font-medium ${currentTenant.stripe_connect_payouts_enabled ? 'text-green-600' : 'text-slate-400'}`}>
+                    <Check className="w-4 h-4" />
+                    {t('payment.payoutsLabel')}: {currentTenant.stripe_connect_payouts_enabled ? t('payment.enabled') : t('payment.disabled')}
+                  </span>
+                </div>
+                <button
+                  onClick={handleConnectStripe}
+                  disabled={connectLoading}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 disabled:opacity-60 transition"
+                >
+                  {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  {t('payment.reconnect')}
+                </button>
+              </div>
+            )}
+
+            {/* Active */}
+            {currentTenant?.stripe_connect_charges_enabled && currentTenant?.stripe_connect_payouts_enabled && (
+              <div className="space-y-4">
+                <div className="bg-green-50 rounded-xl border border-green-200 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-800">{t('payment.status.active')}</p>
+                      <p className="text-sm text-slate-500">{t('payment.status.activeHint')}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-6 text-sm">
+                    <span className="flex items-center gap-1 text-green-700 font-medium">
+                      <Check className="w-4 h-4" /> {t('payment.chargesLabel')}: {t('payment.enabled')}
+                    </span>
+                    <span className="flex items-center gap-1 text-green-700 font-medium">
+                      <Check className="w-4 h-4" /> {t('payment.payoutsLabel')}: {t('payment.enabled')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Currency selector */}
+                <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{t('payment.currency')}</label>
+                    <p className="text-xs text-slate-500 mb-3">{t('payment.currencyHint')}</p>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={connectCurrency}
+                        onChange={e => setConnectCurrency(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        {(['GBP', 'EUR', 'USD', 'BRL', 'CAD', 'AUD', 'CHF', 'MXN', 'ARS', 'COP'] as const).map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleSaveCurrency}
+                        disabled={savingCurrency}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition"
+                      >
+                        {savingCurrency ? <Loader2 className="w-4 h-4 animate-spin" /> : currencySaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                        {currencySaved ? t('payment.currencySaved') : t('common.save')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-slate-400">{t('payment.standardOwnerHint')}</p>
           </div>
         )}
       </div>

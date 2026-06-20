@@ -13,6 +13,11 @@ export interface Tenant {
     settings?: Record<string, any>;
     created_at?: string;
     updated_at?: string;
+    // Stripe Connect (club → member payments)
+    stripe_connect_account_id?: string | null;
+    stripe_connect_charges_enabled?: boolean;
+    stripe_connect_payouts_enabled?: boolean;
+    stripe_connect_currency?: string;
 }
 
 export interface TenantUser {

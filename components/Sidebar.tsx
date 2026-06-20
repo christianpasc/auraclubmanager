@@ -33,6 +33,7 @@ import {
   Target,
   BookOpen,
   Video,
+  LayoutList,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useAuth } from '../contexts/AuthContext';
@@ -257,6 +258,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                    {t('sidebar.monthlyFees')}
                 </NavLink>
               )}
+              <NavLink
+                to="/school-plans"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
+                  }`
+                }
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+                {t('schoolPlans.sidebar')}
+              </NavLink>
             </div>
           )}
         </div>

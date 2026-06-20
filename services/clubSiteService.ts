@@ -114,7 +114,7 @@ export const clubSiteService = {
   async getBySlug(slug: string): Promise<{ site: ClubSite; tenant: any } | null> {
     const { data: tenant } = await supabase
       .from('tenants')
-      .select('id, name, slug, logo_url, primary_color')
+      .select('id, name, slug, logo_url, primary_color, stripe_connect_charges_enabled, stripe_connect_payouts_enabled')
       .eq('slug', slug)
       .single();
 

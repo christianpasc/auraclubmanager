@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ShoppingBag, Plus, Minus, X, Loader2, CheckCircle2, Package } from 'lucide-react';
+import { ShoppingBag, Plus, Minus, X, Loader2, CheckCircle2, Package, CreditCard } from 'lucide-react';
 import { clubSiteService } from '../services/clubSiteService';
 import { storeService, Product, ProductVariant } from '../services/storeService';
+import { paymentProvider } from '../services/payment';
 
 interface CartItem {
   product: Product;
@@ -20,6 +21,8 @@ const PublicStore: React.FC = () => {
   const [clubName, setClubName] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState('#6366f1');
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -48,6 +51,7 @@ const PublicStore: React.FC = () => {
       setClubName(tenant.name);
       setLogoUrl(tenant.logo_url || site.logo_url || null);
       setPrimaryColor(tenant.primary_color || site.primary_color || '#6366f1');
+      setStripeEnabled(!!(tenant.stripe_connect_charges_enabled && tenant.stripe_connect_payouts_enabled));
       const prods = await storeService.getProductsPublic(tenant.id);
       setProducts(prods);
       setLoading(false);
@@ -111,6 +115,45 @@ const PublicStore: React.FC = () => {
       setCart([]);
     }
     setPlacing(false);
+  };
+
+  const placeOrderAndCheckout = async () => {
+    if (!tenantId || !buyerName.trim()) { setOrderError('Nome é obrigatório.'); return; }
+    setStripeCheckoutLoading(true); setOrderError(null);
+    const result = await storeService.placeOrder(
+      tenantId,
+      buyerName.trim(),
+      buyerEmail.trim(),
+      buyerPhone.trim(),
+      notes.trim(),
+      cart.map(i => ({
+        product_id: i.product.id!,
+        variant_id: i.variant?.id,
+        product_name: i.product.name,
+        variant_name: i.variant?.name,
+        unit_price: i.unitPrice,
+        quantity: i.quantity,
+      }))
+    );
+    if (result.error || !result.order_id) {
+      setOrderError(result.error || 'Erro ao criar pedido.');
+      setStripeCheckoutLoading(false);
+      return;
+    }
+    try {
+      const baseUrl = window.location.href.split('?')[0];
+      const checkoutResult = await paymentProvider.createCheckoutSession({
+        mode: 'payment',
+        tenantId,
+        orderId: result.order_id,
+        successUrl: `${baseUrl}?order_paid=1&order_id=${result.order_id}`,
+        cancelUrl: baseUrl,
+      });
+      window.location.href = checkoutResult.url;
+    } catch (err: any) {
+      setOrderError(err.message || 'Erro ao iniciar pagamento.');
+      setStripeCheckoutLoading(false);
+    }
   };
 
   if (loading) {
@@ -332,12 +375,21 @@ const PublicStore: React.FC = () => {
 
                 {orderError && <p className="text-rose-600 text-xs bg-rose-50 rounded-lg px-3 py-2">{orderError}</p>}
 
-                <button onClick={placeOrder} disabled={placing || cart.length === 0}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-white font-semibold rounded-xl disabled:opacity-50"
-                  style={{ backgroundColor: primaryColor }}>
-                  {placing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-                  Confirmar pedido · {FMT(cartTotal)}
-                </button>
+                <div className="space-y-2">
+                  {stripeEnabled && (
+                    <button onClick={placeOrderAndCheckout} disabled={stripeCheckoutLoading || placing || cart.length === 0}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-violet-600 text-white font-semibold rounded-xl disabled:opacity-50 hover:bg-violet-700 transition">
+                      {stripeCheckoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                      Pagar com Stripe · {FMT(cartTotal)}
+                    </button>
+                  )}
+                  <button onClick={placeOrder} disabled={placing || stripeCheckoutLoading || cart.length === 0}
+                    className="w-full flex items-center justify-center gap-2 py-3 text-white font-semibold rounded-xl disabled:opacity-50"
+                    style={{ backgroundColor: primaryColor }}>
+                    {placing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
+                    {stripeEnabled ? 'Pagar na entrega · ' : 'Confirmar pedido · '}{FMT(cartTotal)}
+                  </button>
+                </div>
               </div>
             )}
           </div>
