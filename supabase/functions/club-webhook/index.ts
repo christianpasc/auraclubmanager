@@ -135,44 +135,104 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
-      // ── Subscription invoice paid (renewal) ───────────────────────────────
+      // ── Subscription invoice paid (first payment or renewal) ──────────────
       case "invoice.paid": {
         const stripeInvoice = event!.data.object as Stripe.Invoice;
         const subId = typeof stripeInvoice.subscription === "string" ? stripeInvoice.subscription : null;
         if (!subId) break;
 
         const piId = typeof stripeInvoice.payment_intent === "string" ? stripeInvoice.payment_intent : null;
+        const stripeInvoiceId = stripeInvoice.id;
 
-        let auraInvoice: { id: string; tenant_id: string; status: string; stripe_payment_intent_id: string | null } | null = null;
+        // Idempotency: this exact Stripe invoice was already recorded (webhook retry)
+        try {
+          const dupe = await supabase.from("invoices").select("id").eq("stripe_invoice_id", stripeInvoiceId).limit(1);
+          if ((dupe.data?.length ?? 0) > 0) break;
+        } catch { /* ignore, proceed */ }
+
+        type AuraInvoice = {
+          id: string; tenant_id: string; athlete_id: string | null; school_plan_id: string | null;
+          enrollment_id: string | null; description: string | null; amount: number; status: string;
+          stripe_payment_intent_id: string | null; stripe_invoice_id: string | null;
+        };
+        let latest: AuraInvoice | null = null;
         try {
           const res = await supabase
             .from("invoices")
-            .select("id, tenant_id, status, stripe_payment_intent_id")
+            .select("id, tenant_id, athlete_id, school_plan_id, enrollment_id, description, amount, status, stripe_payment_intent_id, stripe_invoice_id")
             .eq("stripe_subscription_id", subId)
             .order("created_at", { ascending: false })
             .limit(1)
             .single();
-          auraInvoice = res.data ?? null;
+          latest = res.data ?? null;
         } catch { /* no matching invoice */ }
 
-        if (auraInvoice) {
-          if (auraInvoice.status !== "paid") {
-            await supabase.from("invoices").update({ status: "paid", paid_at: now, stripe_payment_intent_id: piId, updated_at: now }).eq("id", auraInvoice.id);
-          } else if (piId && !auraInvoice.stripe_payment_intent_id) {
-            // checkout.session.completed already marked it paid (subscription mode sessions
-            // don't carry payment_intent), so backfill it here once invoice.paid arrives.
-            await supabase.from("invoices").update({ stripe_payment_intent_id: piId, updated_at: now }).eq("id", auraInvoice.id);
-          }
+        if (!latest) break;
 
-          if (piId && !auraInvoice.stripe_payment_intent_id) {
+        const paidAmount = (stripeInvoice.amount_paid || 0) / 100;
+
+        if (latest.status !== "paid") {
+          // First payment confirmation for this invoice row.
+          await supabase.from("invoices").update({
+            status: "paid", paid_at: now, stripe_payment_intent_id: piId, stripe_invoice_id: stripeInvoiceId, updated_at: now,
+          }).eq("id", latest.id);
+
+          if (piId) {
             try {
               await supabase.from("payments").insert({
-                tenant_id: auraInvoice.tenant_id,
-                stripe_payment_intent_id: piId,
-                amount: (stripeInvoice.amount_paid || 0) / 100,
-                status: "completed",
-                created_at: now,
-                updated_at: now,
+                tenant_id: latest.tenant_id, stripe_payment_intent_id: piId, amount: paidAmount,
+                status: "completed", created_at: now, updated_at: now,
+              });
+            } catch { /* ignore */ }
+          }
+        } else if (!latest.stripe_invoice_id) {
+          // checkout.session.completed already marked it paid (subscription mode sessions
+          // don't carry payment_intent) — same cycle, just backfill the Stripe invoice id.
+          await supabase.from("invoices").update({
+            stripe_invoice_id: stripeInvoiceId,
+            stripe_payment_intent_id: piId || latest.stripe_payment_intent_id,
+            updated_at: now,
+          }).eq("id", latest.id);
+
+          if (piId && !latest.stripe_payment_intent_id) {
+            try {
+              await supabase.from("payments").insert({
+                tenant_id: latest.tenant_id, stripe_payment_intent_id: piId, amount: paidAmount,
+                status: "completed", created_at: now, updated_at: now,
+              });
+            } catch { /* ignore */ }
+          }
+        } else if (latest.stripe_invoice_id !== stripeInvoiceId) {
+          // New billing cycle: the latest invoice for this subscription is already
+          // settled with a different Stripe invoice id — create a new monthly row.
+          const dueDate = stripeInvoice.period_end
+            ? new Date(stripeInvoice.period_end * 1000).toISOString().split("T")[0]
+            : now.split("T")[0];
+
+          try {
+            await supabase.from("invoices").insert({
+              tenant_id: latest.tenant_id,
+              athlete_id: latest.athlete_id,
+              school_plan_id: latest.school_plan_id,
+              enrollment_id: latest.enrollment_id,
+              description: latest.description,
+              amount: paidAmount || latest.amount,
+              due_date: dueDate,
+              status: "paid",
+              paid_at: now,
+              stripe_subscription_id: subId,
+              stripe_payment_intent_id: piId,
+              stripe_invoice_id: stripeInvoiceId,
+            });
+          } catch (err) {
+            console.error("club-webhook: failed to create renewal invoice", err);
+          }
+
+          if (piId) {
+            try {
+              await supabase.from("payments").insert({
+                tenant_id: latest.tenant_id, stripe_payment_intent_id: piId, amount: paidAmount,
+                status: "completed", created_at: now, updated_at: now,
               });
             } catch { /* ignore */ }
           }

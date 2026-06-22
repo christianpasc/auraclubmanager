@@ -19,6 +19,7 @@ export interface Enrollment {
     contract_signed?: boolean;
     contract_signed_at?: string;
     notes?: string;
+    school_plan_id?: string | null;
     created_at?: string;
     updated_at?: string;
     // Joined data
@@ -65,7 +66,61 @@ export const enrollmentService = {
             .select()
             .single();
         if (error) throw error;
-        return data as Enrollment;
+        const created = data as Enrollment;
+
+        // Generate the initial charge: a Stripe-payable invoice if a payment plan
+        // was selected, otherwise the legacy manual monthly fees.
+        if (created.id && created.athlete_id) {
+            try {
+                if (created.school_plan_id) {
+                    await this.generateInitialInvoice(created);
+                } else {
+                    await monthlyFeeService.generateFromEnrollment(created, created.athlete_id);
+                }
+            } catch (err) {
+                console.error('Error generating fees/invoice:', err);
+                // Don't throw - enrollment was still created successfully
+            }
+        }
+
+        return created;
+    },
+
+    async generateInitialInvoice(enrollment: Enrollment) {
+        if (!enrollment.school_plan_id || !enrollment.athlete_id) return;
+        const tenant_id = await getCurrentTenantId();
+        if (!tenant_id) throw new Error('No tenant selected');
+
+        const { data: plan, error: planError } = await supabase
+            .from('school_plans')
+            .select('name, amount')
+            .eq('id', enrollment.school_plan_id)
+            .single();
+        if (planError || !plan) throw planError || new Error('Plan not found');
+
+        const dueDate = enrollment.start_date || enrollment.enrollment_date || new Date().toISOString().split('T')[0];
+
+        const { data: invoice, error } = await supabase.from('invoices').insert({
+            tenant_id,
+            athlete_id: enrollment.athlete_id,
+            school_plan_id: enrollment.school_plan_id,
+            enrollment_id: enrollment.id,
+            description: plan.name,
+            amount: plan.amount,
+            due_date: dueDate,
+            status: 'pending',
+        }).select().single();
+        if (error) throw error;
+
+        // Email the payment link to the athlete (or guardian, if a minor).
+        // Best-effort: a failed send shouldn't block the enrollment.
+        try {
+            await supabase.functions.invoke('send-invoice-email', {
+                body: { invoice_id: invoice.id, base_url: window.location.origin },
+            });
+        } catch (err) {
+            console.error('Error sending invoice email:', err);
+        }
     },
 
     async createWithAthlete(
@@ -75,21 +130,12 @@ export const enrollmentService = {
         // First create the athlete
         const athlete = await athleteService.create(athleteData);
 
-        // Then create the enrollment linked to the athlete
+        // Then create the enrollment linked to the athlete (also generates the
+        // initial Stripe invoice or legacy monthly fees, see create() above)
         const enrollment = await this.create({
             ...enrollmentData,
             athlete_id: athlete.id,
         });
-
-        // Generate monthly fees based on the plan type
-        if (enrollment.id && athlete.id) {
-            try {
-                await monthlyFeeService.generateFromEnrollment(enrollment, athlete.id);
-            } catch (err) {
-                console.error('Error generating monthly fees:', err);
-                // Don't throw - enrollment was still created successfully
-            }
-        }
 
         return { athlete, enrollment };
     },

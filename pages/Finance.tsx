@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Wallet, ArrowUpCircle, ArrowDownCircle, Filter, Plus, Edit2, Trash2,
   Loader2, X, ChevronDown, CreditCard, ShoppingBag, Building2, RefreshCcw,
+  Link2, Mail, Check,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
@@ -54,6 +56,8 @@ const Finance: React.FC = () => {
   const [checkoutLoadingId, setCheckoutLoadingId] = useState<string | null>(null);
   const [refundLoadingId, setRefundLoadingId] = useState<string | null>(null);
   const [cancelLoadingId, setCancelLoadingId] = useState<string | null>(null);
+  const [resendLoadingId, setResendLoadingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [stripeActionMsg, setStripeActionMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [refundConfirm, setRefundConfirm] = useState<{ open: boolean; invoice: Invoice | null }>({ open: false, invoice: null });
   const [cancelConfirm, setCancelConfirm] = useState<{ open: boolean; invoice: Invoice | null }>({ open: false, invoice: null });
@@ -199,6 +203,39 @@ const Finance: React.FC = () => {
     } catch (err: any) {
       setStripeActionMsg({ type: 'err', text: err.message || t('payment.actionError') });
       setCheckoutLoadingId(null);
+    }
+  };
+
+  const handleCopyPayLink = async (invoice: Invoice) => {
+    if (!invoice.id) return;
+    const payUrl = `${window.location.origin}/#/pay/${invoice.id}`;
+    try {
+      await navigator.clipboard.writeText(payUrl);
+      setCopiedId(invoice.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setStripeActionMsg({ type: 'err', text: t('payment.actionError') });
+    }
+  };
+
+  const handleResendInvoiceEmail = async (invoice: Invoice) => {
+    if (!invoice.id) return;
+    setResendLoadingId(invoice.id);
+    setStripeActionMsg(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: { invoice_id: invoice.id, base_url: window.location.origin },
+      });
+      if (error) throw error;
+      if (data?.sent) {
+        setStripeActionMsg({ type: 'ok', text: t('payment.emailSent') });
+      } else {
+        setStripeActionMsg({ type: 'err', text: t('payment.emailNoAddress') });
+      }
+    } catch (err: any) {
+      setStripeActionMsg({ type: 'err', text: err.message || t('payment.actionError') });
+    } finally {
+      setResendLoadingId(null);
     }
   };
 
@@ -648,16 +685,33 @@ const Finance: React.FC = () => {
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {(inv.status === 'pending' || inv.status === 'overdue') && (
-                                <button
-                                  onClick={() => handleChargeViaStripe(inv)}
-                                  disabled={checkoutLoadingId === inv.id}
-                                  className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-60 transition"
-                                >
-                                  {checkoutLoadingId === inv.id
-                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    : <CreditCard className="w-3.5 h-3.5" />}
-                                  {checkoutLoadingId === inv.id ? t('payment.checkoutLoading') : t('payment.chargeViaStripe')}
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleChargeViaStripe(inv)}
+                                    disabled={checkoutLoadingId === inv.id}
+                                    className="flex items-center gap-1 px-2.5 py-1 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-60 transition"
+                                  >
+                                    {checkoutLoadingId === inv.id
+                                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      : <CreditCard className="w-3.5 h-3.5" />}
+                                    {checkoutLoadingId === inv.id ? t('payment.checkoutLoading') : t('payment.chargeViaStripe')}
+                                  </button>
+                                  <button
+                                    onClick={() => handleCopyPayLink(inv)}
+                                    title={t('payment.copyLink')}
+                                    className="flex items-center gap-1 px-2.5 py-1 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition"
+                                  >
+                                    {copiedId === inv.id ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <button
+                                    onClick={() => handleResendInvoiceEmail(inv)}
+                                    disabled={resendLoadingId === inv.id}
+                                    title={t('payment.resendEmail')}
+                                    className="flex items-center gap-1 px-2.5 py-1 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 disabled:opacity-60 transition"
+                                  >
+                                    {resendLoadingId === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                                  </button>
+                                </>
                               )}
                               {inv.status === 'paid' && inv.stripe_payment_intent_id && (
                                 <button

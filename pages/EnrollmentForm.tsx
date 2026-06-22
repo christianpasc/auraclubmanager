@@ -8,6 +8,7 @@ import {
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { storageService } from '../services/storageService';
+import { schoolPlanService, SchoolPlan, PLAN_INTERVAL_LABELS } from '../services/schoolPlanService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 
@@ -68,6 +69,12 @@ const EnrollmentForm: React.FC = () => {
     });
 
     const categories = ['Sub-7', 'Sub-9', 'Sub-11', 'Sub-13', 'Sub-15', 'Sub-17', 'Sub-20', 'Profissional'];
+
+    const [schoolPlans, setSchoolPlans] = useState<SchoolPlan[]>([]);
+
+    useEffect(() => {
+        schoolPlanService.getActive().then(setSchoolPlans).catch(err => console.error(err));
+    }, []);
 
     useEffect(() => {
         if (id) loadEnrollment(id);
@@ -460,28 +467,51 @@ const EnrollmentForm: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.planType')}</label>
-                                <select value={enrollment.plan_type || 'monthly'} onChange={(e) => updateEnrollment('plan_type', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    {planTypes.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.stripePlan')}</label>
+                                <select
+                                    value={enrollment.school_plan_id || ''}
+                                    onChange={(e) => updateEnrollment('school_plan_id', e.target.value || null)}
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                >
+                                    <option value="">{t('enrollmentForm.field.stripePlanNone')}</option>
+                                    {schoolPlans.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} — {p.currency || 'EUR'} {p.amount} ({PLAN_INTERVAL_LABELS[p.interval]})
+                                        </option>
+                                    ))}
                                 </select>
+                                {enrollment.school_plan_id && (
+                                    <p className="text-xs text-slate-400 mt-2">{t('enrollmentForm.field.stripePlanHint')}</p>
+                                )}
                             </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.monthlyFee')}</label>
-                                <input type="number" step="0.01" value={enrollment.monthly_fee || ''} onChange={(e) => updateEnrollment('monthly_fee', parseFloat(e.target.value) || undefined)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="150.00" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.paymentDay')}</label>
-                                <select value={enrollment.payment_day || 10} onChange={(e) => updateEnrollment('payment_day', parseInt(e.target.value))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.paymentMethod')}</label>
-                                <select value={enrollment.payment_method || ''} onChange={(e) => updateEnrollment('payment_method', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-                                    <option value="">{t('trainingForm.field.select')}</option>
-                                    {paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                                </select>
-                            </div>
+
+                            {!enrollment.school_plan_id && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.planType')}</label>
+                                        <select value={enrollment.plan_type || 'monthly'} onChange={(e) => updateEnrollment('plan_type', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                            {planTypes.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.monthlyFee')}</label>
+                                        <input type="number" step="0.01" value={enrollment.monthly_fee || ''} onChange={(e) => updateEnrollment('monthly_fee', parseFloat(e.target.value) || undefined)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="150.00" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.paymentDay')}</label>
+                                        <select value={enrollment.payment_day || 10} onChange={(e) => updateEnrollment('payment_day', parseInt(e.target.value))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                            {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">{t('enrollmentForm.field.paymentMethod')}</label>
+                                        <select value={enrollment.payment_method || ''} onChange={(e) => updateEnrollment('payment_method', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                                            <option value="">{t('trainingForm.field.select')}</option>
+                                            {paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                                        </select>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: `${clubLabel} <noreply@auraclubmanager.com>`,
+            from: `${clubLabel} <noreply@auraclubmanager.io>`,
             to: [inv.email],
             subject: `Você foi convidado: ${inv.event_title || "Evento"}`,
             html: `

@@ -38,6 +38,7 @@ import PublicInviteResponse from './pages/PublicInviteResponse';
 import Store from './pages/Store';
 import ProductForm from './pages/ProductForm';
 import PublicStore from './pages/PublicStore';
+import PublicInvoice from './pages/PublicInvoice';
 import SponsorManager from './pages/SponsorManager';
 import FacilityManager from './pages/FacilityManager';
 import Assessments from './pages/Assessments';
@@ -292,6 +293,7 @@ const PublicRoutes: React.FC = () => (
     <Route path="/site/:slug" element={<PublicSite />} />
     <Route path="/invite/:token" element={<PublicInviteResponse />} />
     <Route path="/shop/:slug" element={<PublicStore />} />
+    <Route path="/pay/:invoiceId" element={<PublicInvoice />} />
     <Route path="*" element={<PublicSite />} />
   </Routes>
 );
@@ -300,7 +302,7 @@ const PublicRoutes: React.FC = () => (
 const AppRouter: React.FC = () => {
   const location = useLocation();
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
-  const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/');
+  const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/');
 
   if (isAuthRoute) return <AuthRoutes />;
   if (isPublicRoute) return <PublicRoutes />;
