@@ -63,6 +63,10 @@ Deno.serve(async (req: Request) => {
         success_url: `${success_url}?invoice_id=${invoice_id}`,
         cancel_url,
         metadata: { invoice_id, tenant_id },
+        // Also tag the underlying Subscription itself: invoice.paid can arrive
+        // before checkout.session.completed (Stripe doesn't guarantee order), so
+        // the webhook needs a way to recover invoice_id independent of timing.
+        subscription_data: { metadata: { invoice_id, tenant_id } },
         ...(priceId
           ? { line_items: [{ price: priceId, quantity: 1 }] }
           : {

@@ -11,6 +11,34 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Newer Stripe API versions moved these off the top-level Invoice fields into
+// `parent.subscription_details` / `payments`. Check both shapes so we don't
+// silently break depending on which API version the connected account is on.
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const legacy = (invoice as any).subscription;
+  if (typeof legacy === "string") return legacy;
+  if (legacy?.id) return legacy.id;
+  return (invoice as any).parent?.subscription_details?.subscription ?? null;
+}
+
+function getInvoicePaymentIntentId(invoice: Stripe.Invoice): string | null {
+  const legacy = (invoice as any).payment_intent;
+  if (typeof legacy === "string") return legacy;
+  if (legacy?.id) return legacy.id;
+  const fromPayments = (invoice as any).payments?.data?.[0]?.payment?.payment_intent;
+  if (typeof fromPayments === "string") return fromPayments;
+  return fromPayments?.id ?? null;
+}
+
+// PaymentIntent no longer has a top-level `invoice` field on the newest API
+// versions either — the invoice id moved to `payment_details.order_reference`.
+function getPaymentIntentInvoiceId(pi: Stripe.PaymentIntent): string | null {
+  const legacy = (pi as any).invoice;
+  if (typeof legacy === "string") return legacy;
+  if (legacy?.id) return legacy.id;
+  return (pi as any).payment_details?.order_reference ?? null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -34,9 +62,9 @@ Deno.serve(async (req: Request) => {
   const body = await req.text();
   const stripeKeyLive = Deno.env.get("STRIPE_SECRET_KEY_LIVE");
   const stripeKeyTest = Deno.env.get("STRIPE_SECRET_KEY_TEST");
-  const stripeKey = stripeKeyLive || stripeKeyTest!;
 
-  const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+  // constructEventAsync only verifies the signature (no API calls), so any key works here.
+  const verifierStripe = new Stripe(stripeKeyLive || stripeKeyTest || "sk_test_placeholder", { apiVersion: "2023-10-16" });
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   let event: Stripe.Event;
@@ -44,7 +72,7 @@ Deno.serve(async (req: Request) => {
   let verified = false;
   for (const secret of secrets) {
     try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, secret);
+      event = await verifierStripe.webhooks.constructEventAsync(body, signature, secret);
       verified = true;
       break;
     } catch { /* try next */ }
@@ -55,7 +83,16 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid webhook signature" }), { status: 400 });
   }
 
-  console.log(`club-webhook: received ${event!.type}`);
+  // Pick the key matching the event's own mode — using the live key against a test-mode
+  // connected account (or vice versa) makes every stripe.*.retrieve() call fail.
+  const stripeKey = event!.livemode ? stripeKeyLive : stripeKeyTest;
+  if (!stripeKey) {
+    console.error(`club-webhook: STRIPE_SECRET_KEY_${event!.livemode ? "LIVE" : "TEST"} not configured`);
+    return new Response(JSON.stringify({ error: "Stripe key not configured for this mode" }), { status: 500 });
+  }
+  const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+
+  console.log(`club-webhook: received ${event!.type} (livemode=${event!.livemode})`);
 
   const now = new Date().toISOString();
 
@@ -138,11 +175,22 @@ Deno.serve(async (req: Request) => {
       // ── Subscription invoice paid (first payment or renewal) ──────────────
       case "invoice.paid": {
         const stripeInvoice = event!.data.object as Stripe.Invoice;
-        const subId = typeof stripeInvoice.subscription === "string" ? stripeInvoice.subscription : null;
+        const subId = getInvoiceSubscriptionId(stripeInvoice);
         if (!subId) break;
 
-        const piId = typeof stripeInvoice.payment_intent === "string" ? stripeInvoice.payment_intent : null;
+        const connectedAccountId = (event as any).account as string | undefined;
         const stripeInvoiceId = stripeInvoice.id;
+
+        // The webhook payload's shape follows the account's pinned API version, which
+        // may be newer than ours and omit payment_intent entirely. Re-fetch the invoice
+        // with our own client (pinned to 2023-10-16) to get it back in the legacy shape.
+        let piId = getInvoicePaymentIntentId(stripeInvoice);
+        if (!piId && connectedAccountId) {
+          try {
+            const fullInvoice = await stripe.invoices.retrieve(stripeInvoiceId, { stripeAccount: connectedAccountId });
+            piId = getInvoicePaymentIntentId(fullInvoice);
+          } catch { /* ignore */ }
+        }
 
         // Idempotency: this exact Stripe invoice was already recorded (webhook retry)
         try {
@@ -155,11 +203,12 @@ Deno.serve(async (req: Request) => {
           enrollment_id: string | null; description: string | null; amount: number; status: string;
           stripe_payment_intent_id: string | null; stripe_invoice_id: string | null;
         };
+        const invoiceSelect = "id, tenant_id, athlete_id, school_plan_id, enrollment_id, description, amount, status, stripe_payment_intent_id, stripe_invoice_id";
         let latest: AuraInvoice | null = null;
         try {
           const res = await supabase
             .from("invoices")
-            .select("id, tenant_id, athlete_id, school_plan_id, enrollment_id, description, amount, status, stripe_payment_intent_id, stripe_invoice_id")
+            .select(invoiceSelect)
             .eq("stripe_subscription_id", subId)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -167,7 +216,26 @@ Deno.serve(async (req: Request) => {
           latest = res.data ?? null;
         } catch { /* no matching invoice */ }
 
+        // Stripe doesn't guarantee event order — invoice.paid can arrive before
+        // checkout.session.completed has linked stripe_subscription_id to the row.
+        // Recover via the Subscription's own metadata (set in club-checkout) instead.
+        if (!latest) {
+          if (connectedAccountId) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(subId, { stripeAccount: connectedAccountId });
+              const linkedInvoiceId = sub.metadata?.invoice_id;
+              if (linkedInvoiceId) {
+                const res = await supabase.from("invoices").select(invoiceSelect).eq("id", linkedInvoiceId).single();
+                latest = res.data ?? null;
+              }
+            } catch { /* ignore */ }
+          }
+        }
+
         if (!latest) break;
+
+        // Backfill the subscription link in case we recovered the row via metadata above.
+        await supabase.from("invoices").update({ stripe_subscription_id: subId }).eq("id", latest.id).is("stripe_subscription_id", null);
 
         const paidAmount = (stripeInvoice.amount_paid || 0) / 100;
 
@@ -240,10 +308,74 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
+      // ── Payment intent succeeded (reliable source of payment_intent_id) ───
+      // The Invoice object's payment_intent field has moved/disappeared across
+      // recent API versions; PaymentIntent itself is stable and always carries
+      // its own id plus an `invoice` back-reference, so we backfill from here.
+      case "payment_intent.succeeded": {
+        const pi = event!.data.object as Stripe.PaymentIntent;
+        const stripeInvoiceId = getPaymentIntentInvoiceId(pi);
+        if (!stripeInvoiceId) break; // one-time/order payments are handled via checkout.session.completed
+
+        const connectedAccountId = (event as any).account as string | undefined;
+        if (!connectedAccountId) break;
+
+        let subId: string | null = null;
+        try {
+          const inv = await stripe.invoices.retrieve(stripeInvoiceId, { stripeAccount: connectedAccountId });
+          subId = getInvoiceSubscriptionId(inv);
+        } catch { /* ignore */ }
+        if (!subId) break;
+
+        let latest: { id: string; tenant_id: string; stripe_payment_intent_id: string | null } | null = null;
+        try {
+          const res = await supabase
+            .from("invoices")
+            .select("id, tenant_id, stripe_payment_intent_id")
+            .eq("stripe_subscription_id", subId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          latest = res.data ?? null;
+        } catch { /* no matching invoice */ }
+
+        if (!latest) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subId, { stripeAccount: connectedAccountId });
+            const linkedInvoiceId = sub.metadata?.invoice_id;
+            if (linkedInvoiceId) {
+              const res = await supabase.from("invoices").select("id, tenant_id, stripe_payment_intent_id").eq("id", linkedInvoiceId).single();
+              latest = res.data ?? null;
+            }
+          } catch { /* ignore */ }
+        }
+
+        if (!latest || latest.stripe_payment_intent_id) break;
+
+        await supabase.from("invoices").update({
+          stripe_payment_intent_id: pi.id,
+          stripe_subscription_id: subId,
+          stripe_invoice_id: stripeInvoiceId,
+          updated_at: now,
+        }).eq("id", latest.id);
+
+        try {
+          await supabase.from("payments").insert({
+            tenant_id: latest.tenant_id,
+            stripe_payment_intent_id: pi.id,
+            amount: (pi.amount_received || pi.amount || 0) / 100,
+            status: "completed",
+            created_at: now,
+            updated_at: now,
+          });
+        } catch { /* ignore */ }
+        break;
+      }
+
       // ── Payment failed ─────────────────────────────────────────────────────
       case "invoice.payment_failed": {
         const stripeInvoice = event!.data.object as Stripe.Invoice;
-        const subId = typeof stripeInvoice.subscription === "string" ? stripeInvoice.subscription : null;
+        const subId = getInvoiceSubscriptionId(stripeInvoice);
         if (!subId) break;
 
         let auraInvoice: { id: string; athlete_id: string | null; tenant_id: string } | null = null;
