@@ -8,7 +8,7 @@ import {
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { athleteService, Athlete } from '../services/athleteService';
 import { storageService } from '../services/storageService';
-import { schoolPlanService, SchoolPlan, PLAN_INTERVAL_LABELS } from '../services/schoolPlanService';
+import { schoolPlanService, SchoolPlan } from '../services/schoolPlanService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 
@@ -27,6 +27,11 @@ const EnrollmentForm: React.FC = () => {
         { value: 'semiannual', label: t('planType.semiannual') },
         { value: 'annual',     label: t('planType.annual') },
     ];
+
+    const schoolPlanIntervalLabel = (interval: string): string => {
+        const key = interval === 'one_time' ? 'planType.oneTime' : `planType.${interval}`;
+        return t(key);
+    };
 
     const paymentMethods: Array<{ value: string; label: string }> = (() => {
         const settings = currentTenant?.settings as any;
@@ -476,7 +481,7 @@ const EnrollmentForm: React.FC = () => {
                                     <option value="">{t('enrollmentForm.field.stripePlanNone')}</option>
                                     {schoolPlans.map(p => (
                                         <option key={p.id} value={p.id}>
-                                            {p.name} — {p.currency || 'EUR'} {p.amount} ({PLAN_INTERVAL_LABELS[p.interval]})
+                                            {p.name} — {p.currency || 'EUR'} {p.amount} ({schoolPlanIntervalLabel(p.interval)})
                                         </option>
                                     ))}
                                 </select>

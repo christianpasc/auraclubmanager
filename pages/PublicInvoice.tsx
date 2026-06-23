@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { CreditCard, Loader2, CheckCircle2, AlertTriangle, Receipt } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { paymentProvider } from '../services/payment';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface InvoiceInfo {
   invoice_id: string;
@@ -20,6 +21,7 @@ const FMT = (n: number, currency: string) => `${currency} ${Number(n).toFixed(2)
 
 const PublicInvoice: React.FC = () => {
   const { invoiceId } = useParams<{ invoiceId: string }>();
+  const { t, language } = useLanguage();
 
   const [invoice, setInvoice] = useState<InvoiceInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ const PublicInvoice: React.FC = () => {
       });
       window.location.href = result.url;
     } catch (err: any) {
-      setError(err.message || 'Erro ao iniciar pagamento.');
+      setError(err.message || t('publicInvoice.paymentError'));
       setPayLoading(false);
     }
   };
@@ -72,7 +74,7 @@ const PublicInvoice: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center text-slate-400">
           <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-medium">Cobrança não encontrada</p>
+          <p className="font-medium">{t('publicInvoice.notFound')}</p>
         </div>
       </div>
     );
@@ -85,24 +87,24 @@ const PublicInvoice: React.FC = () => {
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
         <div className="text-center">
           <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide">{invoice.tenant_name}</p>
-          <h1 className="text-xl font-bold text-slate-800 mt-1">Cobrança de Mensalidade</h1>
+          <h1 className="text-xl font-bold text-slate-800 mt-1">{t('publicInvoice.title')}</h1>
         </div>
 
         <div className="bg-slate-50 rounded-xl border border-slate-100 p-5 space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Atleta</span>
+            <span className="text-slate-500">{t('common.athlete')}</span>
             <span className="font-semibold text-slate-800">{invoice.athlete_name}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Plano</span>
+            <span className="text-slate-500">{t('publicInvoice.plan')}</span>
             <span className="font-semibold text-slate-800">{invoice.description || '—'}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Vencimento</span>
-            <span className="font-semibold text-slate-800">{new Date(invoice.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+            <span className="text-slate-500">{t('publicInvoice.dueDate')}</span>
+            <span className="font-semibold text-slate-800">{new Date(invoice.due_date + 'T00:00:00').toLocaleDateString(language)}</span>
           </div>
           <div className="flex justify-between pt-3 border-t border-slate-200">
-            <span className="text-sm font-bold text-slate-700">Total</span>
+            <span className="text-sm font-bold text-slate-700">{t('publicInvoice.total')}</span>
             <span className="text-lg font-bold text-slate-800">{FMT(invoice.amount, invoice.currency)}</span>
           </div>
         </div>
@@ -110,7 +112,7 @@ const PublicInvoice: React.FC = () => {
         {isPaid ? (
           <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
             <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
-            <p className="text-sm font-semibold text-green-700">Esta cobrança já foi paga. Obrigado!</p>
+            <p className="text-sm font-semibold text-green-700">{t('publicInvoice.alreadyPaid')}</p>
           </div>
         ) : (
           <>
@@ -126,9 +128,9 @@ const PublicInvoice: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-60 transition"
             >
               {payLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-              Pagar agora
+              {t('publicInvoice.payNow')}
             </button>
-            <p className="text-xs text-center text-slate-400">Pagamento seguro processado pela Stripe.</p>
+            <p className="text-xs text-center text-slate-400">{t('publicInvoice.securePayment')}</p>
           </>
         )}
       </div>

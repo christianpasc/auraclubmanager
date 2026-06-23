@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
-import { schoolPlanService, SchoolPlan, PLAN_INTERVAL_LABELS } from '../services/schoolPlanService';
+import { schoolPlanService, SchoolPlan } from '../services/schoolPlanService';
 import { paymentProvider } from '../services/payment';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -23,6 +23,11 @@ const EMPTY: Omit<SchoolPlan, 'id' | 'tenant_id' | 'created_at' | 'updated_at'> 
 const SchoolPlans: React.FC = () => {
   const { t, formatCurrency } = useLanguage();
   const { currentTenant } = useTenant();
+
+  const intervalLabel = (interval: string): string => {
+    const key = interval === 'one_time' ? 'planType.oneTime' : `planType.${interval}`;
+    return t(key);
+  };
 
   const [plans, setPlans] = useState<SchoolPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,7 +174,7 @@ const SchoolPlans: React.FC = () => {
                   {formatCurrency(Number(plan.amount))}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs">
-                  {PLAN_INTERVAL_LABELS[plan.interval] || plan.interval}
+                  {intervalLabel(plan.interval)}
                 </span>
                 <span className="text-xs text-slate-400">{plan.currency || 'EUR'}</span>
               </div>
@@ -244,11 +249,11 @@ const SchoolPlans: React.FC = () => {
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex: Mensalidade Futebol"
+                  placeholder={t('schoolPlans.namePlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Descrição</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('schoolPlans.description')}</label>
                 <input
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={form.description}
@@ -286,7 +291,7 @@ const SchoolPlans: React.FC = () => {
                   onChange={e => setForm(f => ({ ...f, interval: e.target.value as SchoolPlan['interval'] }))}
                 >
                   {INTERVALS.map(iv => (
-                    <option key={iv} value={iv}>{PLAN_INTERVAL_LABELS[iv]}</option>
+                    <option key={iv} value={iv}>{intervalLabel(iv)}</option>
                   ))}
                 </select>
               </div>
