@@ -35,6 +35,7 @@ const Settings: React.FC = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [address, setAddress] = useState('');
   const [country, setCountry] = useState('Brazil');
+  const [commsLanguage, setCommsLanguage] = useState('pt-BR');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile state
@@ -101,6 +102,7 @@ const Settings: React.FC = () => {
       if (settings) {
         setAddress(settings.address || '');
         setCountry(settings.country || 'Brazil');
+        setCommsLanguage(settings.language || 'pt-BR');
         // Load payment methods or set defaults
         if (settings.payment_methods && Array.isArray(settings.payment_methods) && settings.payment_methods.length > 0) {
           setPaymentMethods(settings.payment_methods);
@@ -236,6 +238,7 @@ const Settings: React.FC = () => {
           ...(currentTenant.settings as any),
           address,
           country,
+          language: commsLanguage,
         },
       });
       setSaved(true);
@@ -625,6 +628,14 @@ const Settings: React.FC = () => {
                 <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
                   placeholder={t('settings.club.addressPlaceholder')}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.club.commsLanguage')}</label>
+                <select value={commsLanguage} onChange={(e) => setCommsLanguage(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                  {AVAILABLE_LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                </select>
+                <p className="text-xs text-slate-400">{t('settings.club.commsLanguageHint')}</p>
               </div>
             </div>
 

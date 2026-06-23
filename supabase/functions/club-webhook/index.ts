@@ -39,6 +39,20 @@ function getPaymentIntentInvoiceId(pi: Stripe.PaymentIntent): string | null {
   return (pi as any).payment_details?.order_reference ?? null;
 }
 
+// Matches the app's selected-language pattern (LanguageContext) for in-app
+// notifications. Falls back to pt-BR — same default the app itself uses.
+type Lang = "pt-BR" | "pt-PT" | "en-US" | "es-ES" | "fr-FR";
+const PAYMENT_FAILED_I18N: Record<Lang, { title: string; body: (athlete: string) => string }> = {
+  "pt-BR": { title: "Pagamento não processado", body: (a) => `O pagamento de ${a} não foi processado. Verifique seu método de pagamento.` },
+  "pt-PT": { title: "Pagamento não processado", body: (a) => `O pagamento de ${a} não foi processado. Verifique o seu método de pagamento.` },
+  "en-US": { title: "Payment not processed", body: (a) => `${a}'s payment could not be processed. Please check the payment method.` },
+  "es-ES": { title: "Pago no procesado", body: (a) => `El pago de ${a} no se procesó. Verifica el método de pago.` },
+  "fr-FR": { title: "Paiement non traité", body: (a) => `Le paiement de ${a} n'a pas été traité. Vérifiez le moyen de paiement.` },
+};
+function resolveLang(value: unknown): Lang {
+  return (typeof value === "string" && value in PAYMENT_FAILED_I18N) ? (value as Lang) : "pt-BR";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -426,12 +440,19 @@ Deno.serve(async (req: Request) => {
               }
 
               if (targetUserIds.length > 0) {
+                let tenantLang: Lang = "pt-BR";
+                try {
+                  const { data: tenantRow } = await supabase.from("tenants").select("settings").eq("id", auraInvoice.tenant_id).single();
+                  tenantLang = resolveLang((tenantRow?.settings as any)?.language);
+                } catch { /* ignore, default pt-BR */ }
+                const L = PAYMENT_FAILED_I18N[tenantLang];
+
                 const notifications = targetUserIds.map(userId => ({
                   tenant_id: auraInvoice!.tenant_id,
                   user_id: userId,
                   type: "payment_failed",
-                  title: "Pagamento não processado",
-                  body: `O pagamento de ${athlete.full_name} não foi processado. Verifique seu método de pagamento.`,
+                  title: L.title,
+                  body: L.body(athlete.full_name),
                   channels: { email: true, push: false },
                   reference_type: "invoice",
                   reference_id: auraInvoice!.id,

@@ -7,6 +7,29 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Matches the app's selected-language pattern (LanguageContext) for outbound emails.
+// Falls back to pt-BR — same default the app itself uses.
+type Lang = "pt-BR" | "pt-PT" | "en-US" | "es-ES" | "fr-FR";
+
+const I18N: Record<Lang, {
+  subject: (event: string) => string;
+  greeting: (name: string) => string;
+  eventLabel: string;
+  confirm: string;
+  directLink: string;
+  defaultEvent: string;
+}> = {
+  "pt-BR": { subject: (e) => `Você foi convidado: ${e}`, greeting: (n) => `Olá, <strong>${n}</strong>!`, eventLabel: "Evento", confirm: "Confirmar presença", directLink: "Link direto:", defaultEvent: "Evento" },
+  "pt-PT": { subject: (e) => `Foi convidado: ${e}`, greeting: (n) => `Olá, <strong>${n}</strong>!`, eventLabel: "Evento", confirm: "Confirmar presença", directLink: "Link direto:", defaultEvent: "Evento" },
+  "en-US": { subject: (e) => `You're invited: ${e}`, greeting: (n) => `Hello, <strong>${n}</strong>!`, eventLabel: "Event", confirm: "Confirm attendance", directLink: "Direct link:", defaultEvent: "Event" },
+  "es-ES": { subject: (e) => `Has sido invitado: ${e}`, greeting: (n) => `Hola, <strong>${n}</strong>!`, eventLabel: "Evento", confirm: "Confirmar asistencia", directLink: "Enlace directo:", defaultEvent: "Evento" },
+  "fr-FR": { subject: (e) => `Vous êtes invité : ${e}`, greeting: (n) => `Bonjour, <strong>${n}</strong> !`, eventLabel: "Événement", confirm: "Confirmer la présence", directLink: "Lien direct :", defaultEvent: "Événement" },
+};
+
+function resolveLang(value: unknown): Lang {
+  return (typeof value === "string" && value in I18N) ? (value as Lang) : "pt-BR";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -32,7 +55,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: invitations } = await supabase
       .from("invitations")
-      .select("id, name, email, token, event_title, event_date, club_name, message")
+      .select("id, name, email, token, event_title, event_date, club_name, message, tenant:tenants(settings)")
       .in("id", invitationIds);
 
     if (!invitations?.length) {
@@ -46,9 +69,12 @@ Deno.serve(async (req: Request) => {
     for (const inv of invitations) {
       if (!inv.email) continue;
 
+      const lang = resolveLang((inv.tenant as any)?.settings?.language);
+      const L = I18N[lang];
+
       const inviteUrl = `${baseUrl}/#/invite/${inv.token}`;
       const eventInfo = inv.event_title
-        ? `<p><strong>Evento:</strong> ${inv.event_title}${inv.event_date ? ` — ${new Date(inv.event_date).toLocaleDateString("pt-BR")}` : ""}</p>`
+        ? `<p><strong>${L.eventLabel}:</strong> ${inv.event_title}${inv.event_date ? ` — ${new Date(inv.event_date).toLocaleDateString(lang)}` : ""}</p>`
         : "";
       const clubLabel = inv.club_name || "Aura Club Manager";
 
@@ -62,20 +88,20 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: `${clubLabel} <noreply@auraclubmanager.io>`,
             to: [inv.email],
-            subject: `Você foi convidado: ${inv.event_title || "Evento"}`,
+            subject: L.subject(inv.event_title || L.defaultEvent),
             html: `
-              <p>Olá, <strong>${inv.name}</strong>!</p>
+              <p>${L.greeting(inv.name)}</p>
               ${inv.message ? `<p>${inv.message}</p>` : ""}
               ${eventInfo}
               <p>
                 <a href="${inviteUrl}"
                    style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:8px">
-                  Confirmar presença
+                  ${L.confirm}
                 </a>
               </p>
               <hr/>
               <p style="color:#888;font-size:12px;">
-                Link direto: <a href="${inviteUrl}">${inviteUrl}</a>
+                ${L.directLink} <a href="${inviteUrl}">${inviteUrl}</a>
               </p>
             `,
           }),
