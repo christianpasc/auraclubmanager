@@ -1,16 +1,12 @@
 
 import React, { useState } from 'react';
-import { GraduationCap, Shield, Loader2, Building2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import logoImg from '../assets/logo.png?v=2';
 import { useTenant } from '../contexts/TenantContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useAuth } from '../contexts/AuthContext';
 
 const Onboarding: React.FC = () => {
-    const { user } = useAuth();
-    const metaOrgType = user?.user_metadata?.organization_type as 'school' | 'club' | undefined;
     const [orgName, setOrgName] = useState('');
-    const [organizationType, setOrganizationType] = useState<'school' | 'club'>(metaOrgType || 'school');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { createTenant } = useTenant();
@@ -24,7 +20,7 @@ const Onboarding: React.FC = () => {
         setError(null);
 
         try {
-            await createTenant(orgName.trim(), organizationType);
+            await createTenant(orgName.trim());
             // The TenantContext will reload and the app will re-render with the new tenant
         } catch (err: any) {
             console.error('Error creating tenant during onboarding:', err);
@@ -74,37 +70,6 @@ const Onboarding: React.FC = () => {
                                 required
                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             />
-                        </div>
-
-                        {/* Organization Type */}
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                {t('auth.organizationType')}
-                            </label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setOrganizationType('school')}
-                                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school'
-                                        ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
-                                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <GraduationCap className="w-6 h-6" />
-                                    <span className="text-xs font-bold text-center leading-tight">{t('auth.footballSchool')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrganizationType('club')}
-                                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club'
-                                        ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
-                                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <Shield className="w-6 h-6" />
-                                    <span className="text-xs font-bold text-center leading-tight">{t('auth.footballClub')}</span>
-                                </button>
-                            </div>
                         </div>
 
                         <button

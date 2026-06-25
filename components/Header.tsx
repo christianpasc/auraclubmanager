@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Clock, AlertTriangle, Menu } from 'lucide-react';
+import { Bell, Search, Clock, AlertTriangle, Menu, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTenant } from '../contexts/TenantContext';
 import { userService, UserProfile } from '../services/userService';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   title: string;
@@ -15,7 +15,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { currentTenant } = useTenant();
   const { language } = useLanguage();
   const { subscriptionInfo } = useSubscription();
@@ -179,6 +180,18 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
               )}
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
+
+            {/* Logout — desktop only; on mobile it lives inside the sidebar drawer */}
+            <button
+              onClick={async () => {
+                await signOut();
+                navigate('/login');
+              }}
+              title={getText('Sair', 'Log out', 'Salir', 'Se déconnecter', 'Sair')}
+              className="hidden lg:flex p-2 text-slate-400 hover:text-red-500 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>

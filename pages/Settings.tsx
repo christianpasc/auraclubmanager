@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, GraduationCap, CreditCard } from 'lucide-react';
+import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, CreditCard } from 'lucide-react';
 import { useLanguage, AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
@@ -14,6 +14,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import { subscriptionService, PlanLimits } from '../services/subscriptionService';
 import { paymentProvider } from '../services/payment';
 import { stripeConfig } from '../lib/stripe';
+import { paletteService, ColorPalette } from '../services/paletteService';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
@@ -36,6 +37,8 @@ const Settings: React.FC = () => {
   const [address, setAddress] = useState('');
   const [country, setCountry] = useState('Brazil');
   const [commsLanguage, setCommsLanguage] = useState('pt-BR');
+  const [palettes, setPalettes] = useState<ColorPalette[]>([]);
+  const [selectedPaletteId, setSelectedPaletteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile state
@@ -69,9 +72,6 @@ const Settings: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState(language);
   const [selectedCurrency, setSelectedCurrency] = useState(currency);
 
-  // Organization type state
-  const [organizationType, setOrganizationType] = useState<'school' | 'club'>(currentTenant?.organization_type || 'school');
-
   // Payment methods state
   const [paymentMethods, setPaymentMethods] = useState<Array<{ value: string; label: string }>>([]);
   const [newMethodLabel, setNewMethodLabel] = useState('');
@@ -96,8 +96,8 @@ const Settings: React.FC = () => {
     if (currentTenant) {
       setClubName(currentTenant.name || '');
       setClubLogo(currentTenant.logo_url || null);
-      setOrganizationType(currentTenant.organization_type || 'school');
       setConnectCurrency(currentTenant.stripe_connect_currency || 'EUR');
+      setSelectedPaletteId(currentTenant.palette_id || null);
       const settings = currentTenant.settings as any;
       if (settings) {
         setAddress(settings.address || '');
@@ -123,6 +123,10 @@ const Settings: React.FC = () => {
       }
     }
   }, [currentTenant]);
+
+  useEffect(() => {
+    paletteService.getActive().then(setPalettes).catch(err => console.error('Error loading palettes:', err));
+  }, []);
 
   useEffect(() => {
     loadProfile();
@@ -230,10 +234,12 @@ const Settings: React.FC = () => {
         logoUrl = data.publicUrl;
         setLogoFile(null);
       }
+      const selectedPalette = palettes.find(p => p.id === selectedPaletteId);
       await tenantService.update(currentTenant.id, {
         name: clubName,
         logo_url: logoUrl || undefined,
-        organization_type: organizationType,
+        palette_id: selectedPaletteId,
+        primary_color: selectedPalette?.colors.primary || currentTenant.primary_color,
         settings: {
           ...(currentTenant.settings as any),
           address,
@@ -637,23 +643,28 @@ const Settings: React.FC = () => {
                 </select>
                 <p className="text-xs text-slate-400">{t('settings.club.commsLanguageHint')}</p>
               </div>
-            </div>
-
-            <div className="pt-6 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-slate-700 mb-3">{t('settings.club.orgType')}</h3>
-              <div className="grid grid-cols-2 gap-4 max-w-md">
-                <button type="button" onClick={() => setOrganizationType('school')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school' ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
-                  <GraduationCap className="w-6 h-6" />
-                  <span className="text-xs font-bold text-center">{t('settings.club.orgType.school')}</span>
-                </button>
-                <button type="button" onClick={() => setOrganizationType('club')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club' ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
-                  <Shield className="w-6 h-6" />
-                  <span className="text-xs font-bold text-center">{t('settings.club.orgType.club')}</span>
-                </button>
-              </div>
-              <p className="text-xs text-slate-400 mt-2">{t('settings.club.orgType.hint')}</p>
+              {palettes.length > 0 && (
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">{t('settings.club.palette')}</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {palettes.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedPaletteId(p.id)}
+                        className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all text-left ${selectedPaletteId === p.id ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300'}`}
+                      >
+                        <div className="flex -space-x-1.5">
+                          {[p.colors.primary, p.colors.secondary, p.colors.accent].filter(Boolean).map((c, i) => (
+                            <div key={i} className="w-5 h-5 rounded-full border-2 border-white" style={{ background: c }} />
+                          ))}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 truncate">{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}

@@ -10,8 +10,6 @@ import {
   Wallet,
   Dumbbell,
   FileText,
-  ChevronDown,
-  ChevronRight,
   PieChart,
   DollarSign,
   Calendar,
@@ -34,8 +32,11 @@ import {
   BookOpen,
   Video,
   LayoutList,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
+import SidebarGroup from './SidebarGroup';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
@@ -44,16 +45,28 @@ import { useSubscription } from '../contexts/SubscriptionContext';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+const SectionLabel: React.FC<{ label: string; collapsed: boolean }> = ({ label, collapsed }) =>
+  collapsed ? (
+    <div className="hidden lg:block h-px bg-white/10 mx-2 my-2" />
+  ) : (
+    <p className="px-4 pt-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/35">{label}</p>
+  );
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
-  const { t, language } = useLanguage();
-  const { currentTenant, isSchool } = useTenant();
+  const { signOut } = useAuth();
+  const { t } = useLanguage();
+  const { currentTenant } = useTenant();
   const { subscriptionInfo } = useSubscription();
-  const [financeOpen, setFinanceOpen] = useState(location.pathname.startsWith('/finance'));
+
+  const [financeOpen, setFinanceOpen] = useState(
+    location.pathname.startsWith('/finance') || location.pathname.startsWith('/school-plans')
+  );
   const [estruturaOpen, setEstruturaOpen] = useState(
     ['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))
   );
@@ -65,24 +78,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [devOpen, setDevOpen] = useState(
     developmentPaths.some(p => location.pathname.startsWith(p))
   );
-
-  const menuItems = [
-    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/' },
-    { icon: Users, label: t('nav.athletes'), path: '/athletes' },
-    ...(isSchool ? [{ icon: FileText, label: t('nav.enrollments'), path: '/enrollments' }] : []),
-    ...(!isSchool ? [{ icon: Radar, label: t('nav.prospects'), path: '/prospects' }] : []),
-  ];
-
   const sportPaths = ['/competitions', '/games', '/training'];
   const [sportOpen, setSportOpen] = useState(
     sportPaths.some(p => location.pathname.startsWith(p))
   );
 
-  const bottomItems = [
-    { icon: CreditCard, label: t('nav.subscription'), path: '/subscription' },
-    { icon: Settings, label: t('nav.settings'), path: '/settings' },
-  ];
-
+  const subLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`;
 
   // Render subscription/trial info box
   const renderSubscriptionBox = () => {
@@ -145,286 +147,216 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <aside className={`
-      w-64 text-white flex flex-col fixed h-full z-50
-      transform transition-transform duration-300 ease-in-out
+      text-white flex flex-col fixed lg:relative h-full lg:h-auto z-50
+      transform transition-all duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       lg:translate-x-0
+      ${collapsed ? 'w-64 lg:w-20' : 'w-64'}
     `} style={{ background: '#1a2d4e' }}>
-      <div className="p-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {currentTenant?.logo_url ? (
-            <img
-              src={currentTenant.logo_url}
-              alt={currentTenant.name || 'Logo'}
-              className="w-8 h-8 rounded object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-white" />
-            </div>
-          )}
-          <h1 className="text-xl font-bold tracking-tight">Aura Club</h1>
-        </div>
+      {/* Club name + logo */}
+      <div className={`relative m-3 rounded-lg flex items-center gap-3 flex-shrink-0 ${collapsed ? 'lg:justify-center lg:px-2 px-3' : 'px-3'} py-3`} style={{ background: 'rgba(0,0,0,0.25)' }}>
+        {currentTenant?.logo_url ? (
+          <img
+            src={currentTenant.logo_url}
+            alt={currentTenant.name || 'Logo'}
+            className="w-8 h-8 rounded object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
+            <Trophy className="w-5 h-5 text-white" />
+          </div>
+        )}
+        <span className={`text-sm font-semibold tracking-tight truncate ${collapsed ? 'lg:hidden' : ''}`}>
+          {currentTenant?.name || 'Aura Club'}
+        </span>
+
         {/* Close button for mobile */}
         <button
           onClick={onClose}
-          className="lg:hidden p-1 text-white/70 hover:text-white transition-colors"
+          className="lg:hidden absolute top-1/2 -translate-y-1/2 right-2 p-1 text-white/70 hover:text-white transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 mt-4 overflow-y-auto">
-        {menuItems.map((item) => (
-          <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
-        ))}
+      <nav className="flex-1 lg:flex-none px-3 space-y-1 overflow-y-auto lg:overflow-visible">
+        <SidebarItem icon={LayoutDashboard} label={t('nav.dashboard')} path="/" collapsed={collapsed} />
 
-        {/* Esporte com Submenu */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setSportOpen(!sportOpen)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
-              sportPaths.some(p => location.pathname.startsWith(p))
-                ? 'bg-white/10 text-white font-semibold'
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Trophy className="w-5 h-5" />
-              <span className="text-sm">{t('sidebar.sport')}</span>
-            </div>
-            {sportOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
+        <SectionLabel label={t('sidebar.teamSport')} collapsed={collapsed} />
 
-          {sportOpen && (
-            <div className="pl-11 space-y-1 mt-1">
-              <NavLink to="/competitions"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Trophy className="w-3.5 h-3.5" />
-                {t('nav.competitions')}
-              </NavLink>
-              <NavLink to="/games"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Calendar className="w-3.5 h-3.5" />
-                {t('nav.games')}
-              </NavLink>
-              <NavLink to="/training"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Dumbbell className="w-3.5 h-3.5" />
-                {t('nav.training')}
-              </NavLink>
-            </div>
-          )}
-        </div>
+        <SidebarItem icon={Radar} label={t('nav.prospects')} path="/prospects" collapsed={collapsed} />
 
-        {/* Financeiro com Submenu */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setFinanceOpen(!financeOpen)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${location.pathname.startsWith('/finance')
-              ? 'bg-white/10 text-white font-semibold'
-              : 'text-white/70 hover:bg-white/5 hover:text-white'
-              }`}
-          >
-            <div className="flex items-center gap-3">
-              <Wallet className="w-5 h-5" />
-              <span className="text-sm">{t('sidebar.finance')}</span>
-            </div>
-            {financeOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-
-          {financeOpen && (
-            <div className="pl-11 space-y-1 mt-1">
-              <NavLink
-                to="/finance"
-                end
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
-                  }`
-                }
-              >
-                <PieChart className="w-3.5 h-3.5" />
-                {t('sidebar.overview')}
-              </NavLink>
-              {isSchool && (
-                <NavLink
-                  to="/finance/fees"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
-                    }`
-                  }
-                >
-                  <DollarSign className="w-3.5 h-3.5" />
-                   {t('sidebar.monthlyFees')}
-                </NavLink>
-              )}
-              <NavLink
-                to="/school-plans"
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'
-                  }`
-                }
-              >
-                <LayoutList className="w-3.5 h-3.5" />
-                {t('schoolPlans.sidebar')}
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        {/* Estrutura com Submenu */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setEstruturaOpen(!estruturaOpen)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
-              ['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))
-                ? 'bg-white/10 text-white font-semibold'
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Layers className="w-5 h-5" />
-              <span className="text-sm">{t('sidebar.structure')}</span>
-            </div>
-            {estruturaOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-
-          {estruturaOpen && (
-            <div className="pl-11 space-y-1 mt-1">
-              <NavLink to="/groups"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <UsersRound className="w-3.5 h-3.5" />
-                {t('sidebar.groups')}
-              </NavLink>
-              <NavLink to="/guardians"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Heart className="w-3.5 h-3.5" />
-                {t('sidebar.guardians')}
-              </NavLink>
-              <NavLink to="/seasons"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <CalendarRange className="w-3.5 h-3.5" />
-                {t('sidebar.seasons')}
-              </NavLink>
-              <NavLink to="/age-categories"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Tag className="w-3.5 h-3.5" />
-                {t('sidebar.ageCategories')}
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        {/* Site & Marketing com Submenu */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setSiteOpen(!siteOpen)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
-              siteMarketingPaths.some(p => location.pathname.startsWith(p))
-                ? 'bg-white/10 text-white font-semibold'
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Globe className="w-5 h-5" />
-              <span className="text-sm">{t('sidebar.siteMarketing')}</span>
-            </div>
-            {siteOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
-
-          {siteOpen && (
-            <div className="pl-11 space-y-1 mt-1">
-              <NavLink to="/club-site"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Globe className="w-3.5 h-3.5" />
-                {t('sidebar.clubSite')}
-              </NavLink>
-              <NavLink to="/invitations"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Mail className="w-3.5 h-3.5" />
-                {t('sidebar.invitations')}
-              </NavLink>
-              <NavLink to="/store"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <ShoppingBag className="w-3.5 h-3.5" />
-                {t('sidebar.store')}
-              </NavLink>
-              <NavLink to="/sponsors"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Building2 className="w-3.5 h-3.5" />
-                {t('sidebar.sponsors')}
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" />
+        <SidebarItem icon={Users} label={t('nav.athletes')} path="/athletes" collapsed={collapsed} />
 
         {/* Desenvolvimento com Submenu */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setDevOpen(!devOpen)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded transition-colors ${
-              developmentPaths.some(p => location.pathname.startsWith(p))
-                ? 'bg-white/10 text-white font-semibold'
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Target className="w-5 h-5" />
-              <span className="text-sm">{t('sidebar.development')}</span>
-            </div>
-            {devOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-          </button>
+        <SidebarGroup
+          icon={Target}
+          label={t('sidebar.development')}
+          active={developmentPaths.some(p => location.pathname.startsWith(p))}
+          open={devOpen}
+          collapsed={collapsed}
+          onToggle={() => setDevOpen(!devOpen)}
+        >
+          <NavLink to="/assessments" className={subLinkClass}>
+            <ClipboardList className="w-3.5 h-3.5" />
+            {t('sidebar.assessments')}
+          </NavLink>
+          <NavLink to="/development-plans" className={subLinkClass}>
+            <Target className="w-3.5 h-3.5" />
+            {t('sidebar.developmentPlans')}
+          </NavLink>
+          <NavLink to="/drills" className={subLinkClass}>
+            <BookOpen className="w-3.5 h-3.5" />
+            {t('sidebar.drillLibrary')}
+          </NavLink>
+          <NavLink to="/videos" className={subLinkClass}>
+            <Video className="w-3.5 h-3.5" />
+            {t('sidebar.videos')}
+          </NavLink>
+        </SidebarGroup>
 
-          {devOpen && (
-            <div className="pl-11 space-y-1 mt-1">
-              <NavLink to="/assessments"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <ClipboardList className="w-3.5 h-3.5" />
-                {t('sidebar.assessments')}
-              </NavLink>
-              <NavLink to="/development-plans"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Target className="w-3.5 h-3.5" />
-                {t('sidebar.developmentPlans')}
-              </NavLink>
-              <NavLink to="/drills"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <BookOpen className="w-3.5 h-3.5" />
-                {t('sidebar.drillLibrary')}
-              </NavLink>
-              <NavLink to="/videos"
-                className={({ isActive }) => `flex items-center gap-3 px-4 py-2 rounded text-xs transition-colors ${isActive ? 'text-white font-bold' : 'text-white/60 hover:text-white'}`}>
-                <Video className="w-3.5 h-3.5" />
-                {t('sidebar.videos')}
-              </NavLink>
-            </div>
-          )}
-        </div>
+        {/* Esporte com Submenu */}
+        <SidebarGroup
+          icon={Trophy}
+          label={t('sidebar.sport')}
+          active={sportPaths.some(p => location.pathname.startsWith(p))}
+          open={sportOpen}
+          collapsed={collapsed}
+          onToggle={() => setSportOpen(!sportOpen)}
+        >
+          <NavLink to="/competitions" className={subLinkClass}>
+            <Trophy className="w-3.5 h-3.5" />
+            {t('nav.competitions')}
+          </NavLink>
+          <NavLink to="/games" className={subLinkClass}>
+            <Calendar className="w-3.5 h-3.5" />
+            {t('nav.games')}
+          </NavLink>
+          <NavLink to="/training" className={subLinkClass}>
+            <Dumbbell className="w-3.5 h-3.5" />
+            {t('nav.training')}
+          </NavLink>
+        </SidebarGroup>
 
-        {bottomItems.map((item) => (
-          <SidebarItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
-        ))}
+        <SectionLabel label={t('sidebar.management')} collapsed={collapsed} />
+
+        <SidebarItem icon={FileText} label={t('nav.enrollments')} path="/enrollments" collapsed={collapsed} />
+
+        {/* Financeiro com Submenu */}
+        <SidebarGroup
+          icon={Wallet}
+          label={t('sidebar.finance')}
+          active={location.pathname.startsWith('/finance') || location.pathname.startsWith('/school-plans')}
+          open={financeOpen}
+          collapsed={collapsed}
+          onToggle={() => setFinanceOpen(!financeOpen)}
+        >
+          <NavLink to="/finance" end className={subLinkClass}>
+            <PieChart className="w-3.5 h-3.5" />
+            {t('sidebar.overview')}
+          </NavLink>
+          <NavLink to="/finance/fees" className={subLinkClass}>
+            <DollarSign className="w-3.5 h-3.5" />
+            {t('sidebar.monthlyFees')}
+          </NavLink>
+          <NavLink to="/school-plans" className={subLinkClass}>
+            <LayoutList className="w-3.5 h-3.5" />
+            {t('schoolPlans.sidebar')}
+          </NavLink>
+        </SidebarGroup>
+
+        {/* Estrutura com Submenu */}
+        <SidebarGroup
+          icon={Layers}
+          label={t('sidebar.structure')}
+          active={['/groups', '/guardians', '/seasons', '/age-categories'].some(p => location.pathname.startsWith(p))}
+          open={estruturaOpen}
+          collapsed={collapsed}
+          onToggle={() => setEstruturaOpen(!estruturaOpen)}
+        >
+          <NavLink to="/groups" className={subLinkClass}>
+            <UsersRound className="w-3.5 h-3.5" />
+            {t('sidebar.groups')}
+          </NavLink>
+          <NavLink to="/guardians" className={subLinkClass}>
+            <Heart className="w-3.5 h-3.5" />
+            {t('sidebar.guardians')}
+          </NavLink>
+          <NavLink to="/seasons" className={subLinkClass}>
+            <CalendarRange className="w-3.5 h-3.5" />
+            {t('sidebar.seasons')}
+          </NavLink>
+          <NavLink to="/age-categories" className={subLinkClass}>
+            <Tag className="w-3.5 h-3.5" />
+            {t('sidebar.ageCategories')}
+          </NavLink>
+        </SidebarGroup>
+
+        {/* Site & Marketing com Submenu */}
+        <SidebarGroup
+          icon={Globe}
+          label={t('sidebar.siteMarketing')}
+          active={siteMarketingPaths.some(p => location.pathname.startsWith(p))}
+          open={siteOpen}
+          collapsed={collapsed}
+          onToggle={() => setSiteOpen(!siteOpen)}
+        >
+          <NavLink to="/club-site" className={subLinkClass}>
+            <Globe className="w-3.5 h-3.5" />
+            {t('sidebar.clubSite')}
+          </NavLink>
+          <NavLink to="/invitations" className={subLinkClass}>
+            <Mail className="w-3.5 h-3.5" />
+            {t('sidebar.invitations')}
+          </NavLink>
+          <NavLink to="/store" className={subLinkClass}>
+            <ShoppingBag className="w-3.5 h-3.5" />
+            {t('sidebar.store')}
+          </NavLink>
+          <NavLink to="/sponsors" className={subLinkClass}>
+            <Building2 className="w-3.5 h-3.5" />
+            {t('sidebar.sponsors')}
+          </NavLink>
+        </SidebarGroup>
+
+        <SidebarItem icon={CalendarDays} label={t('sidebar.facilities')} path="/facilities" collapsed={collapsed} />
+
+        <div className="h-px bg-white/10 mx-2 my-3" />
+
+        <SidebarItem icon={CreditCard} label={t('nav.subscription')} path="/subscription" collapsed={collapsed} />
+        <SidebarItem icon={Settings} label={t('nav.settings')} path="/settings" collapsed={collapsed} />
+
+        {/* Collapse toggle — desktop only, end of menu */}
+        <button
+          onClick={onToggleCollapse}
+          className={`hidden lg:flex items-center gap-3 w-full px-4 py-3 rounded text-white/50 hover:bg-white/5 hover:text-white transition-colors ${collapsed ? 'justify-center px-0' : ''}`}
+        >
+          {collapsed ? <PanelLeftOpen className="w-5 h-5 flex-shrink-0" /> : <PanelLeftClose className="w-5 h-5 flex-shrink-0" />}
+          {!collapsed && <span className="text-sm">{t('sidebar.collapse')}</span>}
+        </button>
       </nav>
 
-      <div className="p-4 border-t border-white/10">
-        {renderSubscriptionBox()}
+      <div className="p-4 border-t border-white/10 flex-shrink-0">
+        {!collapsed && renderSubscriptionBox()}
 
+        {/* Logout — mobile only; on desktop it lives in the Header next to the avatar */}
         <button
           onClick={async () => {
             await signOut();
             navigate('/login');
           }}
-          className="flex items-center gap-3 w-full px-4 py-3 text-white/70 hover:text-white transition-colors"
+          className="lg:hidden flex items-center gap-3 w-full px-4 py-3 text-white/70 hover:text-white transition-colors"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-5 h-5 flex-shrink-0" />
           <span className="text-sm">{t('sidebar.logout')}</span>
         </button>
       </div>
+
+      {/* Fills any remaining height so the dark background reaches the bottom of the page,
+          without pushing the items above down when content is shorter than the viewport. */}
+      <div className="hidden lg:block flex-1" />
     </aside>
   );
 };
 
 export default Sidebar;
-

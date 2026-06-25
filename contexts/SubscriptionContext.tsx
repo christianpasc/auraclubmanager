@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { subscriptionService, SubscriptionInfo } from '../services/subscriptionService';
-import { ModuleKey, isModuleEnabled } from '../services/featureFlagService';
+import { ModuleKey, isModuleEnabled, mergeModuleFeatures } from '../services/featureFlagService';
 import { useTenant } from './TenantContext';
 import { useAuth } from './AuthContext';
 
@@ -29,7 +29,7 @@ interface SubscriptionProviderProps {
 
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
     const { user } = useAuth();
-    const { currentTenant, loading: tenantLoading, isSchool } = useTenant();
+    const { currentTenant, loading: tenantLoading } = useTenant();
     const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -103,9 +103,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
     const hasFeature = (key: ModuleKey): boolean => {
         if (!subscriptionInfo) return true;
-        const features = isSchool
-            ? subscriptionInfo.moduleFeaturesSchool
-            : subscriptionInfo.moduleFeaturesClub;
+        const features = mergeModuleFeatures(subscriptionInfo.moduleFeaturesSchool, subscriptionInfo.moduleFeaturesClub);
         return isModuleEnabled(features, key);
     };
 

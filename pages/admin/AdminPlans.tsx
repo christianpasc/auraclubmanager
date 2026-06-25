@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminPlanService, StripePlan, PlanLanguage, PlanI18nRecord, PlanFeaturesI18nRecord } from '../../services/adminPlanService';
-import { PLAN_MODULES, ModuleFeatures } from '../../services/featureFlagService';
+import { PLAN_MODULES, ModuleFeatures, mergeModuleFeatures } from '../../services/featureFlagService';
+import { auditService } from '../../services/auditService';
 import { stripeConfig } from '../../lib/stripe';
 import {
     Search, Loader2, Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
@@ -27,8 +28,6 @@ interface LangFields {
     name: string;
     description: string;
     features: string[];
-    features_school: string[];
-    features_club: string[];
 }
 
 type LangFormData = Record<PlanLanguage, LangFields>;
@@ -50,16 +49,13 @@ interface PlanFormData {
     max_athletes: string;
     unlimited_users: boolean;
     unlimited_athletes: boolean;
-    module_features_school: ModuleFeatures;
-    module_features_club: ModuleFeatures;
+    module_features: ModuleFeatures;
 }
 
 const emptyLangFields = (): LangFields => ({
     name: '',
     description: '',
     features: [''],
-    features_school: [''],
-    features_club: [''],
 });
 
 const emptyLangFormData = (): LangFormData => ({
@@ -85,8 +81,7 @@ const emptyForm: PlanFormData = {
     max_athletes: '',
     unlimited_users: true,
     unlimited_athletes: true,
-    module_features_school: {},
-    module_features_club: {},
+    module_features: {},
 };
 
 const parseJsonArray = (val: any): string[] => {
@@ -152,22 +147,21 @@ const AdminPlans: React.FC = () => {
         const featSchoolI18n = parseJsonObj(plan.features_school_i18n);
         const featClubI18n = parseJsonObj(plan.features_club_i18n);
 
-        // Legacy fallbacks for pt-BR
-        const legacyFeatures = (() => { const f = parseJsonArray(plan.features); return f.length > 0 ? f : ['']; })();
-        const legacySchool = (() => { const f = parseJsonArray(plan.features_school); return f.length > 0 ? f : ['']; })();
-        const legacyClub = (() => { const f = parseJsonArray(plan.features_club); return f.length > 0 ? f : ['']; })();
-
+        // Merge generic + legacy school/club feature lists into one, so plans that
+        // had different bullets per organization type keep all of their content
+        // visible once the school/club distinction goes away.
         const buildLangFields = (lang: PlanLanguage): LangFields => {
             const isPtBr = lang === 'pt-BR';
-            const featArr = parseJsonArray(featI18n[lang]);
-            const schoolArr = parseJsonArray(featSchoolI18n[lang]);
-            const clubArr = parseJsonArray(featClubI18n[lang]);
+            const featArr = featI18n[lang] ? parseJsonArray(featI18n[lang]) : (isPtBr ? parseJsonArray(plan.features) : []);
+            const schoolArr = featSchoolI18n[lang] ? parseJsonArray(featSchoolI18n[lang]) : (isPtBr ? parseJsonArray(plan.features_school) : []);
+            const clubArr = featClubI18n[lang] ? parseJsonArray(featClubI18n[lang]) : (isPtBr ? parseJsonArray(plan.features_club) : []);
+            const merged = Array.from(new Set(
+                [...featArr, ...schoolArr, ...clubArr].map(f => f.trim()).filter(f => f !== '')
+            ));
             return {
                 name: nameI18n[lang] || (isPtBr ? plan.name : ''),
                 description: descI18n[lang] || (isPtBr ? (plan.description || '') : ''),
-                features: featArr.length > 0 ? featArr : (isPtBr ? legacyFeatures : ['']),
-                features_school: schoolArr.length > 0 ? schoolArr : (isPtBr ? legacySchool : ['']),
-                features_club: clubArr.length > 0 ? clubArr : (isPtBr ? legacyClub : ['']),
+                features: merged.length > 0 ? merged : [''],
             };
         };
 
@@ -194,8 +188,10 @@ const AdminPlans: React.FC = () => {
             max_athletes: plan.max_athletes !== null && plan.max_athletes !== undefined ? plan.max_athletes.toString() : '',
             unlimited_users: plan.max_users === null || plan.max_users === undefined,
             unlimited_athletes: plan.max_athletes === null || plan.max_athletes === undefined,
-            module_features_school: (plan.module_features_school as ModuleFeatures) || {},
-            module_features_club: (plan.module_features_club as ModuleFeatures) || {},
+            module_features: mergeModuleFeatures(
+                (plan.module_features_school as ModuleFeatures) || {},
+                (plan.module_features_club as ModuleFeatures) || {}
+            ),
         });
         setShowModal(true);
     };
@@ -210,25 +206,25 @@ const AdminPlans: React.FC = () => {
         }));
     };
 
-    const updateFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club', index: number, value: string) => {
+    const updateFeatureInLang = (lang: PlanLanguage, index: number, value: string) => {
         setForm(prev => {
-            const arr = [...prev.langs[lang][field]];
+            const arr = [...prev.langs[lang].features];
             arr[index] = value;
-            return { ...prev, langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: arr } } };
+            return { ...prev, langs: { ...prev.langs, [lang]: { ...prev.langs[lang], features: arr } } };
         });
     };
 
-    const addFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club') => {
+    const addFeatureInLang = (lang: PlanLanguage) => {
         setForm(prev => ({
             ...prev,
-            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: [...prev.langs[lang][field], ''] } },
+            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], features: [...prev.langs[lang].features, ''] } },
         }));
     };
 
-    const removeFeatureInLang = (lang: PlanLanguage, field: 'features' | 'features_school' | 'features_club', index: number) => {
+    const removeFeatureInLang = (lang: PlanLanguage, index: number) => {
         setForm(prev => ({
             ...prev,
-            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], [field]: prev.langs[lang][field].filter((_, i) => i !== index) } },
+            langs: { ...prev.langs, [lang]: { ...prev.langs[lang], features: prev.langs[lang].features.filter((_, i) => i !== index) } },
         }));
     };
 
@@ -238,12 +234,13 @@ const AdminPlans: React.FC = () => {
         setError(null);
 
         try {
-            // Build i18n objects
+            // Build i18n objects. The school/club distinction no longer exists in the
+            // UI, but the underlying RPCs still expect both fields — mirror the same
+            // generic list into all three so they stay in sync without touching the
+            // database schema.
             const nameI18n: PlanI18nRecord = {};
             const descI18n: PlanI18nRecord = {};
             const featI18n: PlanFeaturesI18nRecord = {};
-            const featSchoolI18n: PlanFeaturesI18nRecord = {};
-            const featClubI18n: PlanFeaturesI18nRecord = {};
 
             LANGUAGES.forEach(({ code }) => {
                 const l = form.langs[code];
@@ -251,14 +248,11 @@ const AdminPlans: React.FC = () => {
                 if (l.description.trim()) descI18n[code] = l.description.trim();
                 const feats = l.features.filter(f => f.trim() !== '');
                 if (feats.length > 0) featI18n[code] = feats;
-                const school = l.features_school.filter(f => f.trim() !== '');
-                if (school.length > 0) featSchoolI18n[code] = school;
-                const club = l.features_club.filter(f => f.trim() !== '');
-                if (club.length > 0) featClubI18n[code] = club;
             });
 
             // pt-BR is canonical for legacy fields
             const ptBr = form.langs['pt-BR'];
+            const ptBrFeatures = ptBr.features.filter(f => f.trim() !== '');
 
             const planData = {
                 name: ptBr.name || form.langs['en-US'].name || 'Plano',
@@ -269,9 +263,9 @@ const AdminPlans: React.FC = () => {
                 price: parseFloat(form.price) || 0,
                 currency: form.currency,
                 is_active: form.is_active,
-                features: ptBr.features.filter(f => f.trim() !== ''),
-                features_school: ptBr.features_school.filter(f => f.trim() !== ''),
-                features_club: ptBr.features_club.filter(f => f.trim() !== ''),
+                features: ptBrFeatures,
+                features_school: ptBrFeatures,
+                features_club: ptBrFeatures,
                 sort_order: parseInt(form.sort_order) || 0,
                 is_popular: form.is_popular,
                 is_coming_soon: form.is_coming_soon,
@@ -280,19 +274,21 @@ const AdminPlans: React.FC = () => {
                 name_i18n: nameI18n,
                 description_i18n: descI18n,
                 features_i18n: featI18n,
-                features_school_i18n: featSchoolI18n,
-                features_club_i18n: featClubI18n,
+                features_school_i18n: featI18n,
+                features_club_i18n: featI18n,
             };
 
             if (editingPlan?.id) {
                 await adminPlanService.updatePlan(editingPlan.id, planData);
                 await adminPlanService.updateComingSoon(editingPlan.id, form.is_coming_soon);
-                await adminPlanService.updateModuleFeatures(editingPlan.id, form.module_features_school, form.module_features_club);
+                await adminPlanService.updateModuleFeatures(editingPlan.id, form.module_features, form.module_features);
+                await auditService.log('plan.update', 'stripe_plan', editingPlan.id, { name: planData.name });
             } else {
                 const created = await adminPlanService.createPlan(planData);
                 if (created.id) {
                     await adminPlanService.updateComingSoon(created.id, form.is_coming_soon);
-                    await adminPlanService.updateModuleFeatures(created.id, form.module_features_school, form.module_features_club);
+                    await adminPlanService.updateModuleFeatures(created.id, form.module_features, form.module_features);
+                    await auditService.log('plan.create', 'stripe_plan', created.id, { name: planData.name });
                 }
             }
 
@@ -309,6 +305,7 @@ const AdminPlans: React.FC = () => {
     const handleToggle = async (plan: StripePlan) => {
         try {
             await adminPlanService.togglePlanActive(plan.id!, !plan.is_active);
+            await auditService.log(plan.is_active ? 'plan.deactivate' : 'plan.activate', 'stripe_plan', plan.id, { name: plan.name });
             await loadPlans();
         } catch (err: any) {
             console.error('Error toggling plan:', err);
@@ -318,7 +315,9 @@ const AdminPlans: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         try {
+            const deletedPlan = plans.find(p => p.id === id);
             await adminPlanService.deletePlan(id);
+            await auditService.log('plan.delete', 'stripe_plan', id, { name: deletedPlan?.name });
             setDeleteConfirm(null);
             await loadPlans();
         } catch (err: any) {
@@ -617,14 +616,14 @@ const AdminPlans: React.FC = () => {
                                                     <input
                                                         type="text"
                                                         value={feature}
-                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features', i, e.target.value)}
+                                                        onChange={(e) => updateFeatureInLang(activeLang, i, e.target.value)}
                                                         className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                         placeholder={`Feature ${i + 1}...`}
                                                     />
                                                     {currentLangData.features.length > 1 && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => removeFeatureInLang(activeLang, 'features', i)}
+                                                            onClick={() => removeFeatureInLang(activeLang, i)}
                                                             className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                         >
                                                             <X className="w-4 h-4" />
@@ -635,85 +634,11 @@ const AdminPlans: React.FC = () => {
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => addFeatureInLang(activeLang, 'features')}
+                                            onClick={() => addFeatureInLang(activeLang)}
                                             className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
                                         >
                                             <Plus className="w-3 h-3" />
                                             Adicionar feature
-                                        </button>
-                                    </div>
-
-                                    {/* Features School */}
-                                    <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                            🎓 Funcionalidades Escolinha
-                                        </label>
-                                        <div className="space-y-2">
-                                            {currentLangData.features_school.map((feature, i) => (
-                                                <div key={i} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={feature}
-                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features_school', i, e.target.value)}
-                                                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        placeholder={`Feature escolinha ${i + 1}...`}
-                                                    />
-                                                    {currentLangData.features_school.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeFeatureInLang(activeLang, 'features_school', i)}
-                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => addFeatureInLang(activeLang, 'features_school')}
-                                            className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                            Adicionar feature escolinha
-                                        </button>
-                                    </div>
-
-                                    {/* Features Club */}
-                                    <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                            🛡️ Funcionalidades Clube
-                                        </label>
-                                        <div className="space-y-2">
-                                            {currentLangData.features_club.map((feature, i) => (
-                                                <div key={i} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={feature}
-                                                        onChange={(e) => updateFeatureInLang(activeLang, 'features_club', i, e.target.value)}
-                                                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                        placeholder={`Feature clube ${i + 1}...`}
-                                                    />
-                                                    {currentLangData.features_club.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeFeatureInLang(activeLang, 'features_club', i)}
-                                                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => addFeatureInLang(activeLang, 'features_club')}
-                                            className="mt-2 text-sm text-indigo-600 font-semibold hover:text-indigo-700 flex items-center gap-1"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                            Adicionar feature clube
                                         </button>
                                     </div>
                                 </div>
@@ -895,64 +820,23 @@ const AdminPlans: React.FC = () => {
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-sm font-bold text-slate-700 mb-0.5">Módulos Habilitados</p>
-                                    <p className="text-xs text-slate-500">Deixe vazio para liberar tudo. Marque ao menos um para restringir por tipo de organização.</p>
+                                    <p className="text-xs text-slate-500">Deixe vazio para liberar tudo. Marque ao menos um para restringir os módulos deste plano.</p>
                                 </div>
 
-                                {/* Escolinha */}
-                                <div className="p-4 bg-green-50 border border-green-200 rounded-xl space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-bold text-green-700 uppercase tracking-wide">🎓 Escolinha de Futebol</p>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const schoolMods = PLAN_MODULES.filter(m => !m.clubOnly);
-                                                const all = schoolMods.every(m => form.module_features_school[m.key] === true);
-                                                const next: ModuleFeatures = {};
-                                                schoolMods.forEach(m => { next[m.key] = !all; });
-                                                setForm(prev => ({ ...prev, module_features_school: next }));
-                                            }}
-                                            className="text-xs text-green-700 font-semibold hover:text-green-900"
-                                        >
-                                            {PLAN_MODULES.filter(m => !m.clubOnly).every(m => form.module_features_school[m.key] === true) ? 'Desmarcar todos' : 'Marcar todos'}
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {PLAN_MODULES.filter(m => !m.clubOnly).map(mod => (
-                                            <label key={mod.key} className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-green-100 cursor-pointer hover:border-green-400 transition-colors">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={form.module_features_school[mod.key] === true}
-                                                    onChange={(e) => setForm(prev => ({
-                                                        ...prev,
-                                                        module_features_school: { ...prev.module_features_school, [mod.key]: e.target.checked },
-                                                    }))}
-                                                    className="w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500"
-                                                />
-                                                <span className="text-base leading-none">{mod.emoji}</span>
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-semibold text-slate-700">{mod.labelPt}</p>
-                                                    <p className="text-[10px] text-slate-400 truncate">{mod.description}</p>
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Clube */}
                                 <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide">🛡️ Clube de Futebol</p>
+                                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Módulos</p>
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                const all = PLAN_MODULES.every(m => form.module_features_club[m.key] === true);
+                                                const all = PLAN_MODULES.every(m => form.module_features[m.key] === true);
                                                 const next: ModuleFeatures = {};
                                                 PLAN_MODULES.forEach(m => { next[m.key] = !all; });
-                                                setForm(prev => ({ ...prev, module_features_club: next }));
+                                                setForm(prev => ({ ...prev, module_features: next }));
                                             }}
                                             className="text-xs text-indigo-700 font-semibold hover:text-indigo-900"
                                         >
-                                            {PLAN_MODULES.every(m => form.module_features_club[m.key] === true) ? 'Desmarcar todos' : 'Marcar todos'}
+                                            {PLAN_MODULES.every(m => form.module_features[m.key] === true) ? 'Desmarcar todos' : 'Marcar todos'}
                                         </button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -960,10 +844,10 @@ const AdminPlans: React.FC = () => {
                                             <label key={mod.key} className="flex items-center gap-3 p-2.5 bg-white rounded-lg border border-indigo-100 cursor-pointer hover:border-indigo-400 transition-colors">
                                                 <input
                                                     type="checkbox"
-                                                    checked={form.module_features_club[mod.key] === true}
+                                                    checked={form.module_features[mod.key] === true}
                                                     onChange={(e) => setForm(prev => ({
                                                         ...prev,
-                                                        module_features_club: { ...prev.module_features_club, [mod.key]: e.target.checked },
+                                                        module_features: { ...prev.module_features, [mod.key]: e.target.checked },
                                                     }))}
                                                     className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                                                 />

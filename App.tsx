@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
@@ -58,6 +58,18 @@ import AdminLayout from './components/layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPlans from './pages/admin/AdminPlans';
+import AdminStripe from './pages/admin/AdminStripe';
+import AdminStripeEvents from './pages/admin/AdminStripeEvents';
+import AdminPlatformUsers from './pages/admin/AdminPlatformUsers';
+import AdminPalettes from './pages/admin/AdminPalettes';
+import AdminIntegrations from './pages/admin/AdminIntegrations';
+import AdminChatWidget from './pages/admin/AdminChatWidget';
+import AdminHealthJobs from './pages/admin/AdminHealthJobs';
+import AdminObservability from './pages/admin/AdminObservability';
+import AdminAudit from './pages/admin/AdminAudit';
+import AdminMaintenance from './pages/admin/AdminMaintenance';
+import { Wrench } from 'lucide-react';
+import { platformSettingsService, PLATFORM_SETTING_KEYS, MaintenanceSetting, ChatWidgetSetting } from './services/platformSettingsService';
 import Onboarding from './pages/Onboarding';
 import SchoolPlans from './pages/SchoolPlans';
 import FeatureGate from './components/FeatureGate';
@@ -68,6 +80,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('aura_sidebar_collapsed') === '1');
+
+  const toggleCollapsed = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('aura_sidebar_collapsed', next ? '1' : '0');
+      return next;
+    });
+  };
 
   // Close sidebar when route changes (mobile)
   React.useEffect(() => {
@@ -101,8 +122,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="flex-1 lg:ml-64 min-h-screen flex flex-col">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+      <main className="flex-1 min-h-screen flex flex-col">
         <Header title={getTitle()} onMenuClick={() => setSidebarOpen(true)} />
         <div className="p-4 lg:p-8">
           {children}
@@ -171,16 +192,6 @@ const Gated: React.FC<{ feature: ModuleKey; children: React.ReactNode }> = ({ fe
   <FeatureGate feature={feature}>{children}</FeatureGate>
 );
 
-// Wrapper for routes that should only be accessible by school-type tenants
-const SchoolOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isSchool, loading } = useTenant();
-  if (loading) return null;
-  if (!isSchool) return <Navigate to="/" replace />;
-  return <>{children}</>;
-};
-
-
-
 // Component that renders auth routes outside of tenant/subscription context
 const AuthRoutes: React.FC = () => {
   return (
@@ -202,7 +213,17 @@ const ProtectedRoutes: React.FC = () => {
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedAdminLayout><AdminDashboard /></ProtectedAdminLayout>} />
             <Route path="/admin/users" element={<ProtectedAdminLayout><AdminUsers /></ProtectedAdminLayout>} />
+            <Route path="/admin/stripe" element={<ProtectedAdminLayout><AdminStripe /></ProtectedAdminLayout>} />
+            <Route path="/admin/stripe-events" element={<ProtectedAdminLayout><AdminStripeEvents /></ProtectedAdminLayout>} />
             <Route path="/admin/plans" element={<ProtectedAdminLayout><AdminPlans /></ProtectedAdminLayout>} />
+            <Route path="/admin/platform-users" element={<ProtectedAdminLayout><AdminPlatformUsers /></ProtectedAdminLayout>} />
+            <Route path="/admin/palettes" element={<ProtectedAdminLayout><AdminPalettes /></ProtectedAdminLayout>} />
+            <Route path="/admin/integrations" element={<ProtectedAdminLayout><AdminIntegrations /></ProtectedAdminLayout>} />
+            <Route path="/admin/chat-widget" element={<ProtectedAdminLayout><AdminChatWidget /></ProtectedAdminLayout>} />
+            <Route path="/admin/health" element={<ProtectedAdminLayout><AdminHealthJobs /></ProtectedAdminLayout>} />
+            <Route path="/admin/observability" element={<ProtectedAdminLayout><AdminObservability /></ProtectedAdminLayout>} />
+            <Route path="/admin/audit" element={<ProtectedAdminLayout><AdminAudit /></ProtectedAdminLayout>} />
+            <Route path="/admin/maintenance" element={<ProtectedAdminLayout><AdminMaintenance /></ProtectedAdminLayout>} />
 
             {/* Plans route - accessible even with expired trial */}
             <Route path="/plans" element={<ProtectedLayoutExpired><Plans /></ProtectedLayoutExpired>} />
@@ -213,9 +234,9 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/athletes" element={<ProtectedLayout><Gated feature="athletes"><Athletes /></Gated></ProtectedLayout>} />
             <Route path="/athletes/new" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
             <Route path="/athletes/:id" element={<ProtectedLayout><AthleteForm /></ProtectedLayout>} />
-            <Route path="/enrollments" element={<ProtectedLayout><SchoolOnlyRoute><Gated feature="enrollments"><Enrollments /></Gated></SchoolOnlyRoute></ProtectedLayout>} />
-            <Route path="/enrollments/new" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
-            <Route path="/enrollments/:id" element={<ProtectedLayout><SchoolOnlyRoute><EnrollmentForm /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/enrollments" element={<ProtectedLayout><Gated feature="enrollments"><Enrollments /></Gated></ProtectedLayout>} />
+            <Route path="/enrollments/new" element={<ProtectedLayout><EnrollmentForm /></ProtectedLayout>} />
+            <Route path="/enrollments/:id" element={<ProtectedLayout><EnrollmentForm /></ProtectedLayout>} />
             <Route path="/competitions" element={<ProtectedLayout><Gated feature="competitions"><Competitions /></Gated></ProtectedLayout>} />
             <Route path="/competitions/new" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
             <Route path="/competitions/:id" element={<ProtectedLayout><CompetitionForm /></ProtectedLayout>} />
@@ -229,23 +250,23 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/prospects/new" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
             <Route path="/prospects/:id" element={<ProtectedLayout><ProspectForm /></ProtectedLayout>} />
             <Route path="/finance" element={<ProtectedLayout><Gated feature="finance"><Finance /></Gated></ProtectedLayout>} />
-            <Route path="/finance/fees" element={<ProtectedLayout><SchoolOnlyRoute><MonthlyFees /></SchoolOnlyRoute></ProtectedLayout>} />
+            <Route path="/finance/fees" element={<ProtectedLayout><MonthlyFees /></ProtectedLayout>} />
             <Route path="/school-plans" element={<ProtectedLayout><SchoolPlans /></ProtectedLayout>} />
-            <Route path="/seasons" element={<ProtectedLayout><Seasons /></ProtectedLayout>} />
-            <Route path="/age-categories" element={<ProtectedLayout><AgeCategories /></ProtectedLayout>} />
-            <Route path="/groups" element={<ProtectedLayout><Groups /></ProtectedLayout>} />
+            <Route path="/seasons" element={<ProtectedLayout><Gated feature="structure"><Seasons /></Gated></ProtectedLayout>} />
+            <Route path="/age-categories" element={<ProtectedLayout><Gated feature="structure"><AgeCategories /></Gated></ProtectedLayout>} />
+            <Route path="/groups" element={<ProtectedLayout><Gated feature="structure"><Groups /></Gated></ProtectedLayout>} />
             <Route path="/groups/new" element={<ProtectedLayout><GroupForm /></ProtectedLayout>} />
             <Route path="/groups/:id" element={<ProtectedLayout><GroupForm /></ProtectedLayout>} />
-            <Route path="/guardians" element={<ProtectedLayout><Guardians /></ProtectedLayout>} />
+            <Route path="/guardians" element={<ProtectedLayout><Gated feature="structure"><Guardians /></Gated></ProtectedLayout>} />
             <Route path="/guardians/new" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
             <Route path="/guardians/:id" element={<ProtectedLayout><GuardianForm /></ProtectedLayout>} />
-            <Route path="/club-site" element={<ProtectedLayout><ClubSiteEditor /></ProtectedLayout>} />
-            <Route path="/invitations" element={<ProtectedLayout><InvitationManager /></ProtectedLayout>} />
-            <Route path="/store" element={<ProtectedLayout><Store /></ProtectedLayout>} />
+            <Route path="/club-site" element={<ProtectedLayout><Gated feature="site_marketing"><ClubSiteEditor /></Gated></ProtectedLayout>} />
+            <Route path="/invitations" element={<ProtectedLayout><Gated feature="site_marketing"><InvitationManager /></Gated></ProtectedLayout>} />
+            <Route path="/store" element={<ProtectedLayout><Gated feature="site_marketing"><Store /></Gated></ProtectedLayout>} />
             <Route path="/store/products/new" element={<ProtectedLayout><ProductForm /></ProtectedLayout>} />
             <Route path="/store/products/:id" element={<ProtectedLayout><ProductForm /></ProtectedLayout>} />
-            <Route path="/sponsors" element={<ProtectedLayout><SponsorManager /></ProtectedLayout>} />
-            <Route path="/facilities" element={<ProtectedLayout><FacilityManager /></ProtectedLayout>} />
+            <Route path="/sponsors" element={<ProtectedLayout><Gated feature="site_marketing"><SponsorManager /></Gated></ProtectedLayout>} />
+            <Route path="/facilities" element={<ProtectedLayout><Gated feature="facilities"><FacilityManager /></Gated></ProtectedLayout>} />
             <Route path="/athletes/:id/evolution" element={<ProtectedLayout><Gated feature="assessments"><AthleteEvolution /></Gated></ProtectedLayout>} />
             <Route path="/development-plans" element={<ProtectedLayout><Gated feature="development_plans"><DevelopmentPlans /></Gated></ProtectedLayout>} />
             <Route path="/development-plans/new" element={<ProtectedLayout><Gated feature="development_plans"><DevelopmentPlanForm /></Gated></ProtectedLayout>} />
@@ -298,14 +319,52 @@ const PublicRoutes: React.FC = () => (
   </Routes>
 );
 
+const MaintenancePage: React.FC<{ message: string }> = ({ message }) => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-8 text-center">
+    <div className="max-w-sm">
+      <Wrench className="w-12 h-12 mx-auto mb-4 text-amber-400" />
+      <h1 className="text-2xl font-bold mb-2">Em manutenção</h1>
+      <p className="text-slate-300">{message}</p>
+    </div>
+  </div>
+);
+
 // Router wrapper that decides which route set to use
 const AppRouter: React.FC = () => {
   const location = useLocation();
+  const { isSuperAdmin } = useAuth();
+  const [maintenance, setMaintenance] = useState<MaintenanceSetting | null>(null);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
+
+  useEffect(() => {
+    platformSettingsService.get<MaintenanceSetting>(PLATFORM_SETTING_KEYS.MAINTENANCE)
+      .then(setMaintenance)
+      .finally(() => setMaintenanceChecked(true));
+  }, []);
+
+  // Injects the configured support chat script once, if enabled — independent of maintenance state.
+  useEffect(() => {
+    platformSettingsService.get<ChatWidgetSetting>(PLATFORM_SETTING_KEYS.CHAT_WIDGET).then(data => {
+      if (data?.enabled && data.embed_code) {
+        const container = document.createElement('div');
+        container.innerHTML = data.embed_code;
+        Array.from(container.childNodes).forEach(node => document.body.appendChild(node));
+      }
+    });
+  }, []);
+
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
   const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/');
 
   if (isAuthRoute) return <AuthRoutes />;
   if (isPublicRoute) return <PublicRoutes />;
+
+  // Maintenance only gates the authenticated app — super admins always get through
+  // so they can turn it back off, and the login screen is never blocked.
+  if (maintenanceChecked && maintenance?.enabled && !isSuperAdmin) {
+    return <MaintenancePage message={maintenance.message || 'Estamos em manutenção. Voltamos em breve.'} />;
+  }
+
   return <ProtectedRoutes />;
 };
 

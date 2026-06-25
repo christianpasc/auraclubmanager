@@ -37,6 +37,32 @@ export interface UpdateTenantPayload {
     name?: string;
 }
 
+export interface AdminStripeOverview {
+    connect_active: number;
+    connect_total: number;
+    saas_active: number;
+    saas_trial: number;
+    saas_past_due: number;
+}
+
+export interface PlatformUserMembership {
+    tenant_id: string;
+    tenant_name: string;
+    role: string | null;
+    is_owner: boolean;
+}
+
+export interface PlatformUser {
+    user_id: string;
+    email: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    is_super_admin: boolean;
+    last_sign_in_at: string | null;
+    created_at: string;
+    memberships: PlatformUserMembership[];
+}
+
 export const adminService = {
     async getMetrics(): Promise<SaasMetrics> {
         const { data, error } = await supabase.rpc('get_saas_metrics');
@@ -59,6 +85,18 @@ export const adminService = {
             p_name: payload.name ?? null,
         });
         if (error) throw error;
+    },
+
+    async getStripeOverview(): Promise<AdminStripeOverview> {
+        const { data, error } = await supabase.rpc('get_admin_stripe_overview');
+        if (error) throw error;
+        return data as AdminStripeOverview;
+    },
+
+    async getAllPlatformUsers(): Promise<PlatformUser[]> {
+        const { data, error } = await supabase.rpc('admin_get_all_users');
+        if (error) throw error;
+        return (data || []) as PlatformUser[];
     },
 
     async checkIsSuperAdmin(): Promise<boolean> {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { adminService, AdminTenant, UpdateTenantPayload } from '../../services/adminService';
+import { auditService } from '../../services/auditService';
 import {
     Search, Loader2, Users, Swords, Dumbbell, Trophy, Edit3,
     X, Calendar, Globe, Building2, AlertCircle, CheckCircle2,
@@ -130,6 +131,9 @@ const EditModal: React.FC<EditModalProps> = ({ tenant, onClose, onSaved }) => {
                 trial_ends_at: trialDate ? new Date(trialDate).toISOString() : null,
             };
             await adminService.updateTenant(payload);
+            await auditService.log('tenant.update', 'tenant', tenant.tenant_id, {
+                name, subscription_status: status, country, trial_ends_at: payload.trial_ends_at,
+            });
             onSaved({
                 tenant_id: tenant.tenant_id,
                 tenant_name: name,

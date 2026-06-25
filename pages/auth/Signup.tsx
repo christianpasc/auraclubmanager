@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown, GraduationCap, Shield, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown, ArrowRight } from 'lucide-react';
 import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
 import { AVAILABLE_LANGUAGES, useLanguage } from '../../contexts/LanguageContext';
@@ -16,7 +16,6 @@ const Signup: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const [organizationType, setOrganizationType] = useState<'school' | 'club'>('school');
     const { signUp } = useAuth();
     const { t, language: contextLanguage } = useLanguage();
     const [language, setLanguage] = useState(contextLanguage);
@@ -47,7 +46,7 @@ const Signup: React.FC = () => {
 
         setLoading(true);
 
-        const { error } = await signUp(email, password, { full_name: fullName, language, organization_type: organizationType });
+        const { error } = await signUp(email, password, { full_name: fullName, language });
 
         if (error) {
             setError(error.message);
@@ -196,37 +195,6 @@ const Signup: React.FC = () => {
                                     required
                                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                                 />
-                            </div>
-                        </div>
-
-                        {/* Organization Type */}
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                {t('auth.organizationType')}
-                            </label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setOrganizationType('school')}
-                                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'school'
-                                        ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-sm'
-                                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <GraduationCap className="w-6 h-6" />
-                                    <span className="text-xs font-bold text-center leading-tight">{t('auth.footballSchool')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrganizationType('club')}
-                                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${organizationType === 'club'
-                                        ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-sm'
-                                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                                        }`}
-                                >
-                                    <Shield className="w-6 h-6" />
-                                    <span className="text-xs font-bold text-center leading-tight">{t('auth.footballClub')}</span>
-                                </button>
                             </div>
                         </div>
 

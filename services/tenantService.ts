@@ -7,6 +7,7 @@ export interface Tenant {
     slug: string;
     logo_url?: string;
     primary_color?: string;
+    palette_id?: string | null;
     subscription_plan?: string;
     subscription_status?: string;
     organization_type?: 'school' | 'club';

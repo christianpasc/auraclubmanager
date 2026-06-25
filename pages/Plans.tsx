@@ -385,14 +385,7 @@ const Plans: React.FC = () => {
                             {/* Features */}
                             <ul className="space-y-3 mb-4">
                                 {(() => {
-                                    const orgType = currentTenant?.organization_type || 'school';
-                                    const isClub = orgType === 'club';
-                                    // i18n-aware features resolved per org type
-                                    const typeFeatures = isClub
-                                        ? getPlanFeatures(plan.features_club_i18n, plan.features_club)
-                                        : getPlanFeatures(plan.features_school_i18n, plan.features_school);
-                                    const genericFeatures = getPlanFeatures(plan.features_i18n, plan.features);
-                                    const displayFeatures = typeFeatures.length > 0 ? typeFeatures : genericFeatures;
+                                    const displayFeatures = getPlanFeatures(plan.features_i18n, plan.features);
                                     return displayFeatures.map((feature: string, i: number) => (
                                         <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
                                             <Check className={`w-5 h-5 flex-shrink-0 ${plan.is_popular ? 'text-primary' : 'text-green-500'}`} />
