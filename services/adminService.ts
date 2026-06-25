@@ -45,6 +45,34 @@ export interface AdminStripeOverview {
     saas_past_due: number;
 }
 
+export interface SaasMetricsV2 {
+    total_accounts: number;
+    active_subscriptions: number;
+    trial_accounts: number;
+    past_due_accounts: number;
+    expired_accounts: number;
+    canceled_accounts: number;
+    connect_active_accounts: number;
+    total_users: number;
+    active_users_30d: number;
+    new_accounts_this_month: number;
+    canceled_this_month: number;
+    mrr: number;
+    arr: number;
+    avg_revenue_per_account: number;
+    conversion_rate: number;
+    churn_rate_month: number;
+    net_growth_month: number;
+    avg_athletes_per_account: number;
+    trials_ending_7d: number;
+    renewals_due_7d: number;
+}
+
+export interface SignupMonth {
+    month_key: string;
+    count: number;
+}
+
 export interface PlatformUserMembership {
     tenant_id: string;
     tenant_name: string;
@@ -97,6 +125,18 @@ export const adminService = {
         const { data, error } = await supabase.rpc('admin_get_all_users');
         if (error) throw error;
         return (data || []) as PlatformUser[];
+    },
+
+    async getMetricsV2(): Promise<SaasMetricsV2> {
+        const { data, error } = await supabase.rpc('get_saas_metrics_v2');
+        if (error) throw error;
+        return data as SaasMetricsV2;
+    },
+
+    async getSignupsByMonth(): Promise<SignupMonth[]> {
+        const { data, error } = await supabase.rpc('get_signups_by_month');
+        if (error) throw error;
+        return (data || []) as SignupMonth[];
     },
 
     async checkIsSuperAdmin(): Promise<boolean> {
