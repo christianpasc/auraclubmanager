@@ -12,6 +12,38 @@ import { useLanguage } from '../contexts/LanguageContext';
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('pt-BR') : '—';
 
+// Captures a frame from the video file as a JPEG blob, used as the library card thumbnail.
+// Best-effort: if anything fails (codec the browser can't decode, etc.) we just skip the thumbnail.
+function generateThumbnail(file: File): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    const cleanup = () => URL.revokeObjectURL(url);
+
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(1, (video.duration || 1) / 2);
+    };
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { cleanup(); resolve(null); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => { cleanup(); resolve(blob); }, 'image/jpeg', 0.8);
+      } catch {
+        cleanup(); resolve(null);
+      }
+    };
+    video.onerror = () => { cleanup(); resolve(null); };
+  });
+}
+
 // ── Upload Modal ──────────────────────────────────────────────────────────────
 interface UploadModalProps {
   athletes: Athlete[];
@@ -24,15 +56,18 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
   const [file,         setFile]         = useState<File | null>(null);
   const [title,        setTitle]        = useState('');
   const [description,  setDescription]  = useState('');
-  const [athleteId,    setAthleteId]    = useState('');
+  const [athleteIds,   setAthleteIds]   = useState<string[]>([]);
   const [isPrivate,    setIsPrivate]    = useState(true);
   const [consentGiven, setConsentGiven] = useState(false);
   const [uploading,    setUploading]    = useState(false);
   const [progress,     setProgress]     = useState(0);
   const [err,          setErr]          = useState<string | null>(null);
 
-  const selectedAthlete = athletes.find(a => a.id === athleteId);
-  const needsConsent = selectedAthlete ? isMinorFromBirthDate(selectedAthlete.birth_date) : false;
+  const toggleAthlete = (id: string) => {
+    setAthleteIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const selectedAthletes = athletes.filter(a => athleteIds.includes(a.id!));
+  const needsConsent = selectedAthletes.some(a => isMinorFromBirthDate(a.birth_date));
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
@@ -52,17 +87,25 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
     setUploading(true); setErr(null); setProgress(10);
     try {
       const storagePath = await videoService.upload(file, tenantId);
-      setProgress(70);
+      setProgress(60);
+      let thumbnailPath: string | null = null;
+      try {
+        const thumbBlob = await generateThumbnail(file);
+        if (thumbBlob) thumbnailPath = await videoService.uploadThumbnail(thumbBlob, tenantId);
+      } catch { /* thumbnail is best-effort, never blocks the upload */ }
+      setProgress(80);
       const record = await videoService.create({
         title: title.trim(),
         description: description.trim() || null,
         storage_path: storagePath,
-        athlete_id: athleteId || null,
+        thumbnail_path: thumbnailPath,
+        athlete_id: athleteIds[0] || null,
         is_private: isPrivate,
         consent_given: needsConsent ? consentGiven : true,
       });
+      if (athleteIds.length) await videoService.setVideoAthletes(record.id!, athleteIds);
       setProgress(100);
-      onSave(record);
+      onSave({ ...record, athletes: selectedAthletes });
     } catch (e: any) { setErr(e.message); } finally { setUploading(false); }
   };
 
@@ -98,16 +141,19 @@ const UploadModal: React.FC<UploadModalProps> = ({ athletes, onSave, onClose }) 
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.athlete')}</label>
-            <select value={athleteId} onChange={e => setAthleteId(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">{t('videos.noAthlete')}</option>
-              {athletes.map(a => (
-                <option key={a.id} value={a.id!}>
-                  {a.full_name}{isMinorFromBirthDate(a.birth_date) ? ` ${t('videos.minor')}` : ''}
-                </option>
+            <label className="block text-xs font-medium text-slate-600 mb-1">{t('videos.athletes')}</label>
+            <div className="border border-slate-200 rounded-lg max-h-40 overflow-y-auto divide-y divide-slate-100">
+              {athletes.length === 0 ? (
+                <p className="text-xs text-slate-400 px-3 py-2">{t('videos.noAthlete')}</p>
+              ) : athletes.map(a => (
+                <label key={a.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50">
+                  <input type="checkbox" checked={athleteIds.includes(a.id!)} onChange={() => toggleAthlete(a.id!)}
+                    className="rounded text-indigo-600"/>
+                  <span className="text-sm text-slate-700">{a.full_name}</span>
+                  {isMinorFromBirthDate(a.birth_date) && <span className="text-amber-500 text-xs">{t('videos.minor')}</span>}
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           {needsConsent && (
@@ -162,7 +208,16 @@ interface VideoCardProps {
 const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const isMinor  = isMinorFromBirthDate(video.athlete?.birth_date);
+  const linkedAthletes = video.athletes?.length ? video.athletes : (video.athlete ? [video.athlete] : []);
+  const isMinor  = linkedAthletes.some(a => isMinorFromBirthDate(a.birth_date));
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!video.thumbnail_path) { setThumbUrl(null); return; }
+    let active = true;
+    videoService.getSignedUrl(video.thumbnail_path).then(url => { if (active) setThumbUrl(url); }).catch(() => {});
+    return () => { active = false; };
+  }, [video.thumbnail_path]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden group">
@@ -170,8 +225,8 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
       <div
         className="relative bg-slate-900 aspect-video flex items-center justify-center cursor-pointer"
         onClick={() => navigate(`/videos/${video.id}`)}>
-        {video.thumbnail_path ? (
-          <img src={videoService.getPublicUrl(video.thumbnail_path)}
+        {thumbUrl ? (
+          <img src={thumbUrl}
             alt={video.title} className="w-full h-full object-cover opacity-80"/>
         ) : (
           <Video className="w-10 h-10 text-slate-500"/>
@@ -193,10 +248,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
 
       <div className="p-4">
         <p className="font-semibold text-slate-800 truncate text-sm">{video.title}</p>
-        {video.athlete && (
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-            <User className="w-3 h-3"/>{video.athlete.full_name}
-            {isMinor && <span className="text-amber-500">{t('videos.minor')}</span>}
+        {linkedAthletes.length > 0 && (
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 truncate">
+            <User className="w-3 h-3 shrink-0"/>{linkedAthletes.map(a => a.full_name).join(', ')}
+            {isMinor && <span className="text-amber-500 shrink-0">{t('videos.minor')}</span>}
           </p>
         )}
         <div className="flex items-center justify-between mt-3">
@@ -220,16 +275,24 @@ const VideoLibrary: React.FC = () => {
   const [showUpload,  setShowUpload]  = useState(false);
   const [search,      setSearch]      = useState('');
   const [filterAthlete, setFilterAthlete] = useState('');
+  const [loadError,   setLoadError]   = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
+  const load = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
       const [v, a] = await Promise.all([videoService.getAll(), athleteService.getAll()]);
       setVideos(v);
       setAthletes(a.filter(x => x.status === 'active'));
+    } catch (e: any) {
+      console.error('Error loading videos:', e);
+      setLoadError(e.message || 'Erro ao carregar vídeos.');
+    } finally {
       setLoading(false);
-    })();
-  }, []);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const saveVideo = (v: VideoRecord) => {
     setVideos(prev => [v, ...prev]);
@@ -244,7 +307,10 @@ const VideoLibrary: React.FC = () => {
   };
 
   const filtered = videos.filter(v => {
-    if (filterAthlete && v.athlete_id !== filterAthlete) return false;
+    if (filterAthlete) {
+      const ids = v.athletes?.length ? v.athletes.map(a => a.id) : [v.athlete_id];
+      if (!ids.includes(filterAthlete)) return false;
+    }
     if (search && !v.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -278,6 +344,14 @@ const VideoLibrary: React.FC = () => {
 
       {loading ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-indigo-500"/></div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center py-20 text-rose-400">
+          <AlertTriangle className="w-10 h-10 mb-3 opacity-60"/>
+          <p className="font-medium text-rose-500">{loadError}</p>
+          <button onClick={load} className="mt-4 px-4 py-2 bg-rose-600 text-white text-sm rounded-lg hover:bg-rose-700">
+            {t('common.tryAgain')}
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
           <Video className="w-12 h-12 mb-3 opacity-30"/>

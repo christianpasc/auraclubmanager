@@ -26,11 +26,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowExpiredT
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
                     <p className="text-slate-500 font-medium">Carregando...</p>
-                    <p className="text-xs text-slate-400">
-                        Auth: {authLoading ? 'Wait' : 'OK'} |
-                        Tenant: {tenantLoading ? 'Wait' : 'OK'} |
-                        Sub: {subscriptionLoading ? 'Wait' : 'OK'}
-                    </p>
                 </div>
             </div>
         );

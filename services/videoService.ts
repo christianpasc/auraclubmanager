@@ -20,7 +20,8 @@ export interface Video {
   created_at?: string;
   // joined
   athlete?: { id: string; full_name: string; birth_date?: string | null } | null;
-  game?: { id: string; game_date: string; opponent?: string | null } | null;
+  game?: { id: string; game_date: string; home_team?: string | null; away_team?: string | null } | null;
+  athletes?: { id: string; full_name: string; birth_date?: string | null }[];
 }
 
 export interface VideoClip {
@@ -34,6 +35,38 @@ export interface VideoClip {
   tags?: string[];
 }
 
+export type AnnotationShapeType = 'arrow' | 'circle' | 'freehand';
+
+export interface AnnotationPoint { x: number; y: number; }
+
+export interface AnnotationShape {
+  id: string;
+  type: AnnotationShapeType;
+  color: string;
+  // arrow: x1,y1 -> x2,y2
+  x1?: number; y1?: number; x2?: number; y2?: number;
+  // circle: center + radius (used to mark a player/spot)
+  cx?: number; cy?: number; r?: number;
+  // freehand: continuous path
+  points?: AnnotationPoint[];
+}
+
+export interface VideoAnnotation {
+  id?: string;
+  video_id: string;
+  timestamp_seconds: number;
+  title?: string | null;
+  shapes: AnnotationShape[];
+  created_by?: string | null;
+  created_at?: string;
+}
+
+function flattenVideoAthletes(row: any): any {
+  if (!row) return row;
+  const { video_athletes, ...rest } = row;
+  return { ...rest, athletes: (video_athletes ?? []).map((va: any) => va.athlete).filter(Boolean) };
+}
+
 export const videoService = {
   // ── Videos ────────────────────────────────────────────────────────────────
   async getAll(): Promise<Video[]> {
@@ -41,24 +74,33 @@ export const videoService = {
     if (!tenantId) return [];
     const { data, error } = await supabase
       .from('videos')
-      .select('*, athlete:athletes(id,full_name,birth_date), game:games(id,game_date,opponent)')
+      .select('*, athlete:athletes!videos_athlete_id_fkey(id,full_name,birth_date), game:games(id,game_date,home_team,away_team), video_athletes(athlete:athletes!video_athletes_athlete_id_fkey(id,full_name,birth_date))')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []) as Video[];
+    return (data ?? []).map(flattenVideoAthletes) as Video[];
   },
 
   async getById(id: string): Promise<Video> {
     const { data, error } = await supabase
       .from('videos')
-      .select('*, athlete:athletes(id,full_name,birth_date), game:games(id,game_date,opponent)')
+      .select('*, athlete:athletes!videos_athlete_id_fkey(id,full_name,birth_date), game:games(id,game_date,home_team,away_team), video_athletes(athlete:athletes!video_athletes_athlete_id_fkey(id,full_name,birth_date))')
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data as Video;
+    return flattenVideoAthletes(data) as Video;
   },
 
-  async create(v: Omit<Video, 'id' | 'tenant_id' | 'created_at' | 'athlete' | 'game'>): Promise<Video> {
+  async setVideoAthletes(videoId: string, athleteIds: string[]): Promise<void> {
+    await supabase.from('video_athletes').delete().eq('video_id', videoId);
+    if (!athleteIds.length) return;
+    const { error } = await supabase
+      .from('video_athletes')
+      .insert(athleteIds.map(athlete_id => ({ video_id: videoId, athlete_id })));
+    if (error) throw error;
+  },
+
+  async create(v: Omit<Video, 'id' | 'tenant_id' | 'created_at' | 'athlete' | 'game' | 'athletes'>): Promise<Video> {
     const tenantId = getCurrentTenantIdSync();
     if (!tenantId) throw new Error('No tenant');
     const userId = (await supabase.auth.getUser()).data.user?.id ?? null;
@@ -72,7 +114,7 @@ export const videoService = {
   },
 
   async update(id: string, v: Partial<Video>): Promise<Video> {
-    const { athlete: _, game: __, ...rest } = v;
+    const { athlete: _, game: __, athletes: ___, ...rest } = v;
     const { data, error } = await supabase
       .from('videos').update(rest).eq('id', id).select().single();
     if (error) throw error;
@@ -101,6 +143,17 @@ export const videoService = {
     const { error } = await supabase.storage.from('videos').upload(path, file, {
       cacheControl: '3600',
       upsert: false,
+    });
+    if (error) throw error;
+    return path;
+  },
+
+  async uploadThumbnail(blob: Blob, tenantId: string): Promise<string> {
+    const path = `${tenantId}/thumbnails/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+    const { error } = await supabase.storage.from('videos').upload(path, blob, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: 'image/jpeg',
     });
     if (error) throw error;
     return path;
@@ -177,6 +230,39 @@ export const videoService = {
     if (!tags.length) return;
     const { error } = await supabase.from('video_tags')
       .insert(tags.map(tag => ({ clip_id: clipId, tag })));
+    if (error) throw error;
+  },
+
+  // ── Annotations (frame telestration) ────────────────────────────────────
+  async getAnnotations(videoId: string): Promise<VideoAnnotation[]> {
+    const { data, error } = await supabase
+      .from('video_annotations')
+      .select('*')
+      .eq('video_id', videoId)
+      .order('timestamp_seconds');
+    if (error) throw error;
+    return (data ?? []) as VideoAnnotation[];
+  },
+
+  async createAnnotation(a: Omit<VideoAnnotation, 'id' | 'created_at'>): Promise<VideoAnnotation> {
+    const userId = (await supabase.auth.getUser()).data.user?.id ?? null;
+    const { data, error } = await supabase
+      .from('video_annotations')
+      .insert({ ...a, created_by: userId })
+      .select().single();
+    if (error) throw error;
+    return data as VideoAnnotation;
+  },
+
+  async updateAnnotation(id: string, a: Partial<VideoAnnotation>): Promise<VideoAnnotation> {
+    const { data, error } = await supabase
+      .from('video_annotations').update(a).eq('id', id).select().single();
+    if (error) throw error;
+    return data as VideoAnnotation;
+  },
+
+  async deleteAnnotation(id: string): Promise<void> {
+    const { error } = await supabase.from('video_annotations').delete().eq('id', id);
     if (error) throw error;
   },
 
