@@ -574,12 +574,12 @@ const Settings: React.FC = () => {
 
   return (
     <div className="max-w-4xl space-y-8">
-      <div className="flex border-b border-slate-200 overflow-x-auto">
+      <div className="flex flex-wrap border-b border-slate-200">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}

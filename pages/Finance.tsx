@@ -38,12 +38,105 @@ const BOOKING_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> 
   cancelled: 'neutral',
 };
 
+interface DateFilters {
+  search: string;
+  startDate: string;
+  endDate: string;
+  month: string;
+  year: string;
+}
+const emptyDateFilters: DateFilters = { search: '', startDate: '', endDate: '', month: '', year: '' };
+const currentMonthDateFilters = (): DateFilters => {
+  const now = new Date();
+  return { search: '', startDate: '', endDate: '', month: String(now.getMonth() + 1), year: String(now.getFullYear()) };
+};
+
+const matchesDateRange = (dateStr: string | null | undefined, f: DateFilters): boolean => {
+  if (!f.startDate && !f.endDate && !f.month && !f.year) return true;
+  if (!dateStr) return false;
+  const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+  if (f.startDate && d < new Date(f.startDate + 'T00:00:00')) return false;
+  if (f.endDate && d > new Date(f.endDate + 'T23:59:59')) return false;
+  if (f.month && (d.getMonth() + 1) !== Number(f.month)) return false;
+  if (f.year && d.getFullYear() !== Number(f.year)) return false;
+  return true;
+};
+
+const matchesSearchText = (text: string | null | undefined, search: string): boolean => {
+  if (!search.trim()) return true;
+  return (text || '').toLowerCase().includes(search.trim().toLowerCase());
+};
+
+const collectYears = (dateLists: (string | null | undefined)[][]): number[] => {
+  const years = new Set<number>();
+  dateLists.forEach(list => list.forEach(d => {
+    if (d) years.add(new Date(d.includes('T') ? d : d + 'T00:00:00').getFullYear());
+  }));
+  years.add(new Date().getFullYear());
+  return Array.from(years).sort((a, b) => b - a);
+};
+
+interface FinanceFilterBarProps {
+  value: DateFilters;
+  onChange: (next: DateFilters) => void;
+  searchPlaceholder: string;
+  years: number[];
+}
+const FinanceFilterBar: React.FC<FinanceFilterBarProps> = ({ value, onChange, searchPlaceholder, years }) => {
+  const { t, language } = useLanguage();
+  const monthNames = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString(language, { month: 'long' }));
+  const activeCount = [value.search, value.startDate, value.endDate, value.month, value.year].filter(Boolean).length;
+  const inputClass = 'px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none';
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-end gap-3">
+      <div className="flex-1 min-w-[200px]">
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('common.search')}</label>
+        <input
+          value={value.search}
+          onChange={e => onChange({ ...value, search: e.target.value })}
+          placeholder={searchPlaceholder}
+          className={`w-full ${inputClass}`}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('finance.filter.startDate')}</label>
+        <input type="date" value={value.startDate} onChange={e => onChange({ ...value, startDate: e.target.value })} className={inputClass} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('finance.filter.endDate')}</label>
+        <input type="date" value={value.endDate} onChange={e => onChange({ ...value, endDate: e.target.value })} className={inputClass} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('finance.filter.month')}</label>
+        <select value={value.month} onChange={e => onChange({ ...value, month: e.target.value })} className={inputClass}>
+          <option value="">{t('finance.filter.allMonths')}</option>
+          {monthNames.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-500 mb-1">{t('finance.filter.year')}</label>
+        <select value={value.year} onChange={e => onChange({ ...value, year: e.target.value })} className={inputClass}>
+          <option value="">{t('finance.filter.allYears')}</option>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
+      {activeCount > 0 && (
+        <button onClick={() => onChange(emptyDateFilters)}
+          className="flex items-center gap-1 px-3 py-2 text-xs text-primary font-semibold hover:underline">
+          <X className="w-3.5 h-3.5" /> {t('common.clearFilters')}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const Finance: React.FC = () => {
   const navigate = useNavigate();
   const { t, language, formatCurrency } = useLanguage();
   const { currentTenant } = useTenant();
 
   const [activeTab, setActiveTab] = useState<TabId>('summary');
+  const [feesView, setFeesView] = useState<'manual' | 'stripe'>('manual');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthlyFees, setMonthlyFees] = useState<MonthlyFee[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -67,6 +160,11 @@ const Finance: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ type: '', category: '', status: '' });
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [summaryDateFilters, setSummaryDateFilters] = useState<DateFilters>(currentMonthDateFilters);
+  const [txDateFilters, setTxDateFilters] = useState<DateFilters>(currentMonthDateFilters);
+  const [feesDateFilters, setFeesDateFilters] = useState<DateFilters>(currentMonthDateFilters);
+  const [storeDateFilters, setStoreDateFilters] = useState<DateFilters>(currentMonthDateFilters);
+  const [facilitiesDateFilters, setFacilitiesDateFilters] = useState<DateFilters>(currentMonthDateFilters);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; transaction: Transaction | null; loading: boolean }>({
     isOpen: false, transaction: null, loading: false,
   });
@@ -103,26 +201,75 @@ const Finance: React.FC = () => {
     return date.toLocaleDateString(language, { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // ---- Revenue aggregation ----
-  const transactionIncome = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + Number(tx.amount), 0);
-  const transactionExpense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + Number(tx.amount), 0);
-  const feesReceived = monthlyFees.filter(f => f.status === 'paid').reduce((s, f) => s + Number(f.amount), 0);
-  const feesPending = monthlyFees.filter(f => f.status === 'pending').reduce((s, f) => s + Number(f.amount), 0);
-  const feesOverdue = monthlyFees.filter(f => f.status === 'overdue').reduce((s, f) => s + Number(f.amount), 0);
-  const storeRevenue = orders.filter(o => o.status === 'delivered').reduce((s, o) => s + Number(o.total_amount || 0), 0);
-  const storePipeline = orders.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status || '')).reduce((s, o) => s + Number(o.total_amount || 0), 0);
-  const facilityRevenue = bookings.filter(b => b.status === 'confirmed' && Number(b.cost || 0) > 0).reduce((s, b) => s + Number(b.cost || 0), 0);
-  const facilityPending = bookings.filter(b => b.status === 'pending' && Number(b.cost || 0) > 0).reduce((s, b) => s + Number(b.cost || 0), 0);
-  const totalRevenue = transactionIncome + feesReceived + storeRevenue + facilityRevenue;
-  const balance = totalRevenue - transactionExpense;
-  const toReceive = feesPending + storePipeline + facilityPending;
+  // ---- Filters: shared years list + per-tab filtered datasets ----
+  const allYears = collectYears([
+    transactions.map(tx => tx.date),
+    monthlyFees.map(f => f.due_date),
+    invoices.map(i => i.due_date),
+    orders.map(o => o.created_at),
+    bookings.map(b => b.start_at),
+  ]);
 
-  const revenueBySource = [
-    { name: t('finance.tab.transactions'), value: transactionIncome, color: '#6366f1' },
-    { name: t('finance.tab.fees'), value: feesReceived, color: '#10b981' },
-    { name: t('finance.tab.store'), value: storeRevenue, color: '#f59e0b' },
-    { name: t('finance.tab.facilities'), value: facilityRevenue, color: '#3b82f6' },
+  // Resumo tab: filters all underlying datasets and recomputes the dashboard totals
+  const summaryTransactions = transactions.filter(tx => matchesSearchText(tx.description, summaryDateFilters.search) && matchesDateRange(tx.date, summaryDateFilters));
+  const summaryMonthlyFees = monthlyFees.filter(f => matchesSearchText(f.athlete?.full_name, summaryDateFilters.search) && matchesDateRange(f.due_date, summaryDateFilters));
+  const summaryInvoices = invoices.filter(i => matchesSearchText(i.athlete?.full_name, summaryDateFilters.search) && matchesDateRange(i.due_date, summaryDateFilters));
+  const summaryOrders = orders.filter(o => (matchesSearchText(o.buyer_name, summaryDateFilters.search) || matchesSearchText(o.buyer_email, summaryDateFilters.search)) && matchesDateRange(o.created_at, summaryDateFilters));
+  const summaryBookings = bookings.filter(b => (matchesSearchText(b.title, summaryDateFilters.search) || matchesSearchText(b.booked_by, summaryDateFilters.search)) && matchesDateRange(b.start_at, summaryDateFilters));
+
+  const summaryTxIncome = summaryTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + Number(tx.amount), 0);
+  const summaryTxExpense = summaryTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + Number(tx.amount), 0);
+  const summaryFeesReceived = summaryMonthlyFees.filter(f => f.status === 'paid').reduce((s, f) => s + Number(f.amount), 0)
+    + summaryInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
+  const summaryFeesPending = summaryMonthlyFees.filter(f => f.status === 'pending').reduce((s, f) => s + Number(f.amount), 0)
+    + summaryInvoices.filter(i => i.status === 'pending').reduce((s, i) => s + Number(i.amount), 0);
+  const summaryFeesOverdue = summaryMonthlyFees.filter(f => f.status === 'overdue').reduce((s, f) => s + Number(f.amount), 0)
+    + summaryInvoices.filter(i => i.status === 'overdue').reduce((s, i) => s + Number(i.amount), 0);
+  const summaryStoreRevenue = summaryOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  const summaryStorePipeline = summaryOrders.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status || '')).reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  const summaryFacilityRevenue = summaryBookings.filter(b => b.status === 'confirmed' && Number(b.cost || 0) > 0).reduce((s, b) => s + Number(b.cost || 0), 0);
+  const summaryFacilityPending = summaryBookings.filter(b => b.status === 'pending' && Number(b.cost || 0) > 0).reduce((s, b) => s + Number(b.cost || 0), 0);
+  const summaryTotalRevenue = summaryTxIncome + summaryFeesReceived + summaryStoreRevenue + summaryFacilityRevenue;
+  const summaryBalance = summaryTotalRevenue - summaryTxExpense;
+  const summaryToReceive = summaryFeesPending + summaryStorePipeline + summaryFacilityPending;
+  const summaryRevenueBySource = [
+    { name: t('finance.tab.transactions'), value: summaryTxIncome, color: '#6366f1' },
+    { name: t('finance.tab.fees'), value: summaryFeesReceived, color: '#10b981' },
+    { name: t('finance.tab.store'), value: summaryStoreRevenue, color: '#f59e0b' },
+    { name: t('finance.tab.facilities'), value: summaryFacilityRevenue, color: '#3b82f6' },
   ];
+
+  // Mensalidades tab: filters monthly fees / Stripe invoices independently of the global totals above
+  const feesTabMonthlyFees = monthlyFees.filter(f => matchesSearchText(f.athlete?.full_name, feesDateFilters.search) && matchesDateRange(f.due_date, feesDateFilters));
+  const feesTabInvoices = invoices.filter(i => matchesSearchText(i.athlete?.full_name, feesDateFilters.search) && matchesDateRange(i.due_date, feesDateFilters));
+  const feesTabReceived = feesTabMonthlyFees.filter(f => f.status === 'paid').reduce((s, f) => s + Number(f.amount), 0)
+    + feesTabInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount), 0);
+  const feesTabPending = feesTabMonthlyFees.filter(f => f.status === 'pending').reduce((s, f) => s + Number(f.amount), 0)
+    + feesTabInvoices.filter(i => i.status === 'pending').reduce((s, i) => s + Number(i.amount), 0);
+  const feesTabOverdue = feesTabMonthlyFees.filter(f => f.status === 'overdue').reduce((s, f) => s + Number(f.amount), 0)
+    + feesTabInvoices.filter(i => i.status === 'overdue').reduce((s, i) => s + Number(i.amount), 0);
+  const feesTabPaidCount = feesTabMonthlyFees.filter(f => f.status === 'paid').length + feesTabInvoices.filter(i => i.status === 'paid').length;
+  const feesTabPendingCount = feesTabMonthlyFees.filter(f => f.status === 'pending').length + feesTabInvoices.filter(i => i.status === 'pending').length;
+  const feesTabOverdueCount = feesTabMonthlyFees.filter(f => f.status === 'overdue').length + feesTabInvoices.filter(i => i.status === 'overdue').length;
+  const feesTabTotalExpected = feesTabMonthlyFees.reduce((s, f) => s + Number(f.amount), 0)
+    + feesTabInvoices.filter(i => i.status !== 'cancelled').reduce((s, i) => s + Number(i.amount), 0);
+
+  // Loja tab: status pills + search/date
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = !orderStatusFilter || (o.status || 'pending') === orderStatusFilter;
+    const matchesSearch = matchesSearchText(o.buyer_name, storeDateFilters.search) || matchesSearchText(o.buyer_email, storeDateFilters.search);
+    const matchesDate = matchesDateRange(o.created_at, storeDateFilters);
+    return matchesStatus && matchesSearch && matchesDate;
+  });
+  const storeTabRevenue = filteredOrders.filter(o => o.status === 'delivered').reduce((s, o) => s + Number(o.total_amount || 0), 0);
+  const storeTabPipeline = filteredOrders.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status || '')).reduce((s, o) => s + Number(o.total_amount || 0), 0);
+
+  // Instalações tab: search/date over billable bookings
+  const filteredBookings = bookings.filter(b => Number(b.cost || 0) > 0
+    && (matchesSearchText(b.title, facilitiesDateFilters.search) || matchesSearchText(b.booked_by, facilitiesDateFilters.search))
+    && matchesDateRange(b.start_at, facilitiesDateFilters));
+  const facilityTabRevenue = filteredBookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.cost || 0), 0);
+  const facilityTabPending = filteredBookings.filter(b => b.status === 'pending').reduce((s, b) => s + Number(b.cost || 0), 0);
 
   // ---- Transaction tab ----
   const tenantSettings = currentTenant?.settings as any;
@@ -145,9 +292,13 @@ const Finance: React.FC = () => {
     const matchesType = !filters.type || tx.type === filters.type;
     const matchesCategory = !filters.category || tx.category === filters.category;
     const matchesStatus = !filters.status || tx.status === filters.status;
-    return matchesType && matchesCategory && matchesStatus;
+    const matchesSearch = matchesSearchText(tx.description, txDateFilters.search);
+    const matchesDate = matchesDateRange(tx.date, txDateFilters);
+    return matchesType && matchesCategory && matchesStatus && matchesSearch && matchesDate;
   });
   const activeFiltersCount = [filters.type, filters.category, filters.status].filter(Boolean).length;
+  const anyTxFilterActive = activeFiltersCount > 0
+    || !!(txDateFilters.search || txDateFilters.startDate || txDateFilters.endDate || txDateFilters.month || txDateFilters.year);
 
   const getTxStatusVariant = (status: string): 'success' | 'warning' | 'error' | 'info' => {
     switch (status) {
@@ -278,13 +429,6 @@ const Finance: React.FC = () => {
     }
   };
 
-  const filteredOrders = orderStatusFilter
-    ? orders.filter(o => (o.status || 'pending') === orderStatusFilter)
-    : orders;
-
-  const billableBookings = bookings.filter(b => Number(b.cost || 0) > 0);
-  const paidBookingsCount = bookings.filter(b => b.status === 'confirmed' && Number(b.cost || 0) > 0).length;
-  const pendingBookingsCount = bookings.filter(b => b.status === 'pending' && Number(b.cost || 0) > 0).length;
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'summary', label: t('finance.tab.summary') },
@@ -332,38 +476,45 @@ const Finance: React.FC = () => {
       {/* ---- TAB: RESUMO ---- */}
       {activeTab === 'summary' && (
         <div className="space-y-6">
+          <FinanceFilterBar
+            value={summaryDateFilters}
+            onChange={setSummaryDateFilters}
+            searchPlaceholder={t('finance.filter.searchSummary')}
+            years={allYears}
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
               label={t('finance.balance')}
-              value={formatCurrency(balance)}
+              value={formatCurrency(summaryBalance)}
               subValue=""
               icon={Wallet}
-              iconColor={balance >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}
+              iconColor={summaryBalance >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}
             />
             <StatCard
               label={t('finance.totalRevenue')}
-              value={formatCurrency(totalRevenue)}
+              value={formatCurrency(summaryTotalRevenue)}
               subValue=""
               icon={ArrowUpCircle}
               iconColor="bg-green-50 text-green-600"
             />
             <StatCard
               label={t('finance.expenses')}
-              value={formatCurrency(transactionExpense)}
+              value={formatCurrency(summaryTxExpense)}
               subValue=""
               icon={ArrowDownCircle}
               iconColor="bg-red-50 text-red-600"
             />
             <StatCard
               label={t('finance.toReceive')}
-              value={formatCurrency(toReceive)}
+              value={formatCurrency(summaryToReceive)}
               subValue=""
               icon={CreditCard}
               iconColor="bg-amber-50 text-amber-600"
             />
             <StatCard
               label={t('finance.overdueAmount')}
-              value={formatCurrency(feesOverdue)}
+              value={formatCurrency(summaryFeesOverdue)}
               subValue=""
               icon={CreditCard}
               iconColor="bg-rose-50 text-rose-600"
@@ -374,12 +525,12 @@ const Finance: React.FC = () => {
             <h3 className="font-bold text-slate-800 mb-6">{t('finance.revenueBySource')}</h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueBySource} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                <BarChart data={summaryRevenueBySource} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCurrency(v)} width={90} />
                   <Tooltip formatter={(val) => formatCurrency(Number(val))} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                    {revenueBySource.map((entry, i) => (
+                    {summaryRevenueBySource.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Bar>
@@ -392,6 +543,13 @@ const Finance: React.FC = () => {
 
       {/* ---- TAB: LANÇAMENTOS ---- */}
       {activeTab === 'transactions' && (
+        <div className="space-y-4">
+          <FinanceFilterBar
+            value={txDateFilters}
+            onChange={setTxDateFilters}
+            searchPlaceholder={t('finance.filter.searchTransactions')}
+            years={allYears}
+          />
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h3 className="font-bold text-slate-800">{t('finance.recentTransactions')}</h3>
@@ -484,7 +642,7 @@ const Finance: React.FC = () => {
                 {filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                      {activeFiltersCount > 0 ? t('finance.noEntriesFiltered') : t('finance.noEntries')}
+                      {anyTxFilterActive ? t('finance.noEntriesFiltered') : t('finance.noEntries')}
                     </td>
                   </tr>
                 ) : filteredTransactions.map(tx => (
@@ -538,6 +696,7 @@ const Finance: React.FC = () => {
             </div>
           )}
         </div>
+        </div>
       )}
 
       {/* Stripe action feedback */}
@@ -551,32 +710,39 @@ const Finance: React.FC = () => {
       {/* ---- TAB: MENSALIDADES ---- */}
       {activeTab === 'fees' && (
         <div className="space-y-6">
+          <FinanceFilterBar
+            value={feesDateFilters}
+            onChange={setFeesDateFilters}
+            searchPlaceholder={t('finance.filter.searchFees')}
+            years={allYears}
+          />
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               label={t('monthlyFees.totalExpected')}
-              value={formatCurrency(monthlyFees.reduce((s, f) => s + Number(f.amount), 0))}
+              value={formatCurrency(feesTabTotalExpected)}
               subValue=""
               icon={CreditCard}
               iconColor="bg-blue-50 text-blue-600"
             />
             <StatCard
               label={t('monthlyFees.received')}
-              value={formatCurrency(feesReceived)}
-              subValue={`${monthlyFees.filter(f => f.status === 'paid').length} ${t('finance.paidCount')}`}
+              value={formatCurrency(feesTabReceived)}
+              subValue={`${feesTabPaidCount} ${t('finance.paidCount')}`}
               icon={ArrowUpCircle}
               iconColor="bg-green-50 text-green-600"
             />
             <StatCard
               label={t('finance.status.pending')}
-              value={formatCurrency(feesPending)}
-              subValue={`${monthlyFees.filter(f => f.status === 'pending').length} ${t('finance.pendingCount')}`}
+              value={formatCurrency(feesTabPending)}
+              subValue={`${feesTabPendingCount} ${t('finance.pendingCount')}`}
               icon={CreditCard}
               iconColor="bg-amber-50 text-amber-600"
             />
             <StatCard
               label={t('finance.status.overdue')}
-              value={formatCurrency(feesOverdue)}
-              subValue={`${monthlyFees.filter(f => f.status === 'overdue').length} ${t('monthlyFees.fees')}`}
+              value={formatCurrency(feesTabOverdue)}
+              subValue={`${feesTabOverdueCount} ${t('monthlyFees.fees')}`}
               icon={CreditCard}
               iconColor="bg-red-50 text-red-600"
             />
@@ -597,6 +763,25 @@ const Finance: React.FC = () => {
             </button>
           </div>
 
+          {/* Manual vs Stripe sub-tabs */}
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => setFeesView('manual')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all relative ${feesView === 'manual' ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+              <Building2 className="w-4 h-4" /> {t('finance.manualPayments')} ({feesTabMonthlyFees.length})
+              {feesView === 'manual' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
+            </button>
+            <button
+              onClick={() => setFeesView('stripe')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all relative ${feesView === 'stripe' ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
+            >
+              <CreditCard className="w-4 h-4" /> {t('finance.stripePayments')} ({feesTabInvoices.length})
+              {feesView === 'stripe' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
+            </button>
+          </div>
+
+          {feesView === 'manual' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -610,11 +795,11 @@ const Finance: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {monthlyFees.length === 0 ? (
+                  {feesTabMonthlyFees.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center text-slate-400">{t('finance.noEntries')}</td>
                     </tr>
-                  ) : monthlyFees.slice(0, 20).map(fee => (
+                  ) : feesTabMonthlyFees.slice(0, 20).map(fee => (
                     <tr key={fee.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-semibold text-slate-800">{fee.athlete?.full_name || '—'}</td>
                       <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-500">
@@ -634,28 +819,27 @@ const Finance: React.FC = () => {
                 </tbody>
               </table>
             </div>
-            {monthlyFees.length > 20 && (
+            {feesTabMonthlyFees.length > 20 && (
               <div className="px-6 py-3 border-t border-slate-100 text-center">
                 <button
                   onClick={() => navigate('/monthly-fees')}
                   className="text-sm text-primary font-semibold hover:underline"
                 >
-                  {t('finance.viewMonthlyFees')} ({monthlyFees.length})
+                  {t('finance.viewMonthlyFees')} ({feesTabMonthlyFees.length})
                 </button>
               </div>
             )}
           </div>
+          )}
 
           {/* Invoices / Stripe Charges section */}
-          {invoices.length > 0 && (
+          {feesView === 'stripe' && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-violet-500" />
-                <span className="font-semibold text-slate-800">Cobranças Stripe</span>
-                {!stripeActive && (
-                  <span className="ml-auto text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t('payment.stripeNotActive')}</span>
-                )}
-              </div>
+              {!stripeActive && (
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t('payment.stripeNotActive')}</span>
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -669,7 +853,11 @@ const Finance: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {invoices.slice(0, 20).map(inv => (
+                    {feesTabInvoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={stripeActive ? 6 : 5} className="px-6 py-12 text-center text-slate-400">{t('finance.noEntries')}</td>
+                      </tr>
+                    ) : feesTabInvoices.slice(0, 20).map(inv => (
                       <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 text-sm font-semibold text-slate-800">{inv.athlete?.full_name || '—'}</td>
                         <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-500">{inv.school_plan?.name || inv.description || '—'}</td>
@@ -753,25 +941,32 @@ const Finance: React.FC = () => {
       {/* ---- TAB: LOJA ---- */}
       {activeTab === 'store' && (
         <div className="space-y-6">
+          <FinanceFilterBar
+            value={storeDateFilters}
+            onChange={setStoreDateFilters}
+            searchPlaceholder={t('finance.filter.searchStore')}
+            years={allYears}
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard
               label={t('finance.storeRevenue')}
-              value={formatCurrency(storeRevenue)}
-              subValue={`${orders.filter(o => o.status === 'delivered').length} ${t('store.tab.orders').toLowerCase()}`}
+              value={formatCurrency(storeTabRevenue)}
+              subValue={`${filteredOrders.filter(o => o.status === 'delivered').length} ${t('store.tab.orders').toLowerCase()}`}
               icon={ShoppingBag}
               iconColor="bg-amber-50 text-amber-600"
             />
             <StatCard
               label={t('finance.pipeline')}
-              value={formatCurrency(storePipeline)}
-              subValue={`${orders.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status || '')).length} pedidos`}
+              value={formatCurrency(storeTabPipeline)}
+              subValue={`${filteredOrders.filter(o => ['pending', 'confirmed', 'shipped'].includes(o.status || '')).length} pedidos`}
               icon={ShoppingBag}
               iconColor="bg-blue-50 text-blue-600"
             />
             <StatCard
               label={t('finance.otherRevenue')}
-              value={String(orders.length)}
-              subValue={`${orders.filter(o => o.status === 'cancelled').length} cancelados`}
+              value={String(filteredOrders.length)}
+              subValue={`${filteredOrders.filter(o => o.status === 'cancelled').length} cancelados`}
               icon={ShoppingBag}
               iconColor="bg-slate-50 text-slate-500"
             />
@@ -851,24 +1046,31 @@ const Finance: React.FC = () => {
       {/* ---- TAB: INSTALAÇÕES ---- */}
       {activeTab === 'facilities' && (
         <div className="space-y-6">
+          <FinanceFilterBar
+            value={facilitiesDateFilters}
+            onChange={setFacilitiesDateFilters}
+            searchPlaceholder={t('finance.filter.searchFacilities')}
+            years={allYears}
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard
               label={t('finance.facilityRevenue')}
-              value={formatCurrency(facilityRevenue)}
-              subValue={`${paidBookingsCount} reservas confirmadas`}
+              value={formatCurrency(facilityTabRevenue)}
+              subValue={`${filteredBookings.filter(b => b.status === 'confirmed').length} reservas confirmadas`}
               icon={Building2}
               iconColor="bg-blue-50 text-blue-600"
             />
             <StatCard
               label={t('finance.toReceive')}
-              value={formatCurrency(facilityPending)}
-              subValue={`${pendingBookingsCount} pendentes`}
+              value={formatCurrency(facilityTabPending)}
+              subValue={`${filteredBookings.filter(b => b.status === 'pending').length} pendentes`}
               icon={Building2}
               iconColor="bg-amber-50 text-amber-600"
             />
             <StatCard
               label={t('finance.otherRevenue')}
-              value={String(billableBookings.length)}
+              value={String(filteredBookings.length)}
               subValue="reservas com custo"
               icon={Building2}
               iconColor="bg-slate-50 text-slate-500"
@@ -888,11 +1090,11 @@ const Finance: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {billableBookings.length === 0 ? (
+                  {filteredBookings.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-12 text-center text-slate-400">{t('finance.noPaidBookings')}</td>
                     </tr>
-                  ) : billableBookings.map(booking => (
+                  ) : filteredBookings.map(booking => (
                     <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="text-sm font-semibold text-slate-800">{booking.title}</p>
