@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard, Users, LogOut, Shield, X, Menu, CreditCard,
     Wallet, Bell, UserCog, Palette, Plug, MessageCircle, Activity,
-    BarChart3, FileSearch, Wrench, ArrowLeftRight,
+    BarChart3, FileSearch, Wrench, ArrowLeftRight, HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -40,6 +40,7 @@ const NAV_ITEMS: { icon: React.ElementType; label: string; path: string }[] = [
     { icon: CreditCard, label: 'Planos', path: '/admin/plans' },
     { icon: UserCog, label: 'Usuários', path: '/admin/platform-users' },
     { icon: Palette, label: 'Paletas', path: '/admin/palettes' },
+    { icon: HelpCircle, label: 'Central de Ajuda', path: '/admin/help' },
     { icon: Plug, label: 'Integrações', path: '/admin/integrations' },
     { icon: MessageCircle, label: 'Widget de Chat', path: '/admin/chat-widget' },
     { icon: Activity, label: 'Saúde & Jobs', path: '/admin/health' },
@@ -57,6 +58,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/admin/plans': 'Planos',
     '/admin/platform-users': 'Usuários',
     '/admin/palettes': 'Paletas',
+    '/admin/help': 'Central de Ajuda',
     '/admin/integrations': 'Integrações',
     '/admin/chat-widget': 'Widget de Chat',
     '/admin/health': 'Saúde & Jobs',

@@ -8,13 +8,16 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { Link, useNavigate } from 'react-router-dom';
+import HelpLink from './HelpLink';
+import { HelpRouteMatch } from '../constants/helpRouteMap';
 
 interface HeaderProps {
   title: string;
+  helpMatch?: HelpRouteMatch | null;
   onMenuClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ title, helpMatch, onMenuClick }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { currentTenant } = useTenant();
@@ -138,6 +141,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick }) => {
           <Menu className="w-6 h-6" />
         </button>
         <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+        {helpMatch && <HelpLink featureKey={helpMatch.featureKey} routeKey={helpMatch.routeKey} />}
       </div>
 
       <div className="flex items-center gap-4 lg:gap-6">

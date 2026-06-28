@@ -34,6 +34,7 @@ import {
   LayoutList,
   PanelLeftClose,
   PanelLeftOpen,
+  HelpCircle,
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import SidebarGroup from './SidebarGroup';
@@ -325,6 +326,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, collapsed, onToggleC
 
         <SidebarItem icon={CreditCard} label={t('nav.subscription')} path="/subscription" collapsed={collapsed} />
         <SidebarItem icon={Settings} label={t('nav.settings')} path="/settings" collapsed={collapsed} />
+        <a
+          href="#/help"
+          target="_blank"
+          rel="noopener noreferrer"
+          title={collapsed ? t('nav.helpCenter') : undefined}
+          className={`flex items-center gap-3 rounded transition-colors text-white/70 hover:bg-white/5 hover:text-white ${collapsed ? 'justify-center px-3 py-3' : 'px-4 py-3'}`}
+        >
+          <HelpCircle className="w-5 h-5 flex-shrink-0" />
+          {!collapsed && <span className="text-sm">{t('nav.helpCenter')}</span>}
+        </a>
 
         {/* Collapse toggle — desktop only, end of menu */}
         <button

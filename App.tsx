@@ -75,6 +75,11 @@ import SchoolPlans from './pages/SchoolPlans';
 import FeatureGate from './components/FeatureGate';
 import { useAuth } from './contexts/AuthContext';
 import { ModuleKey } from './services/featureFlagService';
+import HelpCenter from './pages/HelpCenter';
+import HelpArticlePage from './pages/HelpArticlePage';
+import AdminHelpCenter from './pages/admin/AdminHelpCenter';
+import AdminHelpArticleEditor from './pages/admin/AdminHelpArticleEditor';
+import { matchHelpRoute } from './constants/helpRouteMap';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -124,7 +129,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
       <main className="flex-1 min-h-screen flex flex-col">
-        <Header title={getTitle()} onMenuClick={() => setSidebarOpen(true)} />
+        <Header title={getTitle()} helpMatch={matchHelpRoute(location.pathname)} onMenuClick={() => setSidebarOpen(true)} />
         <div className="p-4 lg:p-8">
           {children}
         </div>
@@ -224,6 +229,9 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/admin/observability" element={<ProtectedAdminLayout><AdminObservability /></ProtectedAdminLayout>} />
             <Route path="/admin/audit" element={<ProtectedAdminLayout><AdminAudit /></ProtectedAdminLayout>} />
             <Route path="/admin/maintenance" element={<ProtectedAdminLayout><AdminMaintenance /></ProtectedAdminLayout>} />
+            <Route path="/admin/help" element={<ProtectedAdminLayout><AdminHelpCenter /></ProtectedAdminLayout>} />
+            <Route path="/admin/help/articles/new" element={<ProtectedAdminLayout><AdminHelpArticleEditor /></ProtectedAdminLayout>} />
+            <Route path="/admin/help/articles/:id" element={<ProtectedAdminLayout><AdminHelpArticleEditor /></ProtectedAdminLayout>} />
 
             {/* Plans route - accessible even with expired trial */}
             <Route path="/plans" element={<ProtectedLayoutExpired><Plans /></ProtectedLayoutExpired>} />
@@ -315,6 +323,8 @@ const PublicRoutes: React.FC = () => (
     <Route path="/invite/:token" element={<PublicInviteResponse />} />
     <Route path="/shop/:slug" element={<PublicStore />} />
     <Route path="/pay/:invoiceId" element={<PublicInvoice />} />
+    <Route path="/help" element={<HelpCenter />} />
+    <Route path="/help/:slug" element={<HelpArticlePage />} />
     <Route path="*" element={<PublicSite />} />
   </Routes>
 );
@@ -354,7 +364,8 @@ const AppRouter: React.FC = () => {
   }, []);
 
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
-  const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/');
+  const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/')
+    || location.pathname === '/help' || location.pathname.startsWith('/help/');
 
   if (isAuthRoute) return <AuthRoutes />;
   if (isPublicRoute) return <PublicRoutes />;

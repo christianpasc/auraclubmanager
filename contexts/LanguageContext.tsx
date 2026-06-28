@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
-type Language = 'pt-BR' | 'pt-PT' | 'en-US' | 'es-ES' | 'fr-FR';
+export type Language = 'pt-BR' | 'pt-PT' | 'en-US' | 'es-ES' | 'fr-FR';
 
 interface LanguageContextType {
     language: Language;
@@ -26,6 +26,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.finance': 'Financeiro',
         'nav.subscription': 'Assinatura',
         'nav.settings': 'Configurações',
+        'nav.helpCenter': 'Central de Ajuda',
         'nav.logout': 'Sair',
         'nav.games': 'Jogos',
 
@@ -1475,6 +1476,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.finance': 'Finance',
         'nav.subscription': 'Subscription',
         'nav.settings': 'Settings',
+        'nav.helpCenter': 'Help Center',
         'nav.logout': 'Logout',
         'nav.games': 'Games',
 
@@ -2921,6 +2923,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.finance': 'Finanzas',
         'nav.subscription': 'Suscripción',
         'nav.settings': 'Configuración',
+        'nav.helpCenter': 'Centro de Ayuda',
         'nav.logout': 'Salir',
         'nav.games': 'Partidos',
 
@@ -4333,6 +4336,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.finance': 'Finances',
         'nav.subscription': 'Abonnement',
         'nav.settings': 'Paramètres',
+        'nav.helpCenter': "Centre d'Aide",
         'nav.logout': 'Déconnexion',
         'nav.games': 'Matchs',
 
@@ -5743,6 +5747,7 @@ const translations: Record<Language, Record<string, string>> = {
         'nav.finance': 'Finanças',
         'nav.subscription': 'Subscrição',
         'nav.settings': 'Definições',
+        'nav.helpCenter': 'Central de Ajuda',
         'nav.logout': 'Sair',
         'nav.games': 'Jogos',
 
