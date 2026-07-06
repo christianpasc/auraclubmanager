@@ -37,6 +37,10 @@ export interface Athlete {
     guardian_cpf?: string;
     guardian_phone?: string;
     guardian_email?: string;
+    // LGPD: documented guardian consent, required for minors (mirror of the videos pattern)
+    guardian_consent_given?: boolean;
+    guardian_consent_by?: string | null;
+    guardian_consent_at?: string | null;
     created_at?: string;
     updated_at?: string;
 }

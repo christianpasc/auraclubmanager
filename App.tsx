@@ -67,6 +67,7 @@ import AdminChatWidget from './pages/admin/AdminChatWidget';
 import AdminHealthJobs from './pages/admin/AdminHealthJobs';
 import AdminObservability from './pages/admin/AdminObservability';
 import AdminAudit from './pages/admin/AdminAudit';
+import AdminDeletionRequests from './pages/admin/AdminDeletionRequests';
 import AdminMaintenance from './pages/admin/AdminMaintenance';
 import { Wrench } from 'lucide-react';
 import { platformSettingsService, PLATFORM_SETTING_KEYS, MaintenanceSetting, ChatWidgetSetting } from './services/platformSettingsService';
@@ -228,6 +229,7 @@ const ProtectedRoutes: React.FC = () => {
             <Route path="/admin/health" element={<ProtectedAdminLayout><AdminHealthJobs /></ProtectedAdminLayout>} />
             <Route path="/admin/observability" element={<ProtectedAdminLayout><AdminObservability /></ProtectedAdminLayout>} />
             <Route path="/admin/audit" element={<ProtectedAdminLayout><AdminAudit /></ProtectedAdminLayout>} />
+            <Route path="/admin/deletion-requests" element={<ProtectedAdminLayout><AdminDeletionRequests /></ProtectedAdminLayout>} />
             <Route path="/admin/maintenance" element={<ProtectedAdminLayout><AdminMaintenance /></ProtectedAdminLayout>} />
             <Route path="/admin/help" element={<ProtectedAdminLayout><AdminHelpCenter /></ProtectedAdminLayout>} />
             <Route path="/admin/help/articles/new" element={<ProtectedAdminLayout><AdminHelpArticleEditor /></ProtectedAdminLayout>} />
@@ -339,12 +341,36 @@ const MaintenancePage: React.FC<{ message: string }> = ({ message }) => (
   </div>
 );
 
+const CHAT_CONSENT_KEY = 'aura_chat_consent';
+
+// LGPD/GDPR: the support chat is a third-party script (Crisp/Tawk/etc.) that can
+// set its own cookies — it only loads after the visitor explicitly accepts.
+// Both choices persist, so the banner shows at most once per browser.
+const ChatConsentBanner: React.FC<{ onAccept: () => void; onDecline: () => void }> = ({ onAccept, onDecline }) => (
+  <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-md z-[60] bg-white border border-slate-200 rounded-xl shadow-xl p-4">
+    <p className="text-sm text-slate-700">
+      Usamos um widget de chat de terceiros para suporte, que pode utilizar cookies próprios. Deseja ativá-lo?
+    </p>
+    <div className="flex justify-end gap-2 mt-3">
+      <button onClick={onDecline} className="px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">
+        Recusar
+      </button>
+      <button onClick={onAccept} className="px-4 py-1.5 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary-dark">
+        Aceitar
+      </button>
+    </div>
+  </div>
+);
+
 // Router wrapper that decides which route set to use
 const AppRouter: React.FC = () => {
   const location = useLocation();
   const { isSuperAdmin } = useAuth();
   const [maintenance, setMaintenance] = useState<MaintenanceSetting | null>(null);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
+  const [chatWidget, setChatWidget] = useState<ChatWidgetSetting | null>(null);
+  const [chatConsent, setChatConsent] = useState<string | null>(() => localStorage.getItem(CHAT_CONSENT_KEY));
+  const [chatInjected, setChatInjected] = useState(false);
 
   useEffect(() => {
     platformSettingsService.get<MaintenanceSetting>(PLATFORM_SETTING_KEYS.MAINTENANCE)
@@ -352,23 +378,38 @@ const AppRouter: React.FC = () => {
       .finally(() => setMaintenanceChecked(true));
   }, []);
 
-  // Injects the configured support chat script once, if enabled — independent of maintenance state.
   useEffect(() => {
-    platformSettingsService.get<ChatWidgetSetting>(PLATFORM_SETTING_KEYS.CHAT_WIDGET).then(data => {
-      if (data?.enabled && data.embed_code) {
-        const container = document.createElement('div');
-        container.innerHTML = data.embed_code;
-        Array.from(container.childNodes).forEach(node => document.body.appendChild(node));
-      }
-    });
+    platformSettingsService.get<ChatWidgetSetting>(PLATFORM_SETTING_KEYS.CHAT_WIDGET).then(setChatWidget);
   }, []);
+
+  // Injects the configured support chat script once — only after explicit consent.
+  useEffect(() => {
+    if (chatInjected) return;
+    if (chatConsent !== 'accepted') return;
+    if (!chatWidget?.enabled || !chatWidget.embed_code) return;
+    const container = document.createElement('div');
+    container.innerHTML = chatWidget.embed_code;
+    Array.from(container.childNodes).forEach(node => document.body.appendChild(node));
+    setChatInjected(true);
+  }, [chatWidget, chatConsent, chatInjected]);
+
+  const decideChatConsent = (decision: 'accepted' | 'declined') => {
+    localStorage.setItem(CHAT_CONSENT_KEY, decision);
+    setChatConsent(decision);
+  };
+
+  const showChatBanner = !!chatWidget?.enabled && !!chatWidget.embed_code && chatConsent === null;
 
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
   const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/')
     || location.pathname === '/help' || location.pathname.startsWith('/help/');
 
-  if (isAuthRoute) return <AuthRoutes />;
-  if (isPublicRoute) return <PublicRoutes />;
+  const chatBanner = showChatBanner
+    ? <ChatConsentBanner onAccept={() => decideChatConsent('accepted')} onDecline={() => decideChatConsent('declined')} />
+    : null;
+
+  if (isAuthRoute) return <><AuthRoutes />{chatBanner}</>;
+  if (isPublicRoute) return <><PublicRoutes />{chatBanner}</>;
 
   // Maintenance only gates the authenticated app — super admins always get through
   // so they can turn it back off, and the login screen is never blocked.
@@ -376,7 +417,7 @@ const AppRouter: React.FC = () => {
     return <MaintenancePage message={maintenance.message || 'Estamos em manutenção. Voltamos em breve.'} />;
   }
 
-  return <ProtectedRoutes />;
+  return <><ProtectedRoutes />{chatBanner}</>;
 };
 
 const App: React.FC = () => {

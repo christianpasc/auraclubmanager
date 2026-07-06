@@ -274,9 +274,4 @@ export const videoService = {
   },
 };
 
-export function isMinorFromBirthDate(birthDate?: string | null): boolean {
-  if (!birthDate) return false;
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 18);
-  return new Date(birthDate) > cutoff;
-}
+export { isMinorFromBirthDate } from '../lib/age';

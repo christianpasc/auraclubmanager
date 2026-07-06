@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     LayoutDashboard, Users, LogOut, Shield, X, Menu, CreditCard,
     Wallet, Bell, UserCog, Palette, Plug, MessageCircle, Activity,
-    BarChart3, FileSearch, Wrench, ArrowLeftRight, HelpCircle,
+    BarChart3, FileSearch, Wrench, ArrowLeftRight, HelpCircle, ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -46,6 +46,7 @@ const NAV_ITEMS: { icon: React.ElementType; label: string; path: string }[] = [
     { icon: Activity, label: 'Saúde & Jobs', path: '/admin/health' },
     { icon: BarChart3, label: 'Observabilidade', path: '/admin/observability' },
     { icon: FileSearch, label: 'Auditoria', path: '/admin/audit' },
+    { icon: ShieldAlert, label: 'Exclusões (LGPD)', path: '/admin/deletion-requests' },
 ];
 
 const MAINTENANCE_ITEM = { icon: Wrench, label: 'Manutenção', path: '/admin/maintenance' };
@@ -64,6 +65,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/admin/health': 'Saúde & Jobs',
     '/admin/observability': 'Observabilidade',
     '/admin/audit': 'Auditoria',
+    '/admin/deletion-requests': 'Exclusões (LGPD)',
     '/admin/maintenance': 'Manutenção',
 };
 

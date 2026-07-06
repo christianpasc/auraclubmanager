@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, FileText, CreditCard, Save, ArrowLeft, Loader2,
-    Calendar, DollarSign, Camera, X, Check, Search, UserCheck
+    Calendar, DollarSign, Camera, X, Check, Search, UserCheck, ShieldAlert
 } from 'lucide-react';
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { athleteService, Athlete } from '../services/athleteService';
@@ -11,6 +11,8 @@ import { storageService } from '../services/storageService';
 import { schoolPlanService, SchoolPlan } from '../services/schoolPlanService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
+import { useAuth } from '../contexts/AuthContext';
+import { isMinorFromBirthDate } from '../lib/age';
 
 const EnrollmentForm: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -20,6 +22,7 @@ const EnrollmentForm: React.FC = () => {
     const searchRef = useRef<HTMLDivElement>(null);
     const { t } = useLanguage();
     const { currentTenant } = useTenant();
+    const { user } = useAuth();
 
     const planTypes = [
         { value: 'monthly',    label: t('planType.monthly') },
@@ -146,7 +149,23 @@ const EnrollmentForm: React.FC = () => {
         }
     };
 
+    const isMinor = isMinorFromBirthDate(athlete.birth_date);
+
+    const toggleGuardianConsent = (checked: boolean) => {
+        setAthlete(prev => ({
+            ...prev,
+            guardian_consent_given: checked,
+            guardian_consent_by: checked ? (user?.id ?? null) : null,
+            guardian_consent_at: checked ? new Date().toISOString() : null,
+        }));
+    };
+
     const handleSave = async () => {
+        // LGPD: registering/updating a minor's data requires documented guardian consent
+        if (mode !== 'existing' && isMinor && !athlete.guardian_consent_given) {
+            setError(t('athleteForm.error.guardianConsentRequired'));
+            return;
+        }
         setSaving(true);
         setError(null);
 
@@ -430,6 +449,26 @@ const EnrollmentForm: React.FC = () => {
                                         <input type="tel" value={athlete.guardian_phone || ''} onChange={(e) => updateAthlete('guardian_phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
                                     </div>
                                 </div>
+
+                                {/* LGPD: guardian consent required for minors */}
+                                {isMinor && (
+                                    <div className="mt-4 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                                        <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-amber-800">{t('athleteForm.lgpd.minorTitle')}</p>
+                                            <p className="text-xs text-amber-600 mt-0.5">{t('athleteForm.lgpd.minorMessage')}</p>
+                                            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!athlete.guardian_consent_given}
+                                                    onChange={(e) => toggleGuardianConsent(e.target.checked)}
+                                                    className="rounded text-primary"
+                                                />
+                                                <span className="text-xs text-amber-800 font-medium">{t('athleteForm.lgpd.consent')}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

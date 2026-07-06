@@ -13,6 +13,7 @@ const Signup: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -39,14 +40,23 @@ const Signup: React.FC = () => {
             return;
         }
 
-        if (password.length < 6) {
+        if (password.length < 8) {
             setError(t('auth.passwordTooShort'));
+            return;
+        }
+
+        if (!acceptedTerms) {
+            setError(t('auth.termsRequired'));
             return;
         }
 
         setLoading(true);
 
-        const { error } = await signUp(email, password, { full_name: fullName, language });
+        const { error } = await signUp(email, password, {
+            full_name: fullName,
+            language,
+            privacy_accepted_at: new Date().toISOString(),
+        });
 
         if (error) {
             setError(error.message);
@@ -289,10 +299,32 @@ const Signup: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Terms / Privacy acceptance */}
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={acceptedTerms}
+                                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-slate-600 leading-relaxed">
+                                {t('auth.termsAcceptPrefix')}{' '}
+                                <a
+                                    href="https://www.auraclubmanager.io/politica-privacidade/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-semibold text-blue-600 hover:text-blue-700 underline"
+                                >
+                                    {t('auth.privacyPolicy')}
+                                </a>
+                                {' '}{t('auth.termsAcceptSuffix')}
+                            </span>
+                        </label>
+
                         {/* Submit */}
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !acceptedTerms}
                             className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
                         >
                             {loading ? (

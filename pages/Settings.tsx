@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, CreditCard } from 'lucide-react';
+import { Building2, User, Bell, Shield, Camera, Save, Globe, Check, Loader2, Users, Plus, Edit2, Trash2, Eye, EyeOff, X, Lock, Mail, AlertTriangle, CreditCard, Download } from 'lucide-react';
 import { useLanguage, AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
@@ -15,6 +15,8 @@ import { subscriptionService, PlanLimits } from '../services/subscriptionService
 import { paymentProvider } from '../services/payment';
 import { stripeConfig } from '../lib/stripe';
 import { paletteService, ColorPalette } from '../services/paletteService';
+import { dataExportService } from '../services/dataExportService';
+import { privacyService, DeletionRequest } from '../services/privacyService';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('club');
@@ -55,6 +57,13 @@ const Settings: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Privacy state (export + deletion requests)
+  const [exporting, setExporting] = useState(false);
+  const [pendingDeletions, setPendingDeletions] = useState<DeletionRequest[]>([]);
+  const [deletionModal, setDeletionModal] = useState<{ open: boolean; type: 'account' | 'tenant' }>({ open: false, type: 'account' });
+  const [deletionSubmitting, setDeletionSubmitting] = useState(false);
+  const [privacyMsg, setPrivacyMsg] = useState<string | null>(null);
 
   // Notifications state
   const [notifications, setNotifications] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
@@ -138,6 +147,14 @@ const Settings: React.FC = () => {
       subscriptionService.checkPlanLimits(currentTenant.id).then(limits => {
         if (limits) setPlanLimits(limits);
       });
+    }
+  }, [currentTenant, activeTab]);
+
+  useEffect(() => {
+    if (currentTenant?.id && activeTab === 'security') {
+      privacyService.getPendingForTenant(currentTenant.id)
+        .then(setPendingDeletions)
+        .catch(() => setPendingDeletions([]));
     }
   }, [currentTenant, activeTab]);
 
@@ -304,7 +321,7 @@ const Settings: React.FC = () => {
 
   const handleChangePassword = async () => {
     setPasswordError(null);
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       setPasswordError(t('settings.security.passwordMin'));
       return;
     }
@@ -327,6 +344,38 @@ const Settings: React.FC = () => {
       setPasswordError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!currentTenant?.id) return;
+    setExporting(true);
+    setPrivacyMsg(null);
+    try {
+      await dataExportService.exportTenantData(currentTenant.id, currentTenant.name || 'clube');
+    } catch (err: any) {
+      setPrivacyMsg(err.message || t('settings.privacy.exportError'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleRequestDeletion = async () => {
+    if (!currentTenant?.id) return;
+    setDeletionSubmitting(true);
+    setPrivacyMsg(null);
+    try {
+      const created = await privacyService.createDeletionRequest({
+        tenantId: currentTenant.id,
+        requestType: deletionModal.type,
+      });
+      setPendingDeletions(prev => [...prev, created]);
+      setDeletionModal({ open: false, type: 'account' });
+      setPrivacyMsg(t('settings.privacy.deletionRequested'));
+    } catch (err: any) {
+      setPrivacyMsg(err.message || t('settings.privacy.deletionError'));
+    } finally {
+      setDeletionSubmitting(false);
     }
   };
 
@@ -1107,6 +1156,78 @@ const Settings: React.FC = () => {
                 {saving ? t('settings.security.changing') : saved ? t('settings.security.changed') : t('settings.security.changeBtn')}
               </button>
             </div>
+
+            {/* ── Privacy (LGPD/GDPR) ─────────────────────────────────── */}
+            <div className="pt-8 border-t border-slate-200 space-y-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 mb-1">{t('settings.privacy.title')}</h3>
+                <p className="text-sm text-slate-500">{t('settings.privacy.subtitle')}</p>
+              </div>
+
+              {privacyMsg && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 max-w-xl">
+                  {privacyMsg}
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="max-w-xl bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{t('settings.privacy.exportTitle')}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('settings.privacy.exportDesc')}</p>
+                  </div>
+                  <button onClick={handleExportData} disabled={exporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 shrink-0">
+                    {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {t('settings.privacy.exportBtn')}
+                  </button>
+                </div>
+              )}
+
+              {pendingDeletions.length > 0 ? (
+                <div className="max-w-xl p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-800">{t('settings.privacy.deletionPending')}</p>
+                </div>
+              ) : (
+                <div className="max-w-xl space-y-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{t('settings.privacy.deleteAccountTitle')}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t('settings.privacy.deleteAccountDesc')}</p>
+                    </div>
+                    <button onClick={() => setDeletionModal({ open: true, type: 'account' })}
+                      className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 shrink-0">
+                      {t('settings.privacy.requestBtn')}
+                    </button>
+                  </div>
+                  {isOwner && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{t('settings.privacy.deleteTenantTitle')}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{t('settings.privacy.deleteTenantDesc')}</p>
+                      </div>
+                      <button onClick={() => setDeletionModal({ open: true, type: 'tenant' })}
+                        className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 shrink-0">
+                        {t('settings.privacy.requestBtn')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <ConfirmModal
+              isOpen={deletionModal.open}
+              onClose={() => setDeletionModal(prev => ({ ...prev, open: false }))}
+              onConfirm={handleRequestDeletion}
+              title={t('settings.privacy.confirmTitle')}
+              message={deletionModal.type === 'tenant' ? t('settings.privacy.confirmTenantMsg') : t('settings.privacy.confirmAccountMsg')}
+              confirmLabel={t('settings.privacy.requestBtn')}
+              cancelLabel={t('common.cancel')}
+              isDestructive={true}
+              loading={deletionSubmitting}
+            />
           </div>
         )}
 

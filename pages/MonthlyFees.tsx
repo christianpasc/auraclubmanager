@@ -110,6 +110,32 @@ const MonthlyFees: React.FC = () => {
     }
   };
 
+  const handleExportCsv = () => {
+    const header = ['Atleta', 'Descrição', 'Parcela', 'Vencimento', 'Status', 'Valor', 'Pago em', 'Forma de pagamento'];
+    const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = filteredFees.map(f => [
+      f.athlete?.full_name || '',
+      f.description || `Parcela #${f.installment_number}`,
+      f.installment_number,
+      f.due_date,
+      f.status,
+      f.amount,
+      f.paid_at || '',
+      f.payment_method || '',
+    ].map(escape).join(';'));
+    // UTF-8 BOM so Excel opens the file with the right encoding for accents
+    const csv = '﻿' + [header.map(escape).join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mensalidades-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       paid: 'bg-green-100 text-green-700',
@@ -212,7 +238,7 @@ const MonthlyFees: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-all shadow-sm">
+          <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg hover:bg-slate-50 transition-all shadow-sm">
             <Download className="w-4 h-4" /> {t('monthlyFees.export')}
           </button>
           <button

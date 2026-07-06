@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     User, Shirt, Activity, History, Save, ArrowLeft, Loader2,
-    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus, Plus, TrendingUp, BarChart2
+    Phone, MapPin, Shield, Users, Heart, Camera, X, Search, UserPlus, Plus, TrendingUp, BarChart2, ShieldAlert
 } from 'lucide-react';
 import {
     athleteService, wardrobeService, physiologyService, trainingHistoryService,
@@ -14,6 +14,8 @@ import { ageCategoryService, AgeCategory } from '../services/ageCategoryService'
 import { guardianService, Guardian } from '../services/guardianService';
 import { groupService } from '../services/groupService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { isMinorFromBirthDate } from '../lib/age';
 import AthleteHistoryDashboard from '../components/AthleteHistoryDashboard';
 
 type TabType = 'general' | 'wardrobe' | 'history' | 'physiology';
@@ -113,9 +115,15 @@ const AthleteForm: React.FC = () => {
         }
     };
 
+    const isMinor = isMinorFromBirthDate(athlete.birth_date);
+
     const handleSave = async () => {
         if (!athlete.full_name?.trim()) {
             setError(t('athleteForm.error.nameRequired'));
+            return;
+        }
+        if (isMinor && !athlete.guardian_consent_given) {
+            setError(t('athleteForm.error.guardianConsentRequired'));
             return;
         }
         setSaving(true);
@@ -326,7 +334,17 @@ const GeneralTab: React.FC<{
     onCategoryCreated: (cat: AgeCategory) => void;
 }> = ({ t, athlete, setAthlete, onPhotoUpload, uploadingPhoto, ageCategories, categoryHint, setCategoryHint, currentGroupName, onCategoryCreated }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { user } = useAuth();
     const updateField = (field: keyof Athlete, value: any) => setAthlete(prev => ({ ...prev, [field]: value }));
+    const isMinor = isMinorFromBirthDate(athlete.birth_date);
+    const toggleGuardianConsent = (checked: boolean) => {
+        setAthlete(prev => ({
+            ...prev,
+            guardian_consent_given: checked,
+            guardian_consent_by: checked ? (user?.id ?? null) : null,
+            guardian_consent_at: checked ? new Date().toISOString() : null,
+        }));
+    };
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) onPhotoUpload(file);
@@ -387,6 +405,26 @@ const GeneralTab: React.FC<{
                             <input type="tel" value={athlete.phone || ''} onChange={(e) => updateField('phone', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="(00) 00000-0000" />
                         </div>
                     </div>
+
+                    {/* LGPD: guardian consent required for minors (same pattern as video uploads) */}
+                    {isMinor && (
+                        <div className="mt-4 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                            <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-amber-800">{t('athleteForm.lgpd.minorTitle')}</p>
+                                <p className="text-xs text-amber-600 mt-0.5">{t('athleteForm.lgpd.minorMessage')}</p>
+                                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!athlete.guardian_consent_given}
+                                        onChange={(e) => toggleGuardianConsent(e.target.checked)}
+                                        className="rounded text-primary"
+                                    />
+                                    <span className="text-xs text-amber-800 font-medium">{t('athleteForm.lgpd.consent')}</span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
