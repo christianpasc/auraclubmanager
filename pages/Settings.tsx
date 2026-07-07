@@ -16,6 +16,8 @@ import { paymentProvider } from '../services/payment';
 import { stripeConfig } from '../lib/stripe';
 import { paletteService, ColorPalette } from '../services/paletteService';
 import { dataExportService } from '../services/dataExportService';
+import { asaasSubaccountService } from '../services/asaasSubaccountService';
+import { resolvePaymentProviderId } from '../services/payment';
 import { privacyService, DeletionRequest } from '../services/privacyService';
 
 const Settings: React.FC = () => {
@@ -98,6 +100,14 @@ const Settings: React.FC = () => {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [connectCurrency, setConnectCurrency] = useState('EUR');
   const [savingCurrency, setSavingCurrency] = useState(false);
+
+  // Asaas subaccount state (Brazil)
+  const [asaasForm, setAsaasForm] = useState({
+    email: '', cpfCnpj: '', mobilePhone: '', incomeValue: '',
+    postalCode: '', address: '', addressNumber: '', province: '', complement: '', birthDate: '',
+  });
+  const [asaasSubmitting, setAsaasSubmitting] = useState(false);
+  const [asaasNotice, setAsaasNotice] = useState<string | null>(null);
   const [currencySaved, setCurrencySaved] = useState(false);
 
   // Load data on mount
@@ -503,6 +513,40 @@ const Settings: React.FC = () => {
     } catch (err: any) {
       setConnectError(err.message || t('payment.onboardingError'));
       setConnectLoading(false);
+    }
+  };
+
+  const handleCreateAsaasSubaccount = async () => {
+    if (!currentTenant?.id) return;
+    const digits = asaasForm.cpfCnpj.replace(/\D/g, '');
+    if (digits.length !== 11 && digits.length !== 14) {
+      setConnectError('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.');
+      return;
+    }
+    setAsaasSubmitting(true);
+    setConnectError(null);
+    setAsaasNotice(null);
+    try {
+      const result = await asaasSubaccountService.create({
+        tenantId: currentTenant.id,
+        name: currentTenant.name,
+        email: asaasForm.email,
+        cpfCnpj: digits,
+        mobilePhone: asaasForm.mobilePhone,
+        incomeValue: parseFloat(asaasForm.incomeValue) || 0,
+        address: asaasForm.address,
+        addressNumber: asaasForm.addressNumber,
+        province: asaasForm.province,
+        postalCode: asaasForm.postalCode,
+        complement: asaasForm.complement || undefined,
+        birthDate: digits.length === 11 ? (asaasForm.birthDate || undefined) : undefined,
+      });
+      setAsaasNotice(result.evaluation_notice || 'Conta de recebimento criada com sucesso.');
+      await refreshTenants();
+    } catch (err: any) {
+      setConnectError(err.message || 'Erro ao criar a conta de recebimento.');
+    } finally {
+      setAsaasSubmitting(false);
     }
   };
 
@@ -1314,8 +1358,117 @@ const Settings: React.FC = () => {
           </div>
         )}
 
-        {/* ── Pagamentos (Stripe Connect) ────────────────────────────────── */}
-        {activeTab === 'payments' && (
+        {/* ── Pagamentos (Asaas p/ Brasil, Stripe Connect internacional) ─── */}
+        {activeTab === 'payments' && resolvePaymentProviderId(currentTenant as any) === 'asaas' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Conta de Recebimento (Asaas)</h2>
+              <p className="text-sm text-slate-500 mt-1">Para receber as mensalidades dos alunos por PIX, boleto e cartão diretamente na conta do clube.</p>
+            </div>
+
+            {connectError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                {connectError}
+              </div>
+            )}
+
+            {currentTenant?.asaas_subaccount_id ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 rounded-xl border border-green-200 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <Check className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-800">Conta de recebimento ativa</p>
+                      <p className="text-sm text-slate-500">As mensalidades caem direto na conta do seu clube no Asaas.</p>
+                    </div>
+                  </div>
+                </div>
+                {asaasNotice && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">{asaasNotice}</div>
+                )}
+                <div className="bg-white rounded-xl border border-slate-200 p-5 text-sm text-slate-600 space-y-2">
+                  <p>💰 <strong>Saques:</strong> feitos diretamente no painel do Asaas do seu clube — você recebeu um e-mail de boas-vindas do Asaas com o acesso.</p>
+                  <p>🏦 O Aura não movimenta nem retém o dinheiro das suas mensalidades.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4 max-w-2xl">
+                <p className="text-sm text-slate-600">
+                  Preencha os dados para criar a conta de recebimento do clube. O Asaas enviará um e-mail de boas-vindas com o acesso ao painel próprio para saques.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">E-mail *</label>
+                    <input type="email" value={asaasForm.email} onChange={e => setAsaasForm(p => ({ ...p, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="clube@email.com" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">CPF ou CNPJ *</label>
+                    <input value={asaasForm.cpfCnpj} onChange={e => setAsaasForm(p => ({ ...p, cpfCnpj: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="00.000.000/0000-00" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Celular (com DDD) *</label>
+                    <input value={asaasForm.mobilePhone} onChange={e => setAsaasForm(p => ({ ...p, mobilePhone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="(00) 00000-0000" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Faturamento mensal (R$) *</label>
+                    <input type="number" step="0.01" min="0" value={asaasForm.incomeValue} onChange={e => setAsaasForm(p => ({ ...p, incomeValue: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="5000" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Data de nascimento (se CPF)</label>
+                    <input type="date" value={asaasForm.birthDate} onChange={e => setAsaasForm(p => ({ ...p, birthDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">CEP *</label>
+                    <input value={asaasForm.postalCode} onChange={e => setAsaasForm(p => ({ ...p, postalCode: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="00000-000" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Bairro *</label>
+                    <input value={asaasForm.province} onChange={e => setAsaasForm(p => ({ ...p, province: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Endereço (rua) *</label>
+                    <input value={asaasForm.address} onChange={e => setAsaasForm(p => ({ ...p, address: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Número *</label>
+                    <input value={asaasForm.addressNumber} onChange={e => setAsaasForm(p => ({ ...p, addressNumber: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Complemento</label>
+                    <input value={asaasForm.complement} onChange={e => setAsaasForm(p => ({ ...p, complement: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                  </div>
+                </div>
+                <button
+                  onClick={handleCreateAsaasSubaccount}
+                  disabled={asaasSubmitting}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-60 transition"
+                >
+                  {asaasSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  Criar conta de recebimento
+                </button>
+                <p className="text-xs text-slate-400">
+                  Durante o período de avaliação regulatória (até 60 dias), o Asaas pode aplicar limites de cobrança por conta. Isso é normal e temporário.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Pagamentos (Stripe Connect — internacional) ────────────────── */}
+        {activeTab === 'payments' && resolvePaymentProviderId(currentTenant as any) === 'stripe' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-slate-800">{t('payment.title')}</h2>

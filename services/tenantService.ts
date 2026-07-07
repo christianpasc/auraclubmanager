@@ -22,6 +22,12 @@ export interface Tenant {
     // Market routing: 'asaas' (Brazil) or 'stripe' (international); NULL falls
     // back to country-based resolution (services/payment/index.ts)
     payment_provider?: 'stripe' | 'asaas' | null;
+    // Asaas root-account billing (Aura → club) and subaccount (club → members)
+    asaas_customer_id?: string | null;
+    asaas_subscription_id?: string | null;
+    asaas_subaccount_id?: string | null;
+    asaas_wallet_id?: string | null;
+    asaas_charges_enabled?: boolean;
 }
 
 export interface TenantUser {
