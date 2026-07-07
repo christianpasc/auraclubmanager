@@ -144,6 +144,29 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Resposta inesperada do Asaas ao criar a conta." }, 502);
     }
 
+    // Register the payment webhook on the new subaccount so member-payment
+    // events reach asaas-webhook. Best-effort: a failure here must not undo the
+    // account creation (the webhook can be reconfigured later).
+    try {
+      const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/asaas-webhook`;
+      const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+      await fetch(`${baseUrl}/webhooks`, {
+        method: "POST",
+        headers: { access_token: asaas.apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Aura Club Manager",
+          url: webhookUrl,
+          enabled: true,
+          interrupted: false,
+          authToken: webhookToken || undefined,
+          sendType: "SEQUENTIALLY",
+          events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"],
+        }),
+      });
+    } catch (e) {
+      console.error("subaccount webhook registration failed (non-fatal):", (e as any)?.message || e);
+    }
+
     // Encrypt the one-time apiKey before persisting; never log/return it.
     const key = await importAesKey(encKeyB64);
     const encrypted = await encryptSecret(asaas.apiKey, key);
