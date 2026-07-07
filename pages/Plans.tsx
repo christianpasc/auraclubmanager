@@ -7,6 +7,9 @@ import { useTenant } from '../contexts/TenantContext';
 import { subscriptionService } from '../services/subscriptionService';
 import { adminPlanService, StripePlan, PlanLanguage } from '../services/adminPlanService';
 import { stripeConfig, createCheckoutSession } from '../lib/stripe';
+import { createAsaasCheckout } from '../lib/asaas';
+import { resolvePaymentProviderId } from '../services/payment';
+import { useAuth } from '../contexts/AuthContext';
 
 type IntervalFilter = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'all';
 
@@ -46,12 +49,22 @@ const Plans: React.FC = () => {
     const { language } = useLanguage();
     const { subscriptionInfo, refreshSubscription } = useSubscription();
     const { currentTenant } = useTenant();
+    const { user } = useAuth();
     const [plans, setPlans] = useState<StripePlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [subscribing, setSubscribing] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [intervalFilter, setIntervalFilter] = useState<IntervalFilter>('monthly');
+
+    // Payment provider for this club (Brazil → Asaas, else Stripe)
+    const providerId = resolvePaymentProviderId(currentTenant as any);
+    const isAsaas = providerId === 'asaas';
+
+    // Asaas needs the payer's CPF/CNPJ before opening the hosted invoice.
+    const [asaasModal, setAsaasModal] = useState<StripePlan | null>(null);
+    const [cpfCnpj, setCpfCnpj] = useState('');
+    const [payerEmail, setPayerEmail] = useState('');
 
     const getText = (pt: string, en: string, es: string, fr?: string, ptPT?: string) => {
         if (language === 'en-US') return en;
@@ -166,9 +179,22 @@ const Plans: React.FC = () => {
             alert(getText('Erro: Nenhum clube selecionado', 'Error: No club selected', 'Error: Ningún club seleccionado', 'Erreur : Aucun club sélectionné', 'Erro: Nenhum clube selecionado'));
             return;
         }
+        setErrorMessage(null);
 
+        // Asaas (Brazil): needs a BRL price + the payer's CPF/CNPJ → open modal.
+        if (isAsaas) {
+            if (plan.price_brl == null) {
+                setErrorMessage('Este plano ainda não está disponível para compra no Brasil.');
+                return;
+            }
+            setPayerEmail(user?.email || '');
+            setCpfCnpj('');
+            setAsaasModal(plan);
+            return;
+        }
+
+        // Stripe (international)
         const priceId = stripeConfig.getPriceId(plan);
-
         if (!priceId) {
             setErrorMessage(getText(
                 'Este plano não está disponível para compra no momento. Entre em contato com o suporte.',
@@ -182,7 +208,6 @@ const Plans: React.FC = () => {
 
         try {
             setSubscribing(plan.id!);
-            setErrorMessage(null);
             const result = await createCheckoutSession(plan.id!, currentTenant.id, language);
             if (result?.url) {
                 window.location.href = result.url;
@@ -197,6 +222,25 @@ const Plans: React.FC = () => {
                 'Erreur lors de la création de la session de paiement. Veuillez réessayer.',
                 'Erro ao criar a sessão de pagamento. Tente novamente.'
             ));
+            setSubscribing(null);
+        }
+    };
+
+    const confirmAsaasCheckout = async () => {
+        if (!asaasModal || !currentTenant?.id) return;
+        const digits = cpfCnpj.replace(/\D/g, '');
+        if (digits.length !== 11 && digits.length !== 14) {
+            setErrorMessage('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.');
+            return;
+        }
+        try {
+            setSubscribing(asaasModal.id!);
+            setErrorMessage(null);
+            const result = await createAsaasCheckout(asaasModal.id!, currentTenant.id, digits, payerEmail, currentTenant.name);
+            setAsaasModal(null);
+            window.location.href = result.url;
+        } catch (error: any) {
+            setErrorMessage(error.message || 'Erro ao criar a cobrança. Tente novamente.');
             setSubscribing(null);
         }
     };
@@ -374,10 +418,14 @@ const Plans: React.FC = () => {
                                 </p>
                             )}
 
-                            {/* Price with dynamic currency */}
+                            {/* Price — BRL for Brazil (Asaas), plan currency otherwise */}
                             <div className="flex items-baseline gap-1 mb-6">
                                 <span className="text-3xl font-bold text-slate-800">
-                                    {formatPrice(Number(plan.price), (plan as any).currency || 'brl', language)}
+                                    {isAsaas
+                                        ? (plan.price_brl != null
+                                            ? formatPrice(Number(plan.price_brl), 'brl', language)
+                                            : '—')
+                                        : formatPrice(Number(plan.price), (plan as any).currency || 'brl', language)}
                                 </span>
                                 <span className="text-slate-500 text-sm">{getIntervalLabel(plan.interval)}</span>
                             </div>
@@ -452,6 +500,55 @@ const Plans: React.FC = () => {
                     )}
                 </p>
             </div>
+
+            {/* Asaas checkout modal — collects the payer's CPF/CNPJ (Brazil) */}
+            {asaasModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!subscribing) setAsaasModal(null); }}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">{getPlanText(asaasModal.name_i18n, asaasModal.name)}</h3>
+                            <p className="text-sm text-slate-500 mt-0.5">
+                                {asaasModal.price_brl != null ? formatPrice(Number(asaasModal.price_brl), 'brl', language) : ''} {getIntervalLabel(asaasModal.interval)}
+                                {' · '}PIX, boleto ou cartão
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">CPF ou CNPJ do responsável pela cobrança *</label>
+                            <input
+                                value={cpfCnpj}
+                                onChange={e => setCpfCnpj(e.target.value)}
+                                placeholder="000.000.000-00"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">E-mail para a cobrança</label>
+                            <input
+                                type="email"
+                                value={payerEmail}
+                                onChange={e => setPayerEmail(e.target.value)}
+                                placeholder="email@exemplo.com"
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+
+                        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button onClick={() => setAsaasModal(null)} disabled={!!subscribing}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50">
+                                Cancelar
+                            </button>
+                            <button onClick={confirmAsaasCheckout} disabled={!!subscribing}
+                                className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-50">
+                                {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                Ir para o pagamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -15,6 +15,9 @@ export interface StripePlan {
     stripe_price_id_live?: string | null;
     interval: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
     price: number;
+    // BRL price for the Asaas rail (Brazil); `price`/`currency` remain the
+    // Stripe/international price. Null = plan can't be billed via Asaas yet.
+    price_brl?: number | null;
     currency: string;
     is_active: boolean;
     is_coming_soon: boolean;
@@ -68,6 +71,7 @@ export const adminPlanService = {
             p_features_i18n: JSON.stringify(plan.features_i18n || {}),
             p_features_school_i18n: JSON.stringify(plan.features_school_i18n || {}),
             p_features_club_i18n: JSON.stringify(plan.features_club_i18n || {}),
+            p_price_brl: plan.price_brl ?? null,
         });
         if (error) throw error;
         return data as StripePlan;
@@ -82,6 +86,8 @@ export const adminPlanService = {
         if (plan.stripe_price_id_live !== undefined) params.p_stripe_price_id_live = plan.stripe_price_id_live;
         if (plan.interval !== undefined) params.p_interval = plan.interval;
         if (plan.price !== undefined) params.p_price = plan.price;
+        if (plan.price_brl !== undefined) params.p_price_brl = plan.price_brl ?? null;
+        else params.p_price_brl = -1;
         if (plan.currency !== undefined) params.p_currency = plan.currency;
         if (plan.is_active !== undefined) params.p_is_active = plan.is_active;
         if (plan.features !== undefined) params.p_features = JSON.stringify(plan.features);

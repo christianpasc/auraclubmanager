@@ -40,6 +40,7 @@ interface PlanFormData {
     stripe_price_id_live: string;
     interval: 'monthly' | 'quarterly' | 'yearly' | 'lifetime';
     price: string;
+    price_brl: string;
     currency: string;
     is_active: boolean;
     is_coming_soon: boolean;
@@ -72,6 +73,7 @@ const emptyForm: PlanFormData = {
     stripe_price_id_live: '',
     interval: 'monthly',
     price: '',
+    price_brl: '',
     currency: 'brl',
     is_active: true,
     is_coming_soon: false,
@@ -179,6 +181,7 @@ const AdminPlans: React.FC = () => {
             stripe_price_id_live: plan.stripe_price_id_live || '',
             interval: plan.interval,
             price: plan.price.toString(),
+            price_brl: plan.price_brl != null ? plan.price_brl.toString() : '',
             currency: plan.currency || 'brl',
             is_active: plan.is_active,
             is_coming_soon: plan.is_coming_soon || false,
@@ -261,6 +264,7 @@ const AdminPlans: React.FC = () => {
                 stripe_price_id_live: form.stripe_price_id_live || null,
                 interval: form.interval,
                 price: parseFloat(form.price) || 0,
+                price_brl: form.price_brl.trim() === '' ? null : (parseFloat(form.price_brl) || 0),
                 currency: form.currency,
                 is_active: form.is_active,
                 features: ptBrFeatures,
@@ -650,7 +654,7 @@ const AdminPlans: React.FC = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                        Preço (R$) *
+                                        Preço (internacional) *
                                     </label>
                                     <input
                                         type="number"
@@ -662,6 +666,22 @@ const AdminPlans: React.FC = () => {
                                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         placeholder="49.90"
                                     />
+                                    <p className="text-[11px] text-slate-400 mt-1">Cobrado via Stripe (internacional)</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                        Preço Asaas — BR (R$)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={form.price_brl}
+                                        onChange={(e) => setForm(prev => ({ ...prev, price_brl: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="97.00"
+                                    />
+                                    <p className="text-[11px] text-slate-400 mt-1">Cobrado via Asaas (Brasil). Vazio = indisponível no BR.</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">
