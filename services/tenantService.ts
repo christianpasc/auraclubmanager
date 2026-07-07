@@ -19,6 +19,9 @@ export interface Tenant {
     stripe_connect_charges_enabled?: boolean;
     stripe_connect_payouts_enabled?: boolean;
     stripe_connect_currency?: string;
+    // Market routing: 'asaas' (Brazil) or 'stripe' (international); NULL falls
+    // back to country-based resolution (services/payment/index.ts)
+    payment_provider?: 'stripe' | 'asaas' | null;
 }
 
 export interface TenantUser {

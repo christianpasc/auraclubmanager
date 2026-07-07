@@ -1,5 +1,7 @@
 export type ConnectCurrency = 'GBP' | 'EUR' | 'USD' | 'BRL' | 'CAD' | 'AUD' | 'CHF' | 'MXN' | 'ARS' | 'COP';
 
+export type PaymentProviderId = 'stripe' | 'asaas';
+
 export interface ConnectAccountStatus {
   accountId: string | null;
   chargesEnabled: boolean;
