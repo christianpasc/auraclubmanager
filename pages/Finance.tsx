@@ -16,7 +16,7 @@ import { monthlyFeeService, MonthlyFee } from '../services/monthlyFeeService';
 import { storeService, Order, ORDER_STATUS_LABELS } from '../services/storeService';
 import { facilityService, Booking, BOOKING_STATUS_LABELS } from '../services/facilityService';
 import { invoiceService, Invoice } from '../services/invoiceService';
-import { paymentProvider } from '../services/payment';
+import { getPaymentProvider, resolvePaymentProviderId } from '../services/payment';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 
@@ -155,7 +155,12 @@ const Finance: React.FC = () => {
   const [refundConfirm, setRefundConfirm] = useState<{ open: boolean; invoice: Invoice | null }>({ open: false, invoice: null });
   const [cancelConfirm, setCancelConfirm] = useState<{ open: boolean; invoice: Invoice | null }>({ open: false, invoice: null });
 
-  const stripeActive = !!(currentTenant?.stripe_connect_charges_enabled && currentTenant?.stripe_connect_payouts_enabled);
+  // Which online payment rail this club uses, and whether it can charge members.
+  const providerId = resolvePaymentProviderId(currentTenant as any);
+  const isAsaas = providerId === 'asaas';
+  const stripeActive = isAsaas
+    ? !!currentTenant?.asaas_charges_enabled
+    : !!(currentTenant?.stripe_connect_charges_enabled && currentTenant?.stripe_connect_payouts_enabled);
 
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ type: '', category: '', status: '' });
@@ -343,7 +348,7 @@ const Finance: React.FC = () => {
     setStripeActionMsg(null);
     try {
       const baseUrl = window.location.origin + window.location.pathname;
-      const result = await paymentProvider.createCheckoutSession({
+      const result = await getPaymentProvider(currentTenant as any).createCheckoutSession({
         mode: 'subscription',
         tenantId: currentTenant.id,
         invoiceId: invoice.id,
@@ -359,7 +364,8 @@ const Finance: React.FC = () => {
 
   const handleCopyPayLink = async (invoice: Invoice) => {
     if (!invoice.id) return;
-    const payUrl = `${window.location.origin}/#/pay/${invoice.id}`;
+    // Asaas exposes its own hosted invoice page; Stripe uses our /pay page.
+    const payUrl = invoice.asaas_invoice_url || `${window.location.origin}/#/pay/${invoice.id}`;
     try {
       await navigator.clipboard.writeText(payUrl);
       setCopiedId(invoice.id);
@@ -392,13 +398,14 @@ const Finance: React.FC = () => {
 
   const handleRefund = async () => {
     const invoice = refundConfirm.invoice;
-    if (!invoice?.id || !invoice.stripe_payment_intent_id || !currentTenant?.id) return;
+    const paymentId = isAsaas ? invoice?.asaas_payment_id : invoice?.stripe_payment_intent_id;
+    if (!invoice?.id || !paymentId || !currentTenant?.id) return;
     setRefundLoadingId(invoice.id);
     setRefundConfirm({ open: false, invoice: null });
     try {
-      await paymentProvider.refundPayment({
+      await getPaymentProvider(currentTenant as any).refundPayment({
         tenantId: currentTenant.id,
-        paymentIntentId: invoice.stripe_payment_intent_id,
+        paymentIntentId: paymentId,
       });
       await invoiceService.updateStatus(invoice.id, 'pending');
       setStripeActionMsg({ type: 'ok', text: t('payment.actionSuccess') });
@@ -412,13 +419,14 @@ const Finance: React.FC = () => {
 
   const handleCancelSubscription = async () => {
     const invoice = cancelConfirm.invoice;
-    if (!invoice?.id || !invoice.stripe_subscription_id || !currentTenant?.id) return;
+    const subscriptionId = isAsaas ? invoice?.asaas_subscription_id : invoice?.stripe_subscription_id;
+    if (!invoice?.id || !subscriptionId || !currentTenant?.id) return;
     setCancelLoadingId(invoice.id);
     setCancelConfirm({ open: false, invoice: null });
     try {
-      await paymentProvider.cancelSubscription({
+      await getPaymentProvider(currentTenant as any).cancelSubscription({
         tenantId: currentTenant.id,
-        subscriptionId: invoice.stripe_subscription_id,
+        subscriptionId: subscriptionId,
       });
       setStripeActionMsg({ type: 'ok', text: t('payment.actionSuccess') });
       await loadAll();
@@ -776,7 +784,7 @@ const Finance: React.FC = () => {
               onClick={() => setFeesView('stripe')}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all relative ${feesView === 'stripe' ? 'text-primary' : 'text-slate-500 hover:text-slate-800'}`}
             >
-              <CreditCard className="w-4 h-4" /> {t('finance.stripePayments')} ({feesTabInvoices.length})
+              <CreditCard className="w-4 h-4" /> {isAsaas ? 'Pagamentos Asaas' : t('finance.stripePayments')} ({feesTabInvoices.length})
               {feesView === 'stripe' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />}
             </button>
           </div>
@@ -837,7 +845,9 @@ const Finance: React.FC = () => {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               {!stripeActive && (
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{t('payment.stripeNotActive')}</span>
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    {isAsaas ? 'Conta de recebimento do clube ainda não está ativa.' : t('payment.stripeNotActive')}
+                  </span>
                 </div>
               )}
               <div className="overflow-x-auto">
@@ -882,7 +892,7 @@ const Finance: React.FC = () => {
                                     {checkoutLoadingId === inv.id
                                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                       : <CreditCard className="w-3.5 h-3.5" />}
-                                    {checkoutLoadingId === inv.id ? t('payment.checkoutLoading') : t('payment.chargeViaStripe')}
+                                    {checkoutLoadingId === inv.id ? t('payment.checkoutLoading') : (isAsaas ? 'Cobrar via Asaas' : t('payment.chargeViaStripe'))}
                                   </button>
                                   <button
                                     onClick={() => handleCopyPayLink(inv)}
@@ -901,7 +911,7 @@ const Finance: React.FC = () => {
                                   </button>
                                 </>
                               )}
-                              {inv.status === 'paid' && inv.stripe_payment_intent_id && (
+                              {inv.status === 'paid' && (isAsaas ? inv.asaas_payment_id : inv.stripe_payment_intent_id) && (
                                 <button
                                   onClick={() => setRefundConfirm({ open: true, invoice: inv })}
                                   disabled={refundLoadingId === inv.id}
@@ -913,7 +923,7 @@ const Finance: React.FC = () => {
                                   {t('payment.refund')}
                                 </button>
                               )}
-                              {inv.stripe_subscription_id && inv.status !== 'cancelled' && (
+                              {(isAsaas ? inv.asaas_subscription_id : inv.stripe_subscription_id) && inv.status !== 'cancelled' && (
                                 <button
                                   onClick={() => setCancelConfirm({ open: true, invoice: inv })}
                                   disabled={cancelLoadingId === inv.id}

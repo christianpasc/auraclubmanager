@@ -29,33 +29,45 @@ const invoke = async <T>(fn: string, body: object): Promise<T> => {
 };
 
 const NOT_READY =
-  'Pagamentos via Asaas ainda não estão habilitados nesta etapa. Em breve sua escolinha poderá cobrar por PIX, boleto e cartão.';
+  'Esta operação não está disponível para contas Asaas.';
 
 export const asaasProvider: PaymentProvider = {
-  // Fase 3: creates the club's Asaas subaccount (POST /v3/accounts) and stores
-  // id + encrypted apiKey + walletId. Until then, fail loudly and clearly.
+  // Not used by the Asaas UI: the subaccount is created via the dedicated form
+  // in Settings (asaas-create-subaccount), not this Stripe-style onboarding link.
   async createOnboardingLink(_tenantId, _returnUrl, _refreshUrl): Promise<OnboardingLinkResult> {
     throw new Error(NOT_READY);
   },
 
-  // Fase 4: maps a school_plan onto an Asaas recurring charge template.
+  // Not used: Asaas charges carry the value inline; no pre-synced price object.
   async syncPlan(_planId, _tenantId): Promise<SyncPlanResult> {
     throw new Error(NOT_READY);
   },
 
-  // Fase 4: member charges (PIX/boleto/cartão) on the club's subaccount.
-  async createCheckoutSession(_params: CheckoutParams): Promise<CheckoutResult> {
-    throw new Error(NOT_READY);
+  // Fase 4: member charge (PIX/boleto/cartão) on the club's subaccount.
+  async createCheckoutSession(params: CheckoutParams): Promise<CheckoutResult> {
+    if (!params.invoiceId) throw new Error('Fatura não informada.');
+    const data = await invoke<{ url: string; session_id: string }>('asaas-club-checkout', {
+      tenant_id: params.tenantId,
+      invoice_id: params.invoiceId,
+    });
+    if (!data?.url) throw new Error('URL de pagamento não retornada.');
+    return data;
   },
 
-  // Fase 4.
-  async refundPayment(_params): Promise<RefundResult> {
-    throw new Error(NOT_READY);
+  // Fase 4: paymentIntentId carries the Asaas payment id (interface is generic).
+  async refundPayment(params): Promise<RefundResult> {
+    return invoke<RefundResult>('asaas-club-refund', {
+      tenant_id: params.tenantId,
+      payment_id: params.paymentIntentId,
+    });
   },
 
-  // Fase 4.
-  async cancelSubscription(_params): Promise<void> {
-    throw new Error(NOT_READY);
+  // Fase 4: subscriptionId carries the Asaas subscription id.
+  async cancelSubscription(params): Promise<void> {
+    await invoke<void>('asaas-club-cancel-subscription', {
+      tenant_id: params.tenantId,
+      subscription_id: params.subscriptionId,
+    });
   },
 };
 

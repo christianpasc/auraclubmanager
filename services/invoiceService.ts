@@ -16,6 +16,9 @@ export interface Invoice {
   stripe_subscription_id?: string | null;
   stripe_checkout_session_id?: string | null;
   stripe_payment_intent_id?: string | null;
+  asaas_payment_id?: string | null;
+  asaas_subscription_id?: string | null;
+  asaas_invoice_url?: string | null;
   paid_at?: string | null;
   created_at?: string;
   updated_at?: string;
