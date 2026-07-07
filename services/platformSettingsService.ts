@@ -11,9 +11,16 @@ export interface MaintenanceSetting {
     message: string;
 }
 
+// Asaas NFS-e (nota fiscal de serviço) issuance — off by default until the
+// municipal service configuration is set up in Asaas. See asaas-nfse fn.
+export interface AsaasNfseSetting {
+    enabled: boolean;
+}
+
 export const PLATFORM_SETTING_KEYS = {
     CHAT_WIDGET: 'chat_widget',
     MAINTENANCE: 'maintenance',
+    ASAAS_NFSE: 'asaas_nfse',
 } as const;
 
 export const platformSettingsService = {

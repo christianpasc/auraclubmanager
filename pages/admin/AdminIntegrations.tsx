@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, CheckCircle2, XCircle, HelpCircle, CreditCard, Mail } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, HelpCircle, CreditCard, Mail, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
+import { getAsaasStatus, AsaasStatus } from '../../services/payment';
+import { asaasNfseService } from '../../services/asaasNfseService';
 
 interface IntegrationsStatus {
     stripe: { test: boolean; live: boolean; webhook_test: boolean; webhook_live: boolean };
@@ -31,6 +33,9 @@ const AdminIntegrations: React.FC = () => {
     const [status, setStatus] = useState<IntegrationsStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [unreachable, setUnreachable] = useState(false);
+    const [asaas, setAsaas] = useState<AsaasStatus | null>(null);
+    const [nfseEnabled, setNfseEnabled] = useState(false);
+    const [nfseSaving, setNfseSaving] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -47,7 +52,20 @@ const AdminIntegrations: React.FC = () => {
                 setLoading(false);
             }
         })();
+        getAsaasStatus().then(setAsaas).catch(() => setAsaas(null));
+        asaasNfseService.isEnabled().then(setNfseEnabled).catch(() => {});
     }, []);
+
+    const toggleNfse = async () => {
+        setNfseSaving(true);
+        try {
+            const next = !nfseEnabled;
+            await asaasNfseService.setEnabled(next);
+            setNfseEnabled(next);
+        } finally {
+            setNfseSaving(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -101,6 +119,33 @@ const AdminIntegrations: React.FC = () => {
                 </div>
                 <div className="divide-y divide-slate-100">
                     <StatusRow label="Chave de API" ok={status?.resend.configured ?? null} />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-sm font-bold text-slate-700">Asaas (Brasil)</h3>
+                </div>
+                <div className="divide-y divide-slate-100">
+                    <StatusRow label={`Conta-raiz (${asaas?.env || '—'})`} ok={asaas ? asaas.connected : null} />
+                </div>
+
+                <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <div>
+                            <p className="text-sm font-medium text-slate-700">Emissão de NFS-e</p>
+                            <p className="text-xs text-slate-400">Desligado por padrão. Requer configuração fiscal municipal na conta do clube.</p>
+                        </div>
+                    </div>
+                    <button onClick={toggleNfse} disabled={nfseSaving} title={nfseEnabled ? 'Desativar' : 'Ativar'}>
+                        {nfseSaving
+                            ? <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                            : nfseEnabled
+                                ? <ToggleRight className="w-8 h-8 text-green-500" />
+                                : <ToggleLeft className="w-8 h-8 text-slate-300" />}
+                    </button>
                 </div>
             </div>
         </div>
