@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { asaasModeHeader } from './asaasConfig';
 
 // Asaas SaaS-billing client (Aura charging a BR club its plan). Mirrors the
 // role of lib/stripe.ts's createCheckoutSession, but the hosted invoice URL
@@ -13,6 +14,7 @@ export async function createAsaasCheckout(
 ): Promise<{ url: string }> {
     const { data, error } = await supabase.functions.invoke('asaas-create-checkout', {
         body: { plan_id: planId, tenant_id: tenantId, cpf_cnpj: cpfCnpj, email, name },
+        headers: asaasModeHeader(),
     });
     if (error) {
         let msg = data?.error || error.message || 'Erro ao criar a cobrança.';

@@ -48,9 +48,9 @@ Deno.serve(async (req: Request) => {
       return json({ enabled: false, message: "A emissão de NFS-e está desativada." });
     }
 
-    const env = (Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
+    const mode = (req.headers.get("x-asaas-mode") || Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
+    const baseUrl = ["production", "prod", "live"].includes(mode) ? ASAAS_BASE_URLS.production : ASAAS_BASE_URLS.sandbox;
     const encKeyB64 = Deno.env.get("ASAAS_ENCRYPTION_KEY");
-    const baseUrl = ASAAS_BASE_URLS[env] || ASAAS_BASE_URLS.sandbox;
     if (!encKeyB64) return json({ error: "Chave de criptografia não configurada." }, 500);
 
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");

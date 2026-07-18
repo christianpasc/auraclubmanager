@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { asaasModeHeader } from '../lib/asaasConfig';
 
 export interface CreateSubaccountInput {
     tenantId: string;
@@ -27,6 +28,7 @@ export interface CreateSubaccountResult {
 export const asaasSubaccountService = {
     async create(input: CreateSubaccountInput): Promise<CreateSubaccountResult> {
         const { data, error } = await supabase.functions.invoke('asaas-create-subaccount', {
+            headers: asaasModeHeader(),
             body: {
                 tenant_id: input.tenantId,
                 name: input.name,

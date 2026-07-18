@@ -2,9 +2,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
 // Asaas root-account connectivity check (Fase 1). Super-admin only.
-// Secrets expected (Supabase edge function secrets — never in code):
-//   ASAAS_ENV      = 'sandbox' | 'production' (defaults to sandbox)
-//   ASAAS_API_KEY  = root-account API key for that environment
+// Environment is chosen per-request by the x-asaas-mode header (sent from the
+// client based on hostname: localhost → sandbox, else production), so both
+// keys can live side by side with no secret swapping. Secrets:
+//   ASAAS_API_KEY_SANDBOX / ASAAS_API_KEY_PROD  (preferred, per environment)
+//   ASAAS_API_KEY + ASAAS_ENV                   (legacy single-key fallback)
 // Verifies the key by calling GET /v3/finance/balance on the chosen base URL.
 
 const corsHeaders = {
@@ -23,6 +25,20 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Per-request environment: x-asaas-mode header wins (client picks by hostname),
+// then legacy ASAAS_ENV. Root key comes from the mode-specific secret, falling
+// back to the single ASAAS_API_KEY for backward compatibility.
+function resolveAsaas(req: Request): { env: string; baseUrl: string; rootKey: string | undefined } {
+  const mode = (req.headers.get("x-asaas-mode") || Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
+  const production = mode === "production" || mode === "prod" || mode === "live";
+  const env = production ? "production" : "sandbox";
+  const baseUrl = production ? ASAAS_BASE_URLS.production : ASAAS_BASE_URLS.sandbox;
+  const rootKey = production
+    ? (Deno.env.get("ASAAS_API_KEY_PROD") || Deno.env.get("ASAAS_API_KEY"))
+    : (Deno.env.get("ASAAS_API_KEY_SANDBOX") || Deno.env.get("ASAAS_API_KEY"));
+  return { env, baseUrl, rootKey };
 }
 
 Deno.serve(async (req: Request) => {
@@ -45,12 +61,10 @@ Deno.serve(async (req: Request) => {
       .single();
     if (!profile?.is_super_admin) return json({ error: "Unauthorized: not a super admin" }, 403);
 
-    const env = (Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
-    const apiKey = Deno.env.get("ASAAS_API_KEY");
-    const baseUrl = ASAAS_BASE_URLS[env] || ASAAS_BASE_URLS.sandbox;
+    const { env, baseUrl, rootKey: apiKey } = resolveAsaas(req);
 
     if (!apiKey) {
-      return json({ configured: false, env, connected: false, error: "ASAAS_API_KEY não configurada" });
+      return json({ configured: false, env, connected: false, error: `Chave da conta-raiz Asaas não configurada para ${env}` });
     }
 
     const res = await fetch(`${baseUrl}/finance/balance`, {

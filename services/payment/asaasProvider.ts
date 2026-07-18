@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { asaasModeHeader } from '../../lib/asaasConfig';
 import type {
   PaymentProvider,
   OnboardingLinkResult,
@@ -16,7 +17,7 @@ import type {
 // a clear pt-BR message instead of half-working.
 
 const invoke = async <T>(fn: string, body: object): Promise<T> => {
-  const { data, error } = await supabase.functions.invoke(fn, { body });
+  const { data, error } = await supabase.functions.invoke(fn, { body, headers: asaasModeHeader() });
   if (error) {
     let msg = error.message || `Error calling ${fn}`;
     try {

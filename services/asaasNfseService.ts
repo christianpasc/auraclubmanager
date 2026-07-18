@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { asaasModeHeader } from '../lib/asaasConfig';
 import { platformSettingsService, PLATFORM_SETTING_KEYS, AsaasNfseSetting } from './platformSettingsService';
 
 // NFS-e (nota fiscal de serviço) integration — disabled by default. The flag
@@ -19,6 +20,7 @@ export const asaasNfseService = {
     async issueForInvoice(tenantId: string, invoiceId: string, serviceDescription?: string): Promise<{ enabled: boolean; success?: boolean; nfse_id?: string; message?: string }> {
         const { data, error } = await supabase.functions.invoke('asaas-nfse', {
             body: { tenant_id: tenantId, invoice_id: invoiceId, service_description: serviceDescription },
+            headers: asaasModeHeader(),
         });
         if (error) {
             let msg = data?.error || error.message || 'Erro ao emitir NFS-e.';

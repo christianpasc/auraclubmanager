@@ -40,6 +40,18 @@ function today(offsetDays = 0): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Per-request environment via x-asaas-mode header (client picks by hostname),
+// with legacy ASAAS_ENV/ASAAS_API_KEY fallback. No secret swapping.
+function resolveAsaas(req: Request): { baseUrl: string; rootKey: string | undefined } {
+  const mode = (req.headers.get("x-asaas-mode") || Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
+  const production = mode === "production" || mode === "prod" || mode === "live";
+  const baseUrl = production ? ASAAS_BASE_URLS.production : ASAAS_BASE_URLS.sandbox;
+  const rootKey = production
+    ? (Deno.env.get("ASAAS_API_KEY_PROD") || Deno.env.get("ASAAS_API_KEY"))
+    : (Deno.env.get("ASAAS_API_KEY_SANDBOX") || Deno.env.get("ASAAS_API_KEY"));
+  return { baseUrl, rootKey };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -49,9 +61,7 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const env = (Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
-    const apiKey = Deno.env.get("ASAAS_API_KEY");
-    const baseUrl = ASAAS_BASE_URLS[env] || ASAAS_BASE_URLS.sandbox;
+    const { baseUrl, rootKey: apiKey } = resolveAsaas(req);
     if (!apiKey) return json({ error: "Integração Asaas não configurada." }, 500);
 
     // Authenticate + require membership of the target tenant
