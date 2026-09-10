@@ -11,6 +11,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import StatCard from '../components/StatCard';
+import OnboardingChecklist from '../components/OnboardingChecklist';
 import StatusBadge from '../components/StatusBadge';
 import { useTenant } from '../contexts/TenantContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -187,6 +188,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+
+      {/* Setup progress — hides itself once every step is done or the user dismisses it.
+          Athlete and enrollment counts come from the stats we already loaded. */}
+      <OnboardingChecklist
+        totalAthletes={stats?.totalAthletes || 0}
+        totalEnrollments={stats?.totalEnrollments || 0}
+      />
 
       {/* ── Row 1: KPI Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">

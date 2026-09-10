@@ -6,6 +6,7 @@ import { useTenant } from '../contexts/TenantContext';
 import { storageService } from '../services/storageService';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { buildCountryOptions } from '../constants/countries';
 import { tenantService, TenantUser } from '../services/tenantService';
 import { userService, UserProfile, NotificationSettings, DEFAULT_NOTIFICATION_SETTINGS } from '../services/userService';
 import { usePermissions } from '../hooks/usePermissions';
@@ -282,6 +283,27 @@ const Settings: React.FC = () => {
         if (hasNewLogo) window.location.reload();
       }, 1000);
 
+    } catch (err) {
+      setError(t('settings.errorSaving'));
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Currency is club-wide (tenants.settings.currency) so it survives a browser
+  // change and every member sees the same figures; setCurrency keeps the local copy.
+  const handleSaveDisplayCurrency = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      setCurrency(selectedCurrency);
+      if (currentTenant?.id) {
+        await tenantService.updateSettings(currentTenant.id, { currency: selectedCurrency });
+        await refreshTenants();
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1000);
     } catch (err) {
       setError(t('settings.errorSaving'));
       console.error(err);
@@ -591,68 +613,7 @@ const Settings: React.FC = () => {
     { id: 'payments',      icon: CreditCard, label: t('settings.tab.payments') },
   ];
 
-  const countryOptions = [
-    { value: 'Afghanistan',          label: t('country.Afghanistan') },
-    { value: 'Albania',              label: t('country.Albania') },
-    { value: 'Algeria',              label: t('country.Algeria') },
-    { value: 'Angola',               label: t('country.Angola') },
-    { value: 'Argentina',            label: t('country.Argentina') },
-    { value: 'Australia',            label: t('country.Australia') },
-    { value: 'Austria',              label: t('country.Austria') },
-    { value: 'Belgium',              label: t('country.Belgium') },
-    { value: 'Bolivia',              label: t('country.Bolivia') },
-    { value: 'Brazil',               label: t('country.Brazil') },
-    { value: 'Canada',               label: t('country.Canada') },
-    { value: 'Chile',                label: t('country.Chile') },
-    { value: 'China',                label: t('country.China') },
-    { value: 'Colombia',             label: t('country.Colombia') },
-    { value: 'Croatia',              label: t('country.Croatia') },
-    { value: 'Czech Republic',       label: t('country.Czech Republic') },
-    { value: 'Denmark',              label: t('country.Denmark') },
-    { value: 'Ecuador',              label: t('country.Ecuador') },
-    { value: 'Egypt',                label: t('country.Egypt') },
-    { value: 'England',              label: t('country.England') },
-    { value: 'France',               label: t('country.France') },
-    { value: 'Germany',              label: t('country.Germany') },
-    { value: 'Ghana',                label: t('country.Ghana') },
-    { value: 'Greece',               label: t('country.Greece') },
-    { value: 'Hungary',              label: t('country.Hungary') },
-    { value: 'India',                label: t('country.India') },
-    { value: 'Indonesia',            label: t('country.Indonesia') },
-    { value: 'Iran',                 label: t('country.Iran') },
-    { value: 'Ireland',              label: t('country.Ireland') },
-    { value: 'Israel',               label: t('country.Israel') },
-    { value: 'Italy',                label: t('country.Italy') },
-    { value: 'Japan',                label: t('country.Japan') },
-    { value: 'Kenya',                label: t('country.Kenya') },
-    { value: 'Mexico',               label: t('country.Mexico') },
-    { value: 'Morocco',              label: t('country.Morocco') },
-    { value: 'Netherlands',          label: t('country.Netherlands') },
-    { value: 'New Zealand',          label: t('country.New Zealand') },
-    { value: 'Nigeria',              label: t('country.Nigeria') },
-    { value: 'Norway',               label: t('country.Norway') },
-    { value: 'Paraguay',             label: t('country.Paraguay') },
-    { value: 'Peru',                 label: t('country.Peru') },
-    { value: 'Poland',               label: t('country.Poland') },
-    { value: 'Portugal',             label: t('country.Portugal') },
-    { value: 'Romania',              label: t('country.Romania') },
-    { value: 'Russia',               label: t('country.Russia') },
-    { value: 'Saudi Arabia',         label: t('country.Saudi Arabia') },
-    { value: 'Scotland',             label: t('country.Scotland') },
-    { value: 'Senegal',              label: t('country.Senegal') },
-    { value: 'Serbia',               label: t('country.Serbia') },
-    { value: 'South Africa',         label: t('country.South Africa') },
-    { value: 'South Korea',          label: t('country.South Korea') },
-    { value: 'Spain',                label: t('country.Spain') },
-    { value: 'Sweden',               label: t('country.Sweden') },
-    { value: 'Switzerland',          label: t('country.Switzerland') },
-    { value: 'Turkey',               label: t('country.Turkey') },
-    { value: 'Ukraine',              label: t('country.Ukraine') },
-    { value: 'United Arab Emirates', label: t('country.United Arab Emirates') },
-    { value: 'United States',        label: t('country.United States') },
-    { value: 'Uruguay',              label: t('country.Uruguay') },
-    { value: 'Venezuela',            label: t('country.Venezuela') },
-  ].sort((a, b) => a.label.localeCompare(b.label));
+  const countryOptions = buildCountryOptions(t);
 
   const SaveButton: React.FC<{ onClick: () => void; disabled?: boolean }> = ({ onClick, disabled }) => (
     <button
@@ -825,7 +786,7 @@ const Settings: React.FC = () => {
               </div>
               <div className="flex justify-end mt-3">
                 <SaveButton
-                  onClick={() => { setCurrency(selectedCurrency); }}
+                  onClick={handleSaveDisplayCurrency}
                   disabled={selectedCurrency === currency}
                 />
               </div>

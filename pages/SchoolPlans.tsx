@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Edit2, Trash2, Loader2, RefreshCw, Check, X, ToggleLeft, ToggleRight,
+  Plus, Edit2, Trash2, Loader2, RefreshCw, Check, X, ToggleLeft, ToggleRight, Tag,
 } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { schoolPlanService, SchoolPlan } from '../services/schoolPlanService';
@@ -150,7 +151,11 @@ const SchoolPlans: React.FC = () => {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
       ) : plans.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">{t('schoolPlans.noPlans')}</div>
+        <EmptyState
+          icon={Tag}
+          title={t('emptyState.schoolPlans.title')}
+          description={t('emptyState.schoolPlans.description')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.map(plan => (

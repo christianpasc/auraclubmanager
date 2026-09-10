@@ -48,27 +48,9 @@ const Login: React.FC = () => {
             }
             console.log('Login: SignIn successful.');
 
-            try {
-                const { tenantService } = await import('../../services/tenantService');
-                const tenants = await tenantService.getMyTenants();
-
-                if (tenants.length === 0) {
-                    console.log('No tenants found, creating default...');
-                    const defaultName = 'Meu Clube';
-                    const slug = tenantService.generateSlug(defaultName + '-' + Date.now());
-                    await tenantService.create({ name: defaultName, slug });
-                }
-
-
-            } catch (err: any) {
-                // If it's an AbortError, it might be due to component unmounting or navigation
-                // We should log it but not fail the login if we're authenticated
-                if (err.name === 'AbortError') {
-                    console.log('Tenant check/create aborted. This might happen if navigation occurred.');
-                } else {
-                    console.error('Error ensuring tenant exists:', err);
-                }
-            }
+            // Deliberately no tenant auto-creation here. A user without a tenant must
+            // reach the onboarding wizard (OnboardingGate in App.tsx), which is what
+            // creates the organization with the name and type the user actually picks.
 
             console.log('Login successful, verifying session...');
 

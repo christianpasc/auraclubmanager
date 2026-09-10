@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, MoreVertical, Edit2, Trash2, Loader2, X, ChevronDown, AlertTriangle } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
@@ -345,8 +346,19 @@ const Athletes: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {filteredAthletes.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                      {searchTerm || activeFiltersCount > 0 ? t('athletes.noAthletesFiltered') : t('athletes.noAthletes')}
+                    <td colSpan={6} className="p-0">
+                      {athletes.length === 0 ? (
+                        <EmptyState
+                          icon={UserPlus}
+                          title={t('emptyState.athletes.title')}
+                          description={t('emptyState.athletes.description')}
+                          action={{ label: t('emptyState.athletes.action'), to: '/athletes/new' }}
+                        />
+                      ) : (
+                        <div className="px-6 py-12 text-center text-slate-400">
+                          {t('athletes.noAthletesFiltered')}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (

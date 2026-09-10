@@ -6,6 +6,7 @@ import {
   Link2, Mail, Check,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import EmptyState from '../components/EmptyState';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
@@ -649,8 +650,18 @@ const Finance: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {filteredTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                      {anyTxFilterActive ? t('finance.noEntriesFiltered') : t('finance.noEntries')}
+                    <td colSpan={6} className="p-0">
+                      {anyTxFilterActive ? (
+                        <div className="px-6 py-12 text-center text-slate-400">
+                          {t('finance.noEntriesFiltered')}
+                        </div>
+                      ) : (
+                        <EmptyState
+                          icon={Wallet}
+                          title={t('emptyState.finance.title')}
+                          description={t('emptyState.finance.description')}
+                        />
+                      )}
                     </td>
                   </tr>
                 ) : filteredTransactions.map(tx => (

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FilePlus, UserCheck, Clock, AlertTriangle, Edit2, Trash2, Loader2, X, ChevronDown } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
+import { schoolPlanService } from '../services/schoolPlanService';
 import StatCard from '../components/StatCard';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -27,8 +29,15 @@ const Enrollments: React.FC = () => {
     isOpen: false, enrollment: null, loading: false
   });
 
+  // Drives the empty state: without an active plan the enrollment form has an
+  // empty plan selector, so we point the user at /school-plans first.
+  const [hasActivePlan, setHasActivePlan] = useState(true);
+
   useEffect(() => {
     loadEnrollments();
+    schoolPlanService.getActive()
+      .then(plans => setHasActivePlan(plans.length > 0))
+      .catch(err => console.error('Error checking school plans:', err));
   }, []);
 
   const loadEnrollments = async () => {
@@ -216,8 +225,24 @@ const Enrollments: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredEnrollments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    {searchTerm || activeFiltersCount > 0 ? t('enrollments.noEnrollmentsFiltered') : t('enrollments.noEnrollments')}
+                  <td colSpan={6} className="p-0">
+                    {enrollments.length === 0 ? (
+                      <EmptyState
+                        icon={FilePlus}
+                        title={t('emptyState.enrollments.title')}
+                        description={t('emptyState.enrollments.description')}
+                        action={hasActivePlan ? { label: t('emptyState.enrollments.action'), to: '/enrollments/new' } : undefined}
+                        prerequisite={hasActivePlan ? undefined : {
+                          note: t('emptyState.enrollments.needsPlan'),
+                          label: t('emptyState.enrollments.needsPlanAction'),
+                          to: '/school-plans',
+                        }}
+                      />
+                    ) : (
+                      <div className="px-6 py-12 text-center text-slate-400">
+                        {t('enrollments.noEnrollmentsFiltered')}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (

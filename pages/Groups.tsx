@@ -4,10 +4,11 @@ import { Plus, Search, Users, Pencil, Trash2, Loader2, UsersRound } from 'lucide
 import { groupService, Group } from '../services/groupService';
 import { seasonService, Season } from '../services/seasonService';
 import { useLanguage } from '../contexts/LanguageContext';
+import EmptyState from '../components/EmptyState';
 
 const Groups: React.FC = () => {
     const navigate = useNavigate();
-    const { language } = useLanguage();
+    const { language, t: tr } = useLanguage();
     const t = (pt: string, en: string) => language === 'en-US' ? en : pt;
 
     const [groups, setGroups] = useState<Group[]>([]);
@@ -79,13 +80,12 @@ const Groups: React.FC = () => {
             {loading ? (
                 <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
             ) : filtered.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
-                    <UsersRound className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="font-medium">{t('Nenhuma turma encontrada', 'No groups found')}</p>
-                    <button onClick={() => navigate('/groups/new')} className="mt-4 text-primary text-sm font-semibold hover:underline">
-                        {t('Criar primeira turma', 'Create first group')}
-                    </button>
-                </div>
+                <EmptyState
+                    icon={UsersRound}
+                    title={tr('emptyState.groups.title')}
+                    description={tr('emptyState.groups.description')}
+                    action={{ label: tr('emptyState.groups.action'), to: '/groups/new' }}
+                />
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.map(g => (

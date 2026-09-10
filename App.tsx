@@ -69,9 +69,10 @@ import AdminObservability from './pages/admin/AdminObservability';
 import AdminAudit from './pages/admin/AdminAudit';
 import AdminDeletionRequests from './pages/admin/AdminDeletionRequests';
 import AdminMaintenance from './pages/admin/AdminMaintenance';
-import { Wrench } from 'lucide-react';
+import { Wrench, Loader2 } from 'lucide-react';
 import { platformSettingsService, PLATFORM_SETTING_KEYS, MaintenanceSetting, ChatWidgetSetting } from './services/platformSettingsService';
-import Onboarding from './pages/Onboarding';
+import OnboardingWizard from './pages/onboarding/OnboardingWizard';
+import { isOnboardingComplete } from './services/onboardingService';
 import SchoolPlans from './pages/SchoolPlans';
 import FeatureGate from './components/FeatureGate';
 import { useAuth } from './contexts/AuthContext';
@@ -302,17 +303,37 @@ const ProtectedRoutes: React.FC = () => {
   );
 };
 
-// Renders Onboarding screen when user is logged in but has no tenant
+// Renders the onboarding wizard when the signed-in user has no organization yet,
+// or has one whose setup was never finished.
 const OnboardingGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const { tenants, loading: tenantLoading } = useTenant();
+  const { user, isSuperAdmin } = useAuth();
+  const { tenants, currentTenant, loading: tenantLoading } = useTenant();
+  // The wizard calls refreshTenants() as it goes, which flips tenantLoading back on.
+  // Showing the spinner again would unmount the wizard and lose the step in progress,
+  // so only the very first load is allowed to block.
+  const [everResolved, setEverResolved] = React.useState(false);
 
-  // Still loading — don't flash onboarding
-  if (tenantLoading) return <>{children}</>;
+  React.useEffect(() => {
+    if (!tenantLoading) setEverResolved(true);
+  }, [tenantLoading]);
 
-  // User is logged in and has NO tenant → show onboarding
-  if (user && tenants.length === 0) {
-    return <Onboarding />;
+  // Not signed in: let the routes render so ProtectedRoute can redirect to /login.
+  if (!user) return <>{children}</>;
+
+  // Super admins run the platform backoffice, which needs no organization of its
+  // own -- the wizard must never stand between them and /admin.
+  if (isSuperAdmin) return <>{children}</>;
+
+  if (tenantLoading && !everResolved) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (tenants.length === 0 || !isOnboardingComplete(currentTenant)) {
+    return <OnboardingWizard />;
   }
 
   return <>{children}</>;

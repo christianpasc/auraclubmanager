@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, Clock, AlertCircle, Download, CreditCard, Plus, Edit2, Trash2, Loader2, X, ChevronDown, Check } from 'lucide-react';
+import { Search, CheckCircle, Clock, AlertCircle, Download, CreditCard, Plus, Edit2, Trash2, Loader2, X, ChevronDown, Check, Receipt } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
 import { monthlyFeeService, MonthlyFee } from '../services/monthlyFeeService';
 import { useLanguage } from '../contexts/LanguageContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -305,8 +306,19 @@ const MonthlyFees: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredFees.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    {t('monthlyFees.noFees')}
+                  <td colSpan={6} className="p-0">
+                    {fees.length === 0 ? (
+                      <EmptyState
+                        icon={Receipt}
+                        title={t('emptyState.monthlyFees.title')}
+                        description={t('emptyState.monthlyFees.description')}
+                        action={{ label: t('emptyState.monthlyFees.action'), to: '/enrollments/new' }}
+                      />
+                    ) : (
+                      <div className="px-6 py-12 text-center text-slate-400">
+                        {t('monthlyFees.noFees')}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
