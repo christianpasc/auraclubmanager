@@ -37,6 +37,21 @@ function endsAtFor(interval: string): string | null {
 
 type Admin = ReturnType<typeof createClient>;
 
+// payments.method is constrained to a fixed set, so the Asaas billingType has
+// to be mapped onto it. Writing the raw value made every non-PIX payment fail
+// its insert while the invoice still went to paid.
+function paymentMethodFor(billingType: unknown): string {
+  switch (String(billingType || "").toUpperCase()) {
+    case "PIX": return "pix";
+    case "BOLETO": return "boleto";
+    case "CREDIT_CARD":
+    case "DEBIT_CARD": return "card";
+    case "TRANSFER":
+    case "DEPOSIT": return "bank_transfer";
+    default: return "other";
+  }
+}
+
 // ── ROOT: Aura plan subscription (externalReference "tenant_id:plan_id") ──
 async function handlePlanPayment(admin: Admin, event: string, tenantId: string, planId: string | null) {
   if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
@@ -74,14 +89,22 @@ async function handleMemberPayment(admin: Admin, event: string, payment: any, in
     if (payment.id) {
       const { data: existing } = await admin.from("payments").select("id").eq("asaas_payment_id", payment.id).maybeSingle();
       if (!existing) {
-        await admin.from("payments").insert({
+        const { error: payErr } = await admin.from("payments").insert({
           tenant_id: invoice.tenant_id,
           invoice_id: invoice.id,
           amount: Number(payment.value ?? invoice.amount),
           paid_at: new Date().toISOString(),
-          method: (payment.billingType || "asaas").toString().toLowerCase(),
+          method: paymentMethodFor(payment.billingType),
           asaas_payment_id: payment.id,
         });
+        // Loud on failure: a dropped payments row means the club's books and
+        // the money received no longer agree, and the invoice already says paid.
+        if (payErr) {
+          console.error(
+            `asaas-webhook: FAILED to record payment ${payment.id} for invoice ${invoice.id}:`,
+            payErr.message,
+          );
+        }
       }
     }
   } else if (event === "PAYMENT_OVERDUE") {
@@ -89,8 +112,11 @@ async function handleMemberPayment(admin: Admin, event: string, payment: any, in
       await admin.from("invoices").update({ status: "overdue" }).eq("id", invoice.id);
     }
   } else if (event === "PAYMENT_REFUNDED") {
+    // 'cancelled', not 'pending': a refunded fee is not owed any more, and
+    // 'pending' would put it straight back into the receivables and reminders.
+    // The payments row stays as the audit trail of what actually happened.
     if (invoice.status === "paid") {
-      await admin.from("invoices").update({ status: "pending", paid_at: null }).eq("id", invoice.id);
+      await admin.from("invoices").update({ status: "cancelled", paid_at: null }).eq("id", invoice.id);
     }
   }
 }
@@ -99,11 +125,28 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const expectedToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    // Fail CLOSED. This endpoint runs with verify_jwt disabled and can mark
+    // invoices paid and flip a tenant to active, so an unset token must block
+    // every request rather than wave them through.
+    //
+    // Both Asaas environments post here and write to the same database, so the
+    // sandbox panel may use its OWN token (ASAAS_WEBHOOK_TOKEN_SANDBOX). That
+    // is what makes going live clean: delete that one secret and every sandbox
+    // event stops being accepted, without touching production. With only the
+    // main token configured, both panels share it and nothing changes.
+    const prodToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    const sandboxToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN_SANDBOX");
+    if (!prodToken && !sandboxToken) {
+      console.error("asaas-webhook: no webhook token configured — refusing all requests");
+      return json({ error: "Webhook not configured" }, 503);
+    }
     const gotToken = req.headers.get("asaas-access-token");
-    if (expectedToken && gotToken !== expectedToken) {
+    const isProdCaller = !!prodToken && gotToken === prodToken;
+    const isSandboxCaller = !!sandboxToken && gotToken === sandboxToken;
+    if (!isProdCaller && !isSandboxCaller) {
       return json({ error: "Invalid webhook token" }, 401);
     }
+    const callerEnv = isProdCaller ? "production" : "sandbox";
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -116,6 +159,9 @@ Deno.serve(async (req: Request) => {
     if (!payment) return json({ received: true });
 
     const ext = typeof payment.externalReference === "string" ? payment.externalReference : "";
+    // Logged so the sandbox run is visible in the function logs, and so a
+    // surprise sandbox event against live data is traceable afterwards.
+    console.log(`asaas-webhook [${callerEnv}] ${event} payment=${payment.id || "-"} ref=${ext || "-"}`);
 
     // Route by externalReference shape: "tenant:plan" → plan; UUID → invoice.
     if (ext.includes(":")) {
