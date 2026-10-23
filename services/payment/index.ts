@@ -21,7 +21,20 @@ import { asaasProvider } from './asaasProvider';
 // tenantService while accepting the real Tenant object at every call site.
 export interface PaymentRoutingTenant {
   payment_provider?: string | null;
+  country?: string | null;
   settings?: { country?: string } | null;
+}
+
+// Brazil arrives spelled two ways and from two places: the `tenants.country`
+// column holds the ISO code ('BR') while `settings.country` holds the signup
+// form's label ('Brazil'). Older rows have only one of the two, so we accept
+// either spelling from either source.
+const BRAZIL = new Set(['br', 'brazil', 'brasil']);
+
+function isBrazil(tenant: PaymentRoutingTenant): boolean {
+  return [tenant.country, tenant.settings?.country].some(
+    (value) => !!value && BRAZIL.has(value.trim().toLowerCase())
+  );
 }
 
 // Market routing: the explicit tenants.payment_provider column wins (set at
@@ -31,7 +44,7 @@ export interface PaymentRoutingTenant {
 export function resolvePaymentProviderId(tenant: PaymentRoutingTenant | null | undefined): PaymentProviderId {
   if (tenant?.payment_provider === 'asaas') return 'asaas';
   if (tenant?.payment_provider === 'stripe') return 'stripe';
-  return tenant?.settings?.country === 'Brazil' ? 'asaas' : 'stripe';
+  return tenant && isBrazil(tenant) ? 'asaas' : 'stripe';
 }
 
 export function getPaymentProvider(tenant: PaymentRoutingTenant | null | undefined): PaymentProvider {
