@@ -30,15 +30,12 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch notifications with profile emails
+    // Addresses live in auth.users, not in profiles — resolved by RPC.
     const { data: notifications, error } = await supabase
-      .from("notifications")
-      .select("id, user_id, title, body, profiles!user_id(email, full_name)")
-      .in("id", notificationIds)
-      .is("sent_at", null);
+      .rpc("get_notification_recipients", { p_ids: notificationIds });
 
     if (error || !notifications) {
-      console.error("Failed to fetch notifications:", error);
+      console.error("Failed to fetch notification recipients:", error);
       return new Response(JSON.stringify({ error: "Failed to fetch notifications" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,17 +45,16 @@ Deno.serve(async (req: Request) => {
     let sent = 0;
     const sentIds: string[] = [];
 
-    for (const notif of notifications) {
-      const profile = notif.profiles as any;
-      const email = profile?.email;
-      const name = profile?.full_name || "Atleta";
+    for (const notif of notifications as Array<Record<string, any>>) {
+      const email = notif.email;
+      const name = notif.full_name || "Atleta";
 
       if (!email) continue;
 
       if (resendApiKey) {
         // Send via Resend
         const emailBody = {
-          from: "Aura Club Manager <noreply@auraclubmanager.com>",
+          from: "Aura Club Manager <noreply@auraclubmanager.io>",
           to: [email],
           subject: notif.title,
           html: `
