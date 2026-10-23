@@ -43,19 +43,32 @@ Deno.serve(async (req: Request) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const has = (key: string) => !!Deno.env.get(key);
+
     const status = {
       stripe: {
-        test: !!Deno.env.get("STRIPE_SECRET_KEY_TEST"),
-        live: !!Deno.env.get("STRIPE_SECRET_KEY_LIVE"),
-        webhook_test: !!Deno.env.get("STRIPE_WEBHOOK_SECRET_TEST"),
-        webhook_live: !!Deno.env.get("STRIPE_WEBHOOK_SECRET_LIVE"),
+        test: has("STRIPE_SECRET_KEY_TEST"),
+        live: has("STRIPE_SECRET_KEY_LIVE"),
+        webhook_test: has("STRIPE_WEBHOOK_SECRET_TEST"),
+        webhook_live: has("STRIPE_WEBHOOK_SECRET_LIVE"),
       },
       stripe_connect: {
-        test: !!Deno.env.get("STRIPE_CONNECT_SECRET_KEY_TEST"),
-        live: !!Deno.env.get("STRIPE_CONNECT_SECRET_KEY_LIVE"),
+        test: has("STRIPE_CONNECT_SECRET_KEY_TEST"),
+        live: has("STRIPE_CONNECT_SECRET_KEY_LIVE"),
+      },
+      // Asaas is the Brazilian rail — without these four the whole BR market
+      // cannot be billed, so they get first-class visibility here.
+      asaas: {
+        env: Deno.env.get("ASAAS_ENV") ?? null,
+        api_key: has("ASAAS_API_KEY"),
+        encryption_key: has("ASAAS_ENCRYPTION_KEY"),
+        webhook_token: has("ASAAS_WEBHOOK_TOKEN"),
       },
       resend: {
-        configured: !!Deno.env.get("RESEND_API_KEY"),
+        configured: has("RESEND_API_KEY"),
+      },
+      trial_emails: {
+        cron_token: has("TRIAL_CRON_TOKEN"),
       },
     };
 
