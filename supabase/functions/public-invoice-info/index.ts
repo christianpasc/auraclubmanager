@@ -27,7 +27,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: invoice, error } = await supabase
       .from("invoices")
-      .select("id, tenant_id, athlete_id, description, amount, due_date, status, tenant:tenants(name, stripe_connect_currency), athlete:athletes(full_name)")
+      .select("id, tenant_id, athlete_id, description, amount, due_date, status, tenant:tenants(name, stripe_connect_currency, payment_provider, country, settings), athlete:athletes(full_name)")
       .eq("id", invoice_id)
       .single();
 
@@ -36,11 +36,31 @@ Deno.serve(async (req: Request) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Mirrors resolvePaymentProviderId in services/payment/index.ts: the
+    // explicit column wins, else Brazil (either spelling, either source)
+    // routes to Asaas. The public page has no tenant object of its own, so it
+    // has to be told which rail to use — sending every payer to Stripe is what
+    // broke this page for Brazilian clubs.
+    const tenantRow = invoice.tenant as any;
+    const BRAZIL = ['br', 'brazil', 'brasil'];
+    const isBrazil = [tenantRow?.country, tenantRow?.settings?.country]
+      .some((v: unknown) => typeof v === 'string' && BRAZIL.includes(v.trim().toLowerCase()));
+    const provider = tenantRow?.payment_provider === 'asaas' ? 'asaas'
+      : tenantRow?.payment_provider === 'stripe' ? 'stripe'
+      : (isBrazil ? 'asaas' : 'stripe');
+
+    // Asaas settles in Real only; stripe_connect_currency describes the Stripe
+    // rail and defaulted to EUR, so a Brazilian fee was shown in euros.
+    const currency = provider === 'asaas'
+      ? 'BRL'
+      : (tenantRow?.stripe_connect_currency || 'EUR');
+
     return new Response(JSON.stringify({
       invoice_id: invoice.id,
+      payment_provider: provider,
       tenant_id: invoice.tenant_id,
       tenant_name: (invoice.tenant as any)?.name || "",
-      currency: (invoice.tenant as any)?.stripe_connect_currency || "EUR",
+      currency,
       athlete_name: (invoice.athlete as any)?.full_name || "",
       description: invoice.description,
       amount: invoice.amount,
