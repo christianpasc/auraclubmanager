@@ -11,7 +11,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-asaas-mode",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -51,7 +51,16 @@ async function decryptSecret(payload: string, key: CryptoKey): Promise<string> {
 }
 
 function digits(v: unknown): string {
-  return String(v || "").replace(/\D/g, "");
+  return String(v || "").replace(/[^0-9]/g, "");
+}
+
+// Asaas refuses a subscription whose nextDueDate is in the past, which is
+// exactly the case when a club charges an already-overdue fee. Bring the first
+// cycle forward to today; the invoice keeps its own original due_date.
+function notBeforeToday(date: string | null | undefined): string {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!date) return today;
+  return date < today ? today : date;
 }
 
 Deno.serve(async (req: Request) => {
@@ -92,9 +101,20 @@ Deno.serve(async (req: Request) => {
 
     const { data: invoice } = await admin
       .from("invoices")
-      .select("id, tenant_id, amount, due_date, description, athlete_id, school_plan_id, status")
+      .select("id, tenant_id, amount, due_date, description, athlete_id, school_plan_id, status, asaas_payment_id, asaas_subscription_id, asaas_invoice_url")
       .eq("id", invoice_id).eq("tenant_id", tenant_id).single();
     if (!invoice) return json({ error: "Fatura não encontrada." }, 404);
+
+    // Already charged? Hand back the existing invoice instead of creating a
+    // second one. Without this, a double click bills the family twice and the
+    // first charge is orphaned in Asaas while still collecting.
+    if (invoice.asaas_invoice_url && (invoice.asaas_payment_id || invoice.asaas_subscription_id)) {
+      return json({
+        url: invoice.asaas_invoice_url,
+        session_id: invoice.asaas_subscription_id || invoice.asaas_payment_id,
+        reused: true,
+      });
+    }
 
     const { data: athlete } = await admin
       .from("athletes")
@@ -102,8 +122,31 @@ Deno.serve(async (req: Request) => {
       .eq("id", invoice.athlete_id).maybeSingle();
     if (!athlete) return json({ error: "Atleta da fatura não encontrado." }, 404);
 
-    const payerCpf = digits(athlete.guardian_cpf || athlete.cpf);
-    if (!payerCpf) return json({ error: "Cadastre o CPF do atleta ou do responsável antes de cobrar." }, 400);
+    // Guardian data moved to the guardians table (athlete.guardian_* are legacy
+    // columns the athlete form no longer writes), so the payer is resolved from
+    // the linked primary guardian first, then the legacy columns, then the
+    // athlete's own CPF for an adult paying for themselves.
+    let guardian: { full_name?: string; cpf?: string; email?: string; phone?: string } | null = null;
+    const { data: guardianLink } = await admin
+      .from("athlete_guardians")
+      .select("is_primary, guardian:guardians(full_name, cpf, email, phone)")
+      .eq("athlete_id", athlete.id)
+      .order("is_primary", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (guardianLink) guardian = (guardianLink as any).guardian ?? null;
+
+    const payerName = guardian?.full_name || athlete.guardian_name || athlete.full_name;
+    const payerEmail = guardian?.email || athlete.guardian_email || athlete.email || undefined;
+    const payerPhone = digits(guardian?.phone || athlete.guardian_phone || athlete.phone) || undefined;
+    const payerCpf = digits(guardian?.cpf || athlete.guardian_cpf || athlete.cpf);
+    if (!payerCpf) {
+      return json({
+        error: guardian
+          ? `O responsável ${guardian.full_name || ""} está sem CPF. Informe o CPF dele em Responsáveis para poder cobrar.`.trim()
+          : "Para cobrar é preciso um CPF: cadastre o CPF do atleta, ou vincule um responsável com CPF em Responsáveis.",
+      }, 400);
+    }
 
     // Decrypt the subaccount key and scope all calls to it
     const key = await importAesKey(encKeyB64);
@@ -120,10 +163,10 @@ Deno.serve(async (req: Request) => {
       const res = await asaasFetch("/customers", {
         method: "POST",
         body: JSON.stringify({
-          name: athlete.guardian_name || athlete.full_name,
+          name: payerName,
           cpfCnpj: payerCpf,
-          email: athlete.guardian_email || athlete.email || undefined,
-          mobilePhone: digits(athlete.guardian_phone || athlete.phone) || undefined,
+          email: payerEmail,
+          mobilePhone: payerPhone,
         }),
       });
       const body = await res.json();
@@ -152,7 +195,7 @@ Deno.serve(async (req: Request) => {
           billingType: "UNDEFINED",
           value,
           cycle,
-          nextDueDate: invoice.due_date,
+          nextDueDate: notBeforeToday(invoice.due_date),
           description,
           externalReference,
         }),

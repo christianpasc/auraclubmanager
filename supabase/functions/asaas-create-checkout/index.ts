@@ -8,11 +8,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 // URL to redirect to. subscription_status flips to 'active' only on the
 // asaas-webhook payment confirmation.
 //
-// Secrets: ASAAS_ENV ('sandbox'|'production'), ASAAS_API_KEY (root account).
+// Secrets: ASAAS_API_KEY_SANDBOX / ASAAS_API_KEY_PROD (root account), with
+// ASAAS_ENV + ASAAS_API_KEY kept as a legacy single-key fallback.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-asaas-mode",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -90,7 +91,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: tenant } = await admin
       .from("tenants")
-      .select("id, name, asaas_customer_id")
+      .select("id, name, asaas_customer_id, asaas_subscription_id, subscription_status")
       .eq("id", tenant_id)
       .single();
     if (!tenant) return json({ error: "Clube não encontrado." }, 404);
@@ -101,6 +102,23 @@ Deno.serve(async (req: Request) => {
         headers: { access_token: apiKey, "Content-Type": "application/json", ...(init.headers || {}) },
       });
 
+    // A subscription already exists for this club — most likely the caller is
+    // retrying after the "invoice not ready yet" response below. Return the
+    // pending invoice from that subscription instead of opening a second one,
+    // which would leave an orphan subscription billing the club forever.
+    if (tenant.asaas_subscription_id) {
+      const existingRes = await asaasFetch(`/subscriptions/${tenant.asaas_subscription_id}/payments`, { method: "GET" });
+      if (existingRes.ok) {
+        const existingBody = await existingRes.json();
+        const open = (existingBody?.data || []).find(
+          (p: any) => p?.invoiceUrl && ["PENDING", "OVERDUE", "AWAITING_RISK_ANALYSIS"].includes(p?.status),
+        );
+        if (open) return json({ url: open.invoiceUrl, reused: true });
+      }
+      // Subscription is gone or has no open invoice: fall through and create a
+      // fresh one rather than leaving the club unable to pay.
+    }
+
     // 1. Customer (reuse or create)
     let customerId: string | null = tenant.asaas_customer_id;
     if (!customerId) {
@@ -108,7 +126,7 @@ Deno.serve(async (req: Request) => {
         method: "POST",
         body: JSON.stringify({
           name: name || tenant.name,
-          cpfCnpj: String(cpf_cnpj).replace(/\D/g, ""),
+          cpfCnpj: String(cpf_cnpj).replace(/[^0-9]/g, ""),
           email: email || undefined,
         }),
       });

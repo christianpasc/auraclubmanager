@@ -92,10 +92,33 @@ surfaçam a mensagem do Asaas com clareza, sem quebrar; a UI exibe o aviso dos
 ## Checklist de ativação
 
 ### Secrets (Supabase → Edge Functions → Secrets)
-- [ ] `ASAAS_ENV` = `sandbox` (depois `production`)
-- [ ] `ASAAS_API_KEY` = API key da **conta-raiz** do ambiente escolhido
+
+**Use as duas chaves por ambiente — não a chave única.** O ambiente é escolhido
+*por requisição*, pelo header `x-asaas-mode` que o front envia (ver abaixo), e
+não pelo `ASAAS_ENV`. Com uma única `ASAAS_API_KEY` os dois ambientes usam a
+mesma chave, e uma chave de sandbox contra `api.asaas.com` falha na
+autenticação.
+
+- [ ] `ASAAS_API_KEY_SANDBOX` = API key da conta-raiz **sandbox**
+- [ ] `ASAAS_API_KEY_PROD` = API key da conta-raiz **produção**
 - [ ] `ASAAS_ENCRYPTION_KEY` = `openssl rand -base64 32`
 - [ ] `ASAAS_WEBHOOK_TOKEN` = um token à sua escolha
+      — **obrigatório**: sem ele o `asaas-webhook` recusa toda requisição (503)
+- [ ] `ASAAS_ENV` — opcional, só vale como fallback quando o header não vem.
+      `ASAAS_API_KEY` (chave única) segue aceita apenas por retrocompatibilidade.
+
+### Como o ambiente é escolhido (importante para testar)
+
+`lib/asaasConfig.ts` decide pelo **hostname**: `localhost`, `127.0.0.1` e
+`192.168.*` → `sandbox`; qualquer outro host → `production`. Ou seja:
+
+- Para testar em **sandbox**, rode o app **localmente** (`npm run dev`).
+- Em `app.auraclubmanager.io` o modo é **sempre produção**.
+
+Os dois ambientes compartilham o mesmo banco. Enquanto o webhook de sandbox
+estiver registrado, um pagamento de teste escreve nas mesmas tabelas da
+produção — então **remova o webhook de sandbox no painel Asaas depois de
+validar**, e faça o teste sempre com um clube de teste.
 
 ### Configuração
 - [ ] Webhook da **conta-raiz** no painel Asaas → URL

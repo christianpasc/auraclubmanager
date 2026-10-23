@@ -106,7 +106,11 @@ const Settings: React.FC = () => {
   const [asaasForm, setAsaasForm] = useState({
     email: '', cpfCnpj: '', mobilePhone: '', incomeValue: '',
     postalCode: '', address: '', addressNumber: '', province: '', complement: '', birthDate: '',
+    companyType: 'MEI' as 'MEI' | 'LIMITED' | 'INDIVIDUAL' | 'ASSOCIATION',
   });
+  // Asaas needs the company type for a CNPJ, and it drives their document
+  // check — an associação registered as a limited company gets rejected.
+  const asaasIsCnpj = asaasForm.cpfCnpj.replace(/\D/g, '').length === 14;
   const [asaasSubmitting, setAsaasSubmitting] = useState(false);
   const [asaasNotice, setAsaasNotice] = useState<string | null>(null);
   const [currencySaved, setCurrencySaved] = useState(false);
@@ -561,6 +565,7 @@ const Settings: React.FC = () => {
         province: asaasForm.province,
         postalCode: asaasForm.postalCode,
         complement: asaasForm.complement || undefined,
+        companyType: digits.length === 14 ? asaasForm.companyType : undefined,
         birthDate: digits.length === 11 ? (asaasForm.birthDate || undefined) : undefined,
       });
       setAsaasNotice(result.evaluation_notice || 'Conta de recebimento criada com sucesso.');
@@ -1381,11 +1386,26 @@ const Settings: React.FC = () => {
                     <input type="number" step="0.01" min="0" value={asaasForm.incomeValue} onChange={e => setAsaasForm(p => ({ ...p, incomeValue: e.target.value }))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="5000" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Data de nascimento (se CPF)</label>
-                    <input type="date" value={asaasForm.birthDate} onChange={e => setAsaasForm(p => ({ ...p, birthDate: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-                  </div>
+                  {asaasIsCnpj ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo de empresa *</label>
+                      <select value={asaasForm.companyType}
+                        onChange={e => setAsaasForm(p => ({ ...p, companyType: e.target.value as typeof p.companyType }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                        <option value="MEI">MEI</option>
+                        <option value="LIMITED">Sociedade limitada (LTDA)</option>
+                        <option value="INDIVIDUAL">Empresário individual</option>
+                        <option value="ASSOCIATION">Associação</option>
+                      </select>
+                      <p className="mt-1 text-[11px] text-slate-400">Precisa bater com o cadastro do CNPJ na Receita.</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Data de nascimento (se CPF)</label>
+                      <input type="date" value={asaasForm.birthDate} onChange={e => setAsaasForm(p => ({ ...p, birthDate: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">CEP *</label>
                     <input value={asaasForm.postalCode} onChange={e => setAsaasForm(p => ({ ...p, postalCode: e.target.value }))}

@@ -11,7 +11,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-asaas-mode",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -47,14 +47,25 @@ async function encryptSecret(plaintext: string, key: CryptoKey): Promise<string>
 }
 
 // Per-request environment via x-asaas-mode header, legacy ASAAS_ENV fallback.
-function resolveAsaas(req: Request): { baseUrl: string; rootKey: string | undefined } {
+// The webhook token has to match the environment too: a subaccount created in
+// sandbox must be registered with the sandbox token, or asaas-webhook will
+// reject its events.
+function resolveAsaas(req: Request): {
+  baseUrl: string;
+  rootKey: string | undefined;
+  webhookToken: string | undefined;
+  production: boolean;
+} {
   const mode = (req.headers.get("x-asaas-mode") || Deno.env.get("ASAAS_ENV") || "sandbox").toLowerCase();
   const production = mode === "production" || mode === "prod" || mode === "live";
   const baseUrl = production ? ASAAS_BASE_URLS.production : ASAAS_BASE_URLS.sandbox;
   const rootKey = production
     ? (Deno.env.get("ASAAS_API_KEY_PROD") || Deno.env.get("ASAAS_API_KEY"))
     : (Deno.env.get("ASAAS_API_KEY_SANDBOX") || Deno.env.get("ASAAS_API_KEY"));
-  return { baseUrl, rootKey };
+  const webhookToken = production
+    ? Deno.env.get("ASAAS_WEBHOOK_TOKEN")
+    : (Deno.env.get("ASAAS_WEBHOOK_TOKEN_SANDBOX") || Deno.env.get("ASAAS_WEBHOOK_TOKEN"));
+  return { baseUrl, rootKey, webhookToken, production };
 }
 
 Deno.serve(async (req: Request) => {
@@ -66,10 +77,31 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { baseUrl, rootKey: apiKey } = resolveAsaas(req);
+    const { baseUrl, rootKey: apiKey, webhookToken, production } = resolveAsaas(req);
     const encKeyB64 = Deno.env.get("ASAAS_ENCRYPTION_KEY");
     if (!apiKey) return json({ error: "Integração Asaas não configurada." }, 500);
     if (!encKeyB64) return json({ error: "Chave de criptografia não configurada." }, 500);
+
+    // Asaas reveals the subaccount's apiKey exactly once, in the creation
+    // response. If we only discovered a bad encryption key afterwards, the
+    // account would exist in Asaas with its key lost for good — so prove the
+    // key works BEFORE creating anything.
+    let encryptionKey: CryptoKey;
+    try {
+      encryptionKey = await importAesKey(encKeyB64);
+    } catch (e: any) {
+      console.error("asaas-create-subaccount: bad ASAAS_ENCRYPTION_KEY:", e?.message || e);
+      return json({ error: "Chave de criptografia inválida. Corrija ASAAS_ENCRYPTION_KEY antes de criar a conta." }, 500);
+    }
+
+    // Same reasoning for the webhook token: the subaccount's webhook is
+    // registered with it, and asaas-webhook rejects anything unauthenticated.
+    // Creating the account without it would produce a club whose payments
+    // never reconcile.
+    if (!webhookToken) {
+      const missing = production ? "ASAAS_WEBHOOK_TOKEN" : "ASAAS_WEBHOOK_TOKEN_SANDBOX (ou ASAAS_WEBHOOK_TOKEN)";
+      return json({ error: `${missing} não configurado: sem ele os pagamentos do clube não seriam confirmados.` }, 503);
+    }
 
     // Auth + owner/admin of the tenant
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
@@ -100,17 +132,17 @@ Deno.serve(async (req: Request) => {
     }
 
     // Required fields for POST /v3/accounts
-    const cpfCnpj = String(body.cpf_cnpj || "").replace(/\D/g, "");
+    const cpfCnpj = String(body.cpf_cnpj || "").replace(/[^0-9]/g, "");
     const required: Record<string, string> = {
       name: body.name || tenant.name,
       email: body.email,
       cpfCnpj,
-      mobilePhone: String(body.mobile_phone || "").replace(/\D/g, ""),
+      mobilePhone: String(body.mobile_phone || "").replace(/[^0-9]/g, ""),
       incomeValue: body.income_value,
       address: body.address,
       addressNumber: body.address_number,
       province: body.province,
-      postalCode: String(body.postal_code || "").replace(/\D/g, ""),
+      postalCode: String(body.postal_code || "").replace(/[^0-9]/g, ""),
     };
     for (const [k, v] of Object.entries(required)) {
       if (v === undefined || v === null || v === "") {
@@ -132,8 +164,12 @@ Deno.serve(async (req: Request) => {
       postalCode: required.postalCode,
     };
     if (cpfCnpj.length === 14) {
-      // CNPJ requires companyType
-      accountPayload.companyType = body.company_type || "LIMITED";
+      // CNPJ requires companyType, and it matters: plenty of football schools
+      // are MEI or an associação, not a limited company. Guessing LIMITED for
+      // those can fail Asaas's document check.
+      const allowed = ["MEI", "LIMITED", "INDIVIDUAL", "ASSOCIATION"];
+      const requested = String(body.company_type || "").toUpperCase();
+      accountPayload.companyType = allowed.includes(requested) ? requested : "LIMITED";
     } else if (body.birth_date) {
       accountPayload.birthDate = body.birth_date;
     }
@@ -158,7 +194,6 @@ Deno.serve(async (req: Request) => {
     // account creation (the webhook can be reconfigured later).
     try {
       const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/asaas-webhook`;
-      const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
       await fetch(`${baseUrl}/webhooks`, {
         method: "POST",
         headers: { access_token: asaas.apiKey, "Content-Type": "application/json" },
@@ -167,7 +202,7 @@ Deno.serve(async (req: Request) => {
           url: webhookUrl,
           enabled: true,
           interrupted: false,
-          authToken: webhookToken || undefined,
+          authToken: webhookToken,
           sendType: "SEQUENTIALLY",
           events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"],
         }),
@@ -177,8 +212,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Encrypt the one-time apiKey before persisting; never log/return it.
-    const key = await importAesKey(encKeyB64);
-    const encrypted = await encryptSecret(asaas.apiKey, key);
+    const encrypted = await encryptSecret(asaas.apiKey, encryptionKey);
 
     const { error: updErr } = await admin
       .from("tenants")
