@@ -7,7 +7,14 @@ import { asaasNfseService } from '../../services/asaasNfseService';
 interface IntegrationsStatus {
     stripe: { test: boolean; live: boolean; webhook_test: boolean; webhook_live: boolean };
     stripe_connect: { test: boolean; live: boolean };
-    asaas: { env: string | null; api_key: boolean; encryption_key: boolean; webhook_token: boolean };
+    asaas: {
+        env: string | null;
+        api_key_sandbox: boolean;
+        api_key_prod: boolean;
+        encryption_key: boolean;
+        webhook_token: boolean;
+        webhook_token_sandbox: boolean;
+    };
     resend: { configured: boolean };
     trial_emails: { cron_token: boolean };
 }
@@ -132,13 +139,20 @@ const AdminIntegrations: React.FC = () => {
                 </div>
                 <div className="divide-y divide-slate-100">
                     <StatusRow label={`Conta-raiz (${asaas?.env || '—'})`} ok={asaas ? asaas.connected : null} />
-                    <StatusRow label="Chave de API da conta-raiz" ok={status?.asaas.api_key ?? null} />
+                    <StatusRow label="Chave de API — produção" ok={status?.asaas.api_key_prod ?? null} />
+                    <StatusRow label="Chave de API — sandbox" ok={status?.asaas.api_key_sandbox ?? null} />
                     <StatusRow label="Chave de criptografia das subcontas" ok={status?.asaas.encryption_key ?? null} />
-                    <StatusRow label="Token do webhook" ok={status?.asaas.webhook_token ?? null} />
+                    <StatusRow label="Token do webhook — produção" ok={status?.asaas.webhook_token ?? null} />
+                    <StatusRow label="Token do webhook — sandbox" ok={status?.asaas.webhook_token_sandbox ?? null} />
                     <div className="flex items-center justify-between py-2">
-                        <span className="text-sm text-slate-600">Ambiente declarado</span>
-                        <span className="text-xs font-semibold text-slate-500">
-                            {status?.asaas.env ?? '— não definido'}
+                        <span className="text-sm text-slate-600">
+                            Ambiente padrão
+                            <span className="block text-[11px] text-slate-400">
+                                Opcional. O app escolhe pelo endereço: localhost usa sandbox, o resto produção.
+                            </span>
+                        </span>
+                        <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                            {status?.asaas.env ?? 'pelo endereço'}
                         </span>
                     </div>
                 </div>

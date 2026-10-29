@@ -56,13 +56,17 @@ Deno.serve(async (req: Request) => {
         test: has("STRIPE_CONNECT_SECRET_KEY_TEST"),
         live: has("STRIPE_CONNECT_SECRET_KEY_LIVE"),
       },
-      // Asaas is the Brazilian rail — without these four the whole BR market
-      // cannot be billed, so they get first-class visibility here.
+      // Asaas is the Brazilian rail, so its secrets get first-class visibility.
+      // The functions read ASAAS_API_KEY_SANDBOX / ASAAS_API_KEY_PROD and only
+      // fall back to the single ASAAS_API_KEY, so reporting that legacy name on
+      // its own showed a correctly configured account as missing.
       asaas: {
         env: Deno.env.get("ASAAS_ENV") ?? null,
-        api_key: has("ASAAS_API_KEY"),
+        api_key_sandbox: has("ASAAS_API_KEY_SANDBOX") || has("ASAAS_API_KEY"),
+        api_key_prod: has("ASAAS_API_KEY_PROD") || has("ASAAS_API_KEY"),
         encryption_key: has("ASAAS_ENCRYPTION_KEY"),
         webhook_token: has("ASAAS_WEBHOOK_TOKEN"),
+        webhook_token_sandbox: has("ASAAS_WEBHOOK_TOKEN_SANDBOX"),
       },
       resend: {
         configured: has("RESEND_API_KEY"),
