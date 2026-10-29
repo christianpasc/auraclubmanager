@@ -7,9 +7,11 @@ import { useTenant } from '../contexts/TenantContext';
 import { subscriptionService } from '../services/subscriptionService';
 import { adminPlanService, StripePlan, PlanLanguage } from '../services/adminPlanService';
 import { stripeConfig, createCheckoutSession } from '../lib/stripe';
-import { createAsaasCheckout } from '../lib/asaas';
+import { createAsaasCheckout, AsaasCheckoutResult } from '../lib/asaas';
 import { resolvePaymentProviderId } from '../services/payment';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import AsaasChargePanel from '../components/AsaasChargePanel';
 
 type IntervalFilter = 'monthly' | 'quarterly' | 'yearly' | 'lifetime' | 'all';
 
@@ -61,10 +63,20 @@ const Plans: React.FC = () => {
     const providerId = resolvePaymentProviderId(currentTenant as any);
     const isAsaas = providerId === 'asaas';
 
-    // Asaas needs the payer's CPF/CNPJ before opening the hosted invoice.
+    // Asaas needs the payer's CPF/CNPJ before the charge can be issued; the
+    // charge itself is then shown in this same modal, not on an Asaas page.
     const [asaasModal, setAsaasModal] = useState<StripePlan | null>(null);
     const [cpfCnpj, setCpfCnpj] = useState('');
     const [payerEmail, setPayerEmail] = useState('');
+    const [asaasCharge, setAsaasCharge] = useState<AsaasCheckoutResult | null>(null);
+    const [asaasPaid, setAsaasPaid] = useState(false);
+
+    const closeAsaasModal = () => {
+        setAsaasModal(null);
+        setAsaasCharge(null);
+        setAsaasPaid(false);
+        setErrorMessage(null);
+    };
 
     const getText = (pt: string, en: string, es: string, fr?: string, ptPT?: string) => {
         if (language === 'en-US') return en;
@@ -237,13 +249,40 @@ const Plans: React.FC = () => {
             setSubscribing(asaasModal.id!);
             setErrorMessage(null);
             const result = await createAsaasCheckout(asaasModal.id!, currentTenant.id, digits, payerEmail, currentTenant.name);
-            setAsaasModal(null);
-            window.location.href = result.url;
+            // Stay here and show the QR code. Only fall back to the hosted
+            // invoice when Asaas could not issue PIX or boleto for the charge.
+            if (result.pix || result.boleto) {
+                setAsaasCharge(result);
+                setSubscribing(null);
+            } else {
+                setAsaasModal(null);
+                window.location.href = result.url;
+            }
         } catch (error: any) {
             setErrorMessage(error.message || 'Erro ao criar a cobrança. Tente novamente.');
             setSubscribing(null);
         }
     };
+
+    // While the charge is on screen, watch for the webhook to activate the
+    // plan so the club sees it confirmed without reloading.
+    useEffect(() => {
+        if (!asaasCharge || !currentTenant?.id) return;
+
+        const timer = window.setInterval(async () => {
+            const { data } = await supabase
+                .from('tenants')
+                .select('subscription_status')
+                .eq('id', currentTenant.id)
+                .single();
+            if (data?.subscription_status === 'active') {
+                window.clearInterval(timer);
+                setAsaasPaid(true);
+            }
+        }, 5000);
+
+        return () => window.clearInterval(timer);
+    }, [asaasCharge, currentTenant?.id]);
 
     // Determine which interval tabs to show (only those that have at least one plan)
     const availableIntervals = (['monthly', 'quarterly', 'yearly', 'lifetime'] as IntervalFilter[]).filter(
@@ -501,10 +540,11 @@ const Plans: React.FC = () => {
                 </p>
             </div>
 
-            {/* Asaas checkout modal — collects the payer's CPF/CNPJ (Brazil) */}
+            {/* Asaas checkout modal — takes the payer's CPF/CNPJ, then shows the
+                PIX code and boleto line right here instead of leaving the app. */}
             {asaasModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!subscribing) setAsaasModal(null); }}>
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { if (!subscribing) closeAsaasModal(); }}>
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div>
                             <h3 className="text-lg font-bold text-slate-800">{getPlanText(asaasModal.name_i18n, asaasModal.name)}</h3>
                             <p className="text-sm text-slate-500 mt-0.5">
@@ -513,39 +553,64 @@ const Plans: React.FC = () => {
                             </p>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">CPF ou CNPJ do responsável pela cobrança *</label>
-                            <input
-                                value={cpfCnpj}
-                                onChange={e => setCpfCnpj(e.target.value)}
-                                placeholder="000.000.000-00"
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">E-mail para a cobrança</label>
-                            <input
-                                type="email"
-                                value={payerEmail}
-                                onChange={e => setPayerEmail(e.target.value)}
-                                placeholder="email@exemplo.com"
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            />
-                        </div>
+                        {asaasPaid ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                                    <p className="text-sm font-semibold text-green-700">
+                                        Pagamento confirmado! Seu plano já está ativo.
+                                    </p>
+                                </div>
+                                <button onClick={closeAsaasModal}
+                                    className="w-full px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark">
+                                    Continuar
+                                </button>
+                            </div>
+                        ) : asaasCharge ? (
+                            <>
+                                <AsaasChargePanel charge={asaasCharge} />
+                                <button onClick={closeAsaasModal}
+                                    className="w-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">
+                                    Fechar
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 mb-1">CPF ou CNPJ do responsável pela cobrança *</label>
+                                    <input
+                                        value={cpfCnpj}
+                                        onChange={e => setCpfCnpj(e.target.value)}
+                                        placeholder="000.000.000-00"
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 mb-1">E-mail para a cobrança</label>
+                                    <input
+                                        type="email"
+                                        value={payerEmail}
+                                        onChange={e => setPayerEmail(e.target.value)}
+                                        placeholder="email@exemplo.com"
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
 
-                        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+                                {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
 
-                        <div className="flex justify-end gap-2 pt-1">
-                            <button onClick={() => setAsaasModal(null)} disabled={!!subscribing}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50">
-                                Cancelar
-                            </button>
-                            <button onClick={confirmAsaasCheckout} disabled={!!subscribing}
-                                className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-50">
-                                {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                Ir para o pagamento
-                            </button>
-                        </div>
+                                <div className="flex justify-end gap-2 pt-1">
+                                    <button onClick={closeAsaasModal} disabled={!!subscribing}
+                                        className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg disabled:opacity-50">
+                                        Cancelar
+                                    </button>
+                                    <button onClick={confirmAsaasCheckout} disabled={!!subscribing}
+                                        className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark disabled:opacity-50">
+                                        {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                        Gerar cobrança
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

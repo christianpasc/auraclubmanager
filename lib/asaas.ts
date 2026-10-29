@@ -5,13 +5,21 @@ import { asaasModeHeader } from './asaasConfig';
 // role of lib/stripe.ts's createCheckoutSession, but the hosted invoice URL
 // (PIX/boleto/card) is created server-side in the asaas-create-checkout
 // edge function.
+export interface AsaasCheckoutResult {
+    url: string;
+    // Present when Asaas could issue them: the page renders these inline
+    // instead of sending the club off to the hosted invoice.
+    pix?: { qr_base64: string; payload: string; expires_at?: string | null };
+    boleto?: { line: string; barcode?: string | null };
+}
+
 export async function createAsaasCheckout(
     planId: string,
     tenantId: string,
     cpfCnpj: string,
     email?: string,
     name?: string,
-): Promise<{ url: string }> {
+): Promise<AsaasCheckoutResult> {
     const { data, error } = await supabase.functions.invoke('asaas-create-checkout', {
         body: { plan_id: planId, tenant_id: tenantId, cpf_cnpj: cpfCnpj, email, name },
         headers: asaasModeHeader(),
@@ -26,5 +34,5 @@ export async function createAsaasCheckout(
     }
     if (data?.error) throw new Error(data.error);
     if (!data?.url) throw new Error('URL de pagamento não retornada.');
-    return data as { url: string };
+    return data as AsaasCheckoutResult;
 }

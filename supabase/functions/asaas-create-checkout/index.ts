@@ -53,6 +53,39 @@ function resolveAsaas(req: Request): { baseUrl: string; rootKey: string | undefi
   return { baseUrl, rootKey };
 }
 
+// PIX and boleto details hang off the payment, and both endpoints accept a
+// charge created as UNDEFINED. Failures are not fatal — the hosted invoice
+// still works — so we return whatever could be fetched.
+async function fetchPaymentMethods(
+  asaasFetch: (path: string, init?: RequestInit) => Promise<Response>,
+  paymentId: string,
+) {
+  const result: Record<string, unknown> = {};
+  try {
+    const res = await asaasFetch(`/payments/${paymentId}/pixQrCode`, { method: "GET" });
+    if (res.ok) {
+      const body = await res.json();
+      if (body?.encodedImage && body?.payload) {
+        result.pix = { qr_base64: body.encodedImage, payload: body.payload, expires_at: body.expirationDate ?? null };
+      }
+    }
+  } catch (e) {
+    console.error("pixQrCode fetch failed:", (e as any)?.message || e);
+  }
+  try {
+    const res = await asaasFetch(`/payments/${paymentId}/identificationField`, { method: "GET" });
+    if (res.ok) {
+      const body = await res.json();
+      if (body?.identificationField) {
+        result.boleto = { line: body.identificationField, barcode: body.barCode ?? null };
+      }
+    }
+  } catch (e) {
+    console.error("identificationField fetch failed:", (e as any)?.message || e);
+  }
+  return result;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -113,7 +146,10 @@ Deno.serve(async (req: Request) => {
         const open = (existingBody?.data || []).find(
           (p: any) => p?.invoiceUrl && ["PENDING", "OVERDUE", "AWAITING_RISK_ANALYSIS"].includes(p?.status),
         );
-        if (open) return json({ url: open.invoiceUrl, reused: true });
+        if (open) {
+          const methods = await fetchPaymentMethods(asaasFetch, open.id);
+          return json({ url: open.invoiceUrl, reused: true, ...methods });
+        }
       }
       // Subscription is gone or has no open invoice: fall through and create a
       // fresh one rather than leaving the club unable to pay.
@@ -161,7 +197,8 @@ Deno.serve(async (req: Request) => {
         const msg = body?.errors?.[0]?.description || "Erro ao criar cobrança no Asaas.";
         return json({ error: msg }, 400);
       }
-      return json({ url: body.invoiceUrl });
+      const methods = await fetchPaymentMethods(asaasFetch, body.id);
+      return json({ url: body.invoiceUrl, ...methods });
     }
 
     // 2b. Recurring → subscription
@@ -196,7 +233,8 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Assinatura criada, mas a fatura ainda não está disponível. Tente novamente em instantes." }, 502);
     }
 
-    return json({ url: firstPayment.invoiceUrl });
+    const methods = await fetchPaymentMethods(asaasFetch, firstPayment.id);
+    return json({ url: firstPayment.invoiceUrl, ...methods });
   } catch (err: any) {
     console.error("asaas-create-checkout error:", err);
     return json({ error: err.message || "Internal server error" }, 500);
