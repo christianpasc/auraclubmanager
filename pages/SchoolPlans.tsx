@@ -6,7 +6,7 @@ import EmptyState from '../components/EmptyState';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
 import { schoolPlanService, SchoolPlan } from '../services/schoolPlanService';
-import { paymentProvider } from '../services/payment';
+import { paymentProvider, resolvePaymentProviderId } from '../services/payment';
 import ConfirmModal from '../components/ConfirmModal';
 
 const INTERVALS = ['monthly', 'quarterly', 'semiannual', 'annual', 'one_time'] as const;
@@ -40,7 +40,12 @@ const SchoolPlans: React.FC = () => {
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; plan: SchoolPlan | null; loading: boolean }>({ open: false, plan: null, loading: false });
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
+  // Asaas has no concept of a synced price object — the amount travels on each
+  // charge — so the whole sync idea, and its warnings, only apply to Stripe.
+  const isAsaas = resolvePaymentProviderId(currentTenant as any) === 'asaas';
   const stripeActive = !!(currentTenant?.stripe_connect_charges_enabled && currentTenant?.stripe_connect_payouts_enabled);
+  const asaasActive = !!(currentTenant?.asaas_subaccount_id && currentTenant?.asaas_charges_enabled);
+  const canCharge = isAsaas ? asaasActive : stripeActive;
 
   useEffect(() => { load(); }, []);
 
@@ -54,7 +59,8 @@ const SchoolPlans: React.FC = () => {
   };
 
   const openNew = () => {
-    setForm({ ...EMPTY, currency: currentTenant?.stripe_connect_currency || 'EUR' });
+    // Asaas settles in Real only; stripe_connect_currency describes the other rail.
+    setForm({ ...EMPTY, currency: isAsaas ? 'BRL' : (currentTenant?.stripe_connect_currency || 'EUR') });
     setModal({ open: true, plan: null });
   };
 
@@ -126,7 +132,9 @@ const SchoolPlans: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">{t('schoolPlans.title')}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('schoolPlans.subtitle')}</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {t(isAsaas ? 'schoolPlans.subtitleAsaas' : 'schoolPlans.subtitle')}
+          </p>
         </div>
         <button
           onClick={openNew}
@@ -136,9 +144,9 @@ const SchoolPlans: React.FC = () => {
         </button>
       </div>
 
-      {!stripeActive && (
+      {!canCharge && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-          {t('payment.stripeNotActive')} — {t('settings.tab.payments')}
+          {t(isAsaas ? 'payment.asaasNotActive' : 'payment.stripeNotActive')} — {t('settings.tab.payments')}
         </div>
       )}
 
@@ -184,8 +192,16 @@ const SchoolPlans: React.FC = () => {
                 <span className="text-xs text-slate-400">{plan.currency || 'EUR'}</span>
               </div>
 
-              {/* Stripe sync status */}
-              {stripeActive && (
+              {/* Sync status is a Stripe-only idea: an Asaas charge carries its
+                  own amount, so an Asaas plan is billable the moment it exists. */}
+              {isAsaas ? (
+                asaasActive && (
+                  <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                    <Check className="w-3.5 h-3.5" />
+                    <span title={t('schoolPlans.noSyncNeeded')}>{t('schoolPlans.readyToCharge')}</span>
+                  </div>
+                )
+              ) : stripeActive && (
                 <div className="flex items-center gap-2">
                   {hasSyncId(plan) ? (
                     <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
@@ -210,7 +226,7 @@ const SchoolPlans: React.FC = () => {
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
-                {stripeActive && (
+                {!isAsaas && stripeActive && (
                   <button
                     onClick={() => handleSync(plan)}
                     disabled={syncingId === plan.id}
