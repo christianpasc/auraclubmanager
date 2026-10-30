@@ -17,7 +17,7 @@ import { paymentProvider } from '../services/payment';
 import { stripeConfig } from '../lib/stripe';
 import { paletteService, ColorPalette } from '../services/paletteService';
 import { dataExportService } from '../services/dataExportService';
-import { asaasSubaccountService } from '../services/asaasSubaccountService';
+import { asaasSubaccountService, SubaccountStatus } from '../services/asaasSubaccountService';
 import { resolvePaymentProviderId } from '../services/payment';
 import { privacyService, DeletionRequest } from '../services/privacyService';
 
@@ -113,6 +113,9 @@ const Settings: React.FC = () => {
   const asaasIsCnpj = asaasForm.cpfCnpj.replace(/\D/g, '').length === 14;
   const [asaasSubmitting, setAsaasSubmitting] = useState(false);
   const [asaasNotice, setAsaasNotice] = useState<string | null>(null);
+  // Registration status: a created subaccount is not yet an approved one.
+  const [asaasStatus, setAsaasStatus] = useState<SubaccountStatus | null>(null);
+  const [asaasStatusLoading, setAsaasStatusLoading] = useState(false);
   const [currencySaved, setCurrencySaved] = useState(false);
 
   // Load data on mount
@@ -541,6 +544,21 @@ const Settings: React.FC = () => {
       setConnectLoading(false);
     }
   };
+
+  const loadAsaasStatus = async () => {
+    if (!currentTenant?.id || !currentTenant.asaas_subaccount_id) return;
+    setAsaasStatusLoading(true);
+    try {
+      setAsaasStatus(await asaasSubaccountService.getStatus(currentTenant.id));
+    } catch {
+      // The panel degrades to the plain "account created" state on failure.
+      setAsaasStatus(null);
+    } finally {
+      setAsaasStatusLoading(false);
+    }
+  };
+
+  useEffect(() => { loadAsaasStatus(); }, [currentTenant?.id, currentTenant?.asaas_subaccount_id]);
 
   const handleCreateAsaasSubaccount = async () => {
     if (!currentTenant?.id) return;
@@ -1341,17 +1359,82 @@ const Settings: React.FC = () => {
 
             {currentTenant?.asaas_subaccount_id ? (
               <div className="space-y-4">
-                <div className="bg-green-50 rounded-xl border border-green-200 p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <Check className="w-5 h-5 text-green-600" />
+                {/* Created is not the same as approved: Asaas holds the account
+                    at PENDING until the owner sends documents, so saying
+                    "active" here would be a lie the club only discovers when a
+                    payment fails. */}
+                {(() => {
+                  const general = asaasStatus?.status?.general ?? null;
+                  const approved = general === 'APPROVED';
+                  const reviewing = general === 'AWAITING_APPROVAL';
+                  const rejected = general === 'REJECTED';
+                  // Full class names, not interpolated: Tailwind only ships
+                  // classes it can find literally in the source.
+                  const tone = approved
+                    ? { box: 'bg-green-50 border-green-200', dot: 'bg-green-100', icon: 'text-green-600' }
+                    : rejected
+                      ? { box: 'bg-red-50 border-red-200', dot: 'bg-red-100', icon: 'text-red-600' }
+                      : { box: 'bg-amber-50 border-amber-200', dot: 'bg-amber-100', icon: 'text-amber-600' };
+
+                  return (
+                    <div className={`${tone.box} rounded-xl border p-6 space-y-4`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full ${tone.dot} flex items-center justify-center`}>
+                          {asaasStatusLoading
+                            ? <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                            : approved
+                              ? <Check className={`w-5 h-5 ${tone.icon}`} />
+                              : <AlertTriangle className={`w-5 h-5 ${tone.icon}`} />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            {approved ? 'Conta de recebimento aprovada'
+                              : rejected ? 'Cadastro recusado pelo Asaas'
+                              : reviewing ? 'Documentos em análise'
+                              : 'Conta criada — falta enviar os documentos'}
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            {approved
+                              ? 'As mensalidades caem direto na conta do seu clube no Asaas.'
+                              : rejected
+                                ? 'Envie os documentos novamente pelo link abaixo.'
+                                : reviewing
+                                  ? 'O Asaas está analisando. Você recebe um aviso quando concluir.'
+                                  : 'O Asaas só libera as cobranças depois de verificar os documentos do titular.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {asaasStatus?.onboarding_url && !approved && (
+                        <a
+                          href={asaasStatus.onboarding_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition"
+                        >
+                          <CreditCard className="w-4 h-4" /> Enviar documentos ao Asaas
+                        </a>
+                      )}
+
+                      {asaasStatus?.status && (
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-500">
+                          <span>Dados comerciais: <strong>{asaasStatus.status.commercial_info ?? '—'}</strong></span>
+                          <span>Documentação: <strong>{asaasStatus.status.documentation ?? '—'}</strong></span>
+                          <span>Dados bancários: <strong>{asaasStatus.status.bank_account_info ?? '—'}</strong></span>
+                          <span>Aprovação geral: <strong>{general ?? '—'}</strong></span>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={loadAsaasStatus}
+                        disabled={asaasStatusLoading}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700 disabled:opacity-50"
+                      >
+                        Atualizar status
+                      </button>
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-800">Conta de recebimento ativa</p>
-                      <p className="text-sm text-slate-500">As mensalidades caem direto na conta do seu clube no Asaas.</p>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
                 {/* A sandbox account cannot charge in production, and both live
                     in the same database — so say which one this is. */}
                 {currentTenant?.asaas_subaccount_env === 'sandbox' && (
