@@ -4,7 +4,7 @@ import { auditService } from '../../services/auditService';
 import {
     Search, Loader2, Users, Swords, Dumbbell, Trophy, Edit3,
     X, Calendar, Globe, Building2, AlertCircle, CheckCircle2,
-    Clock, ChevronDown, Plus, Save, LogIn
+    Clock, ChevronDown, Plus, Save, LogIn, CreditCard
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -104,6 +104,8 @@ const EditModal: React.FC<EditModalProps> = ({ tenant, onClose, onSaved }) => {
     const [name, setName] = useState(tenant.tenant_name);
     const [status, setStatus] = useState(tenant.subscription_status);
     const [country, setCountry] = useState(tenant.country ?? 'BR');
+    // 'auto' is the absence of an explicit choice: the country decides.
+    const [provider, setProvider] = useState<'auto' | 'stripe' | 'asaas'>(tenant.payment_provider ?? 'auto');
     const [trialDate, setTrialDate] = useState(toDateInputValue(tenant.trial_ends_at));
     const [extraDays, setExtraDays] = useState('');
     const [saving, setSaving] = useState(false);
@@ -128,17 +130,20 @@ const EditModal: React.FC<EditModalProps> = ({ tenant, onClose, onSaved }) => {
                 name,
                 subscription_status: status,
                 country,
+                payment_provider: provider,
                 trial_ends_at: trialDate ? new Date(trialDate).toISOString() : null,
             };
             await adminService.updateTenant(payload);
             await auditService.log('tenant.update', 'tenant', tenant.tenant_id, {
-                name, subscription_status: status, country, trial_ends_at: payload.trial_ends_at,
+                name, subscription_status: status, country,
+                payment_provider: provider, trial_ends_at: payload.trial_ends_at,
             });
             onSaved({
                 tenant_id: tenant.tenant_id,
                 tenant_name: name,
                 subscription_status: status,
                 country,
+                payment_provider: provider === 'auto' ? null : provider,
                 trial_ends_at: trialDate ? new Date(trialDate).toISOString() : null,
             });
             onClose();
@@ -258,6 +263,29 @@ const EditModal: React.FC<EditModalProps> = ({ tenant, onClose, onSaved }) => {
                                 </select>
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>
+                        </div>
+
+                        {/* Payment rail. An explicit choice overrides the country, which is
+                            what protects a club with a live setup from a stray country edit. */}
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1.5 flex items-center gap-1">
+                                <CreditCard className="w-3.5 h-3.5" /> Meio de pagamento
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={provider}
+                                    onChange={e => setProvider(e.target.value as 'auto' | 'stripe' | 'asaas')}
+                                    className="w-full appearance-none px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-8"
+                                >
+                                    <option value="auto">Automático (pelo país)</option>
+                                    <option value="asaas">Asaas — Brasil</option>
+                                    <option value="stripe">Stripe — internacional</option>
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
+                            <p className="mt-1 text-[11px] text-slate-400">
+                                Fixar um meio prevalece sobre o país. Use “Automático” para que o país volte a decidir.
+                            </p>
                         </div>
 
                         {/* Trial end date + extend */}

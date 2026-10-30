@@ -53,6 +53,27 @@ function resolveAsaas(req: Request): { baseUrl: string; rootKey: string | undefi
   return { baseUrl, rootKey };
 }
 
+// A cached customer id can outlive the customer: deleting it in the Asaas
+// panel leaves our copy pointing at nothing, and every later charge fails with
+// "não é possível criar uma cobrança para um cliente removido" — permanently,
+// since we would keep reusing the same dead id. Checking the id before use
+// costs one call and lets the club recover on its own.
+async function isCustomerUsable(
+  asaasFetch: (path: string, init?: RequestInit) => Promise<Response>,
+  customerId: string,
+): Promise<boolean> {
+  try {
+    const res = await asaasFetch(`/customers/${customerId}`, { method: "GET" });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return body?.deleted !== true;
+  } catch (e) {
+    // A network blip should not throw away a perfectly good customer.
+    console.error("customer check failed, assuming usable:", (e as any)?.message || e);
+    return true;
+  }
+}
+
 // PIX and boleto details hang off the payment, and both endpoints accept a
 // charge created as UNDEFINED. Failures are not fatal — the hosted invoice
 // still works — so we return whatever could be fetched.
@@ -155,8 +176,12 @@ Deno.serve(async (req: Request) => {
       // fresh one rather than leaving the club unable to pay.
     }
 
-    // 1. Customer (reuse or create)
+    // 1. Customer (reuse if it still exists, otherwise create a fresh one)
     let customerId: string | null = tenant.asaas_customer_id;
+    if (customerId && !(await isCustomerUsable(asaasFetch, customerId))) {
+      console.log(`tenant ${tenant_id}: asaas customer ${customerId} is gone, creating a new one`);
+      customerId = null;
+    }
     if (!customerId) {
       const res = await asaasFetch("/customers", {
         method: "POST",

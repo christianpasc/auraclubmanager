@@ -63,6 +63,27 @@ function notBeforeToday(date: string | null | undefined): string {
   return date < today ? today : date;
 }
 
+// A cached customer id can outlive the customer: deleting it in the Asaas
+// panel leaves our copy pointing at nothing, and every later charge fails with
+// "não é possível criar uma cobrança para um cliente removido" — permanently,
+// since we would keep reusing the same dead id. Checking the id before use
+// costs one call and lets the club recover on its own.
+async function isCustomerUsable(
+  asaasFetch: (path: string, init?: RequestInit) => Promise<Response>,
+  customerId: string,
+): Promise<boolean> {
+  try {
+    const res = await asaasFetch(`/customers/${customerId}`, { method: "GET" });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return body?.deleted !== true;
+  } catch (e) {
+    // A network blip should not throw away a perfectly good customer.
+    console.error("customer check failed, assuming usable:", (e as any)?.message || e);
+    return true;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -159,6 +180,10 @@ Deno.serve(async (req: Request) => {
 
     // 1. Customer (reuse or create) in the subaccount
     let customerId = athlete.asaas_customer_id as string | null;
+    if (customerId && !(await isCustomerUsable(asaasFetch, customerId))) {
+      console.log(`athlete ${athlete.id}: asaas customer ${customerId} is gone, creating a new one`);
+      customerId = null;
+    }
     if (!customerId) {
       const res = await asaasFetch("/customers", {
         method: "POST",

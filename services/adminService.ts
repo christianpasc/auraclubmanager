@@ -21,6 +21,8 @@ export interface AdminTenant {
     owner_email: string | null;
     owner_last_login: string | null;
     country: string | null;
+    /** null means the rail is decided by the club's country. */
+    payment_provider: 'stripe' | 'asaas' | null;
     settings: Record<string, string> | null;
     athletes_count: number;
     games_count: number;
@@ -35,6 +37,8 @@ export interface UpdateTenantPayload {
     subscription_status?: string;
     country?: string;
     name?: string;
+    /** 'auto' clears the explicit choice and lets the country decide. */
+    payment_provider?: 'stripe' | 'asaas' | 'auto';
 }
 
 export interface AdminStripeOverview {
@@ -111,6 +115,7 @@ export const adminService = {
             p_subscription_status: payload.subscription_status ?? null,
             p_country: payload.country ?? null,
             p_name: payload.name ?? null,
+            p_payment_provider: payload.payment_provider ?? null,
         });
         if (error) throw error;
     },
