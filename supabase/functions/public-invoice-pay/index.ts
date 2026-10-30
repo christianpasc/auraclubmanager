@@ -167,13 +167,22 @@ Deno.serve(async (req: Request) => {
 
     const { data: tenant } = await admin
       .from("tenants")
-      .select("id, payment_provider, country, settings, asaas_subaccount_id, asaas_charges_enabled, asaas_subaccount_api_key_encrypted")
+      .select("id, payment_provider, country, settings, asaas_subaccount_id, asaas_charges_enabled, asaas_subaccount_api_key_encrypted, asaas_subaccount_env")
       .eq("id", invoice.tenant_id)
       .single();
     if (!tenant) return json({ error: "Clube não encontrado." }, 404);
 
     if (!tenant.asaas_subaccount_id || !tenant.asaas_charges_enabled || !tenant.asaas_subaccount_api_key_encrypted) {
       return json({ error: "O clube ainda não finalizou a conta de recebimento." }, 400);
+    }
+
+    // A subaccount key only works in the environment that issued it, and both
+    // environments share this database. The payer cannot act on this, so the
+    // message points them at the club rather than explaining the mismatch.
+    const requestEnv = ["production", "prod", "live"].includes(mode) ? "production" : "sandbox";
+    if ((tenant.asaas_subaccount_env ?? "production") !== requestEnv) {
+      console.error(`invoice ${invoice.id}: subaccount env ${tenant.asaas_subaccount_env} != request env ${requestEnv}`);
+      return json({ error: "Pagamento indisponível no momento. Avise o clube." }, 400);
     }
 
     const key = await importAesKey(encKeyB64);

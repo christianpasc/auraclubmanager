@@ -1352,6 +1352,14 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                {/* A sandbox account cannot charge in production, and both live
+                    in the same database — so say which one this is. */}
+                {currentTenant?.asaas_subaccount_env === 'sandbox' && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                    Esta conta de recebimento foi criada em <strong>sandbox</strong> e serve apenas para testes.
+                    Cobranças reais exigem uma conta criada em produção.
+                  </div>
+                )}
                 {asaasNotice && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">{asaasNotice}</div>
                 )}

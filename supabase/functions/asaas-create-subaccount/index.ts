@@ -221,6 +221,9 @@ Deno.serve(async (req: Request) => {
         asaas_wallet_id: asaas.walletId || null,
         asaas_subaccount_api_key_encrypted: encrypted,
         asaas_charges_enabled: true,
+        // The key only works in the environment that issued it, and both share
+        // this database — charging checks this before trying to use the key.
+        asaas_subaccount_env: production ? "production" : "sandbox",
       })
       .eq("id", tenant_id);
     if (updErr) return json({ error: `Conta criada, mas falhou ao salvar: ${updErr.message}` }, 500);
@@ -228,6 +231,7 @@ Deno.serve(async (req: Request) => {
     return json({
       success: true,
       subaccount_id: asaas.id,
+      environment: production ? "production" : "sandbox",
       // Regulatory note surfaced to the UI (BACEN 60-day evaluation window).
       evaluation_notice: "Durante o período de avaliação (até 60 dias), o Asaas pode aplicar limites de cobrança por conta. Você receberá um e-mail do Asaas para acessar seu painel.",
     });

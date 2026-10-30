@@ -114,10 +114,21 @@ Deno.serve(async (req: Request) => {
 
     const { data: tenant } = await admin
       .from("tenants")
-      .select("id, asaas_subaccount_id, asaas_charges_enabled, asaas_subaccount_api_key_encrypted")
+      .select("id, asaas_subaccount_id, asaas_charges_enabled, asaas_subaccount_api_key_encrypted, asaas_subaccount_env")
       .eq("id", tenant_id).single();
     if (!tenant?.asaas_subaccount_id || !tenant.asaas_charges_enabled || !tenant.asaas_subaccount_api_key_encrypted) {
       return json({ error: "A conta de recebimento do clube ainda não está pronta." }, 400);
+    }
+
+    // A subaccount key only works in the environment that issued it, and both
+    // environments share this database. Say so plainly instead of letting the
+    // call fail as an opaque authentication error at Asaas.
+    const requestEnv = ["production", "prod", "live"].includes(mode) ? "production" : "sandbox";
+    const accountEnv = tenant.asaas_subaccount_env ?? "production";
+    if (accountEnv !== requestEnv) {
+      return json({
+        error: `A conta de recebimento deste clube foi criada em ${accountEnv} e não pode cobrar em ${requestEnv}. Crie a conta no ambiente correto.`,
+      }, 400);
     }
 
     const { data: invoice } = await admin

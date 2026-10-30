@@ -28,6 +28,8 @@ export interface Tenant {
     asaas_subaccount_id?: string | null;
     asaas_wallet_id?: string | null;
     asaas_charges_enabled?: boolean;
+    /** Environment that issued the subaccount key; charging refuses a mismatch. */
+    asaas_subaccount_env?: 'sandbox' | 'production' | null;
 }
 
 export interface TenantUser {
