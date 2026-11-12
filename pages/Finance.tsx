@@ -20,6 +20,7 @@ import { invoiceService, Invoice } from '../services/invoiceService';
 import { getPaymentProvider, resolvePaymentProviderId } from '../services/payment';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTenant } from '../contexts/TenantContext';
+import { readFunctionError } from '../utils/functionError';
 
 const safeCall = <T,>(p: Promise<T>, def: T): Promise<T> => p.catch(() => def);
 
@@ -384,7 +385,14 @@ const Finance: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('send-invoice-email', {
         body: { invoice_id: invoice.id, base_url: window.location.origin },
       });
-      if (error) throw error;
+      // The function refuses with a reason worth showing — an unconfirmed
+      // address, or no access to this club — and supabase-js hides it behind a
+      // generic "non-2xx" message.
+      if (error) {
+        const { message } = await readFunctionError(error, t('payment.actionError'));
+        setStripeActionMsg({ type: 'err', text: message });
+        return;
+      }
       if (data?.sent) {
         setStripeActionMsg({ type: 'ok', text: t('payment.emailSent') });
       } else {

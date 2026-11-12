@@ -8,6 +8,7 @@ import { gameService, Game } from '../services/competitionService';
 import { useTenant } from '../contexts/TenantContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { readFunctionError } from '../utils/functionError';
 
 type StatusFilter = 'all' | 'pending' | 'accepted' | 'declined';
 type ModalTab = 'single' | 'csv';
@@ -66,6 +67,7 @@ const InvitationManager: React.FC = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [gameFilter, setGameFilter] = useState('');
 
@@ -114,9 +116,14 @@ const InvitationManager: React.FC = () => {
   const sendEmail = async (inv: Invitation) => {
     if (!inv.id || !inv.email || sending.has(inv.id)) return;
     setSending(prev => new Set(prev).add(inv.id!));
-    await supabase.functions.invoke('send-invitations', {
+    setSendError(null);
+    const { error } = await supabase.functions.invoke('send-invitations', {
       body: { invitationIds: [inv.id], baseUrl: window.location.origin },
     });
+    // A refusal used to pass unnoticed: the spinner stopped and nothing was
+    // sent. The function now declines an unconfirmed address or another club's
+    // invitations, and the reason has to reach the screen.
+    if (error) setSendError((await readFunctionError(error, t('invitations.sendFailed'))).message);
     setSending(prev => { const s = new Set(prev); s.delete(inv.id!); return s; });
   };
 
@@ -125,9 +132,11 @@ const InvitationManager: React.FC = () => {
     if (!withEmail.length) return;
     const ids = withEmail.map(inv => inv.id!);
     ids.forEach(id => setSending(prev => new Set(prev).add(id)));
-    await supabase.functions.invoke('send-invitations', {
+    setSendError(null);
+    const { error } = await supabase.functions.invoke('send-invitations', {
       body: { invitationIds: ids, baseUrl: window.location.origin },
     });
+    if (error) setSendError((await readFunctionError(error, t('invitations.sendFailed'))).message);
     ids.forEach(id => setSending(prev => { const s = new Set(prev); s.delete(id); return s; }));
   };
 
@@ -238,6 +247,19 @@ const InvitationManager: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {sendError && (
+        <div className="flex items-start gap-2.5 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <XCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700 flex-1">{sendError}</p>
+          <button
+            onClick={() => setSendError(null)}
+            className="text-xs font-semibold text-red-600 hover:text-red-800 underline flex-shrink-0"
+          >
+            {t('common.close')}
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">

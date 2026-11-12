@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { guardOutboundEmail } from "../_shared/callerGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,11 +56,28 @@ Deno.serve(async (req: Request) => {
 
     const { data: invitations } = await supabase
       .from("invitations")
-      .select("id, name, email, token, event_title, event_date, club_name, message, tenant:tenants(settings)")
+      .select("id, name, email, token, event_title, event_date, club_name, message, tenant_id, tenant:tenants(settings)")
       .in("id", invitationIds);
 
     if (!invitations?.length) {
       return new Response(JSON.stringify({ sent: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // The ids arrive from the client and are read with the service role, so
+    // the caller must be checked against the clubs those invitations actually
+    // belong to — otherwise anyone signed in could mail another club's guest
+    // list. Also requires a confirmed address before Aura sends on someone's
+    // behalf.
+    const guard = await guardOutboundEmail(
+      supabase,
+      req,
+      invitations.map((inv) => inv.tenant_id as string),
+    );
+    if (!guard.ok) {
+      return new Response(JSON.stringify(guard.failure.body), {
+        status: guard.failure.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

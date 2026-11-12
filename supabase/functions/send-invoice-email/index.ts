@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { guardOutboundEmail } from "../_shared/callerGuard.ts";
 
 // Sends the hosted payment page link (/pay/:invoiceId) to the athlete (or their
 // guardian, if a minor) by email via Resend. Mirrors send-invitations' pattern.
@@ -83,13 +84,25 @@ Deno.serve(async (req: Request) => {
 
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
-      .select("id, athlete_id, description, amount, due_date, tenant:tenants(name, settings, stripe_connect_currency)")
+      .select("id, athlete_id, description, amount, due_date, tenant_id, tenant:tenants(name, settings, stripe_connect_currency)")
       .eq("id", invoice_id)
       .single();
 
     if (invoiceError || !invoice) {
       return new Response(JSON.stringify({ error: "Invoice not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // invoice_id comes from the client and is read with the service role, so
+    // the caller has to belong to the club that issued it — without this, any
+    // signed-in user could mail another club's guardians a payment link. Also
+    // requires a confirmed address before Aura sends on someone's behalf.
+    const guard = await guardOutboundEmail(supabase, req, [invoice.tenant_id as string]);
+    if (!guard.ok) {
+      return new Response(JSON.stringify(guard.failure.body), {
+        status: guard.failure.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let recipientEmail: string | null = null;

@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { hasVerifiedEmail } from "../_shared/callerGuard.ts";
 
 // Asaas Fase 3 — creates the club's own Asaas subaccount (subconta padrão) on
 // the ROOT account (POST /v3/accounts). The returned apiKey is shown by Asaas
@@ -120,6 +121,17 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const isManager = membership && (membership.is_owner || ["owner", "admin"].includes(membership.role || ""));
     if (!isManager) return json({ error: "Apenas o proprietário ou administrador pode criar a conta de recebimento." }, 403);
+
+    // A real bank account gets opened at Asaas against a real CPF/CNPJ. Signing
+    // up no longer requires confirming the email, so this is the one place that
+    // insists on it: we will not open a financial account for an identity whose
+    // address nobody has proven they control.
+    if (!(await hasVerifiedEmail(admin, userData.user.id))) {
+      return json({
+        error: "Confirme seu e-mail antes de criar a conta de recebimento. O link está na sua caixa de entrada.",
+        reason: "email_not_verified",
+      }, 403);
+    }
 
     const { data: tenant } = await admin
       .from("tenants")
