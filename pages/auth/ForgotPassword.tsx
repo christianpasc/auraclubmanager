@@ -12,14 +12,17 @@ const ForgotPassword: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const { resetPassword } = useAuth();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setLoading(true);
 
-        const { error } = await resetPassword(email);
+        // The interface language is the best available hint for someone who
+        // cannot sign in; the function prefers their saved profile when it
+        // finds one.
+        const { error } = await resetPassword(email, language);
 
         if (error) {
             setError(error.message);

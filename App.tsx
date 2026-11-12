@@ -54,6 +54,8 @@ import PerformanceDashboard from './pages/PerformanceDashboard';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import EmailVerificationBanner from './components/EmailVerificationBanner';
 import AdminLayout from './components/layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -206,6 +208,10 @@ const AuthRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* Lives with the auth routes on purpose: the recovery link signs the
+          person in, but they must set a password before being let into the
+          app, so this must render outside the tenant/subscription providers. */}
+      <Route path="/reset-password" element={<ResetPassword />} />
     </Routes>
   );
 };
@@ -332,11 +338,20 @@ const OnboardingGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  if (tenants.length === 0 || !isOnboardingComplete(currentTenant)) {
-    return <OnboardingWizard />;
-  }
+  // One insertion point for the "confirm your email" strip, above both the
+  // setup wizard and the app itself, so the request follows a new club
+  // wherever they go instead of being asked for twice in two places.
+  // It renders in normal flow and only while the address is unconfirmed.
+  const body = (tenants.length === 0 || !isOnboardingComplete(currentTenant))
+    ? <OnboardingWizard />
+    : children;
 
-  return <>{children}</>;
+  return (
+    <>
+      <EmailVerificationBanner />
+      {body}
+    </>
+  );
 };
 
 // Public routes — no auth wrapper needed
@@ -421,7 +436,7 @@ const AppRouter: React.FC = () => {
 
   const showChatBanner = !!chatWidget?.enabled && !!chatWidget.embed_code && chatConsent === null;
 
-  const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(location.pathname);
+  const isAuthRoute = ['/login', '/signup', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isPublicRoute = location.pathname.startsWith('/site/') || location.pathname.startsWith('/invite/') || location.pathname.startsWith('/shop/') || location.pathname.startsWith('/pay/')
     || location.pathname === '/help' || location.pathname.startsWith('/help/');
 

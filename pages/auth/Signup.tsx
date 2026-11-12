@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown, ArrowRight } from 'lucide-react';
 import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
@@ -16,8 +16,11 @@ const Signup: React.FC = () => {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
+    // Only reached when the Supabase project still demands confirmation before
+    // the first sign-in; normally the new club goes straight into the app.
+    const [needsConfirmation, setNeedsConfirmation] = useState(false);
     const { signUp } = useAuth();
+    const navigate = useNavigate();
     const { t, language: contextLanguage } = useLanguage();
     const [language, setLanguage] = useState(contextLanguage);
 
@@ -52,7 +55,7 @@ const Signup: React.FC = () => {
 
         setLoading(true);
 
-        const { error } = await signUp(email, password, {
+        const { error, needsEmailConfirmation } = await signUp(email, password, {
             full_name: fullName,
             language,
             privacy_accepted_at: new Date().toISOString(),
@@ -61,15 +64,25 @@ const Signup: React.FC = () => {
         if (error) {
             setError(error.message);
             setLoading(false);
-        } else {
-            // Save language preference to localStorage for immediate use
-            localStorage.setItem('language', language);
-            setSuccess(true);
-            setLoading(false);
+            return;
         }
+
+        // Save language preference to localStorage for immediate use
+        localStorage.setItem('language', language);
+
+        if (needsEmailConfirmation) {
+            setNeedsConfirmation(true);
+            setLoading(false);
+            return;
+        }
+
+        // Straight into the app. OnboardingGate takes it from here and opens
+        // the setup wizard; EmailVerificationBanner asks for the confirmation
+        // without standing in the way.
+        navigate('/', { replace: true });
     };
 
-    if (success) {
+    if (needsConfirmation) {
         return (
             <div className="min-h-screen flex">
                 {/* Left Panel */}
