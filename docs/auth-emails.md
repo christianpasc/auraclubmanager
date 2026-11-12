@@ -73,6 +73,21 @@ Aplicado em 12/11/2026:
   `send-password-reset` (v1), `send-invitations` (v14), `send-invoice-email`
   (v11), `asaas-create-subaccount` (v14).
 
+### A ponte da transição
+
+A trava de envio entrou em produção **antes** de "Confirm email" ser desligado.
+Nessa janela, quem se cadastra confirma pelo e-mail do Supabase — o que preenche
+`auth.users.email_confirmed_at` e deixa o nosso campo nulo, trancando o clube
+fora dos convites, das cobranças e da subconta Asaas, sem saída, porque o
+frontend antigo nunca envia o nosso link.
+
+O gatilho `mirror_email_confirmation_trigger` cobre isso. Ele dispara **só na
+transição NULL → NOT NULL de um UPDATE**, que é a cara de uma confirmação
+enquanto a opção está ligada. Quando ela for desligada, o GoTrue passa a
+preencher a coluna no próprio INSERT, não há transição, nada é espelhado, e o
+nosso link volta a ser o único caminho. **O gatilho se desativa sozinho** — não
+precisa ser removido depois.
+
 Se precisar reimplantar, as três novas importam de `_shared/`, e o deploy tem de
 incluir esses arquivos — com a CLI isso é automático:
 

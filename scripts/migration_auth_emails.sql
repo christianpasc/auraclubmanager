@@ -115,3 +115,45 @@ COMMENT ON FUNCTION public.purge_auth_email_records() IS
 
 REVOKE ALL ON FUNCTION public.purge_auth_email_records() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.purge_auth_email_records() FROM anon, authenticated;
+
+-- ---------------------------------------------------------------
+-- 5. Bridge for the transition window.
+-- ---------------------------------------------------------------
+-- The outbound-email gate reads email_verified_at, and it goes live before
+-- Supabase's "Confirm email" gets turned off. In that window a new club
+-- confirms through Supabase's own email, which sets
+-- auth.users.email_confirmed_at and leaves our flag NULL -- locking them out
+-- of invitations, invoices and the Asaas subaccount with no way to recover,
+-- because the old frontend never sends our link.
+--
+-- This fires ONLY on the NULL -> NOT NULL transition of an UPDATE, which is
+-- what confirming looks like while the setting is on. Once it is off, GoTrue
+-- stamps the column during the INSERT, there is no transition, and nothing
+-- mirrors -- our link becomes the only way to get verified, as designed.
+-- The trigger disables itself.
+
+CREATE OR REPLACE FUNCTION public.mirror_email_confirmation()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET email_verified_at = NEW.email_confirmed_at
+  WHERE id = NEW.id
+    AND email_verified_at IS NULL;
+  RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION public.mirror_email_confirmation() IS
+  'Copies a Supabase email confirmation into profiles.email_verified_at. Only fires on the UPDATE transition, so it stops mirroring once "Confirm email" is disabled and GoTrue starts stamping the column at signup.';
+
+DROP TRIGGER IF EXISTS mirror_email_confirmation_trigger ON auth.users;
+
+CREATE TRIGGER mirror_email_confirmation_trigger
+  AFTER UPDATE OF email_confirmed_at ON auth.users
+  FOR EACH ROW
+  WHEN (OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL)
+  EXECUTE FUNCTION public.mirror_email_confirmation();
