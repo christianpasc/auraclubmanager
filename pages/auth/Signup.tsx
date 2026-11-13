@@ -1,14 +1,21 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, User, Globe, ChevronDown, ArrowRight, MessageCircle } from 'lucide-react';
 import logoImg from '../../assets/logo.png?v=2';
 import { useAuth } from '../../contexts/AuthContext';
 import { AVAILABLE_LANGUAGES, useLanguage } from '../../contexts/LanguageContext';
+import { normalizePhone } from '../../utils/phone';
+import { readUtm } from '../../utils/utm';
+import { AI_CONSENT_VERSION } from '../../constants/consent';
 
 const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
+    // Opt-in, and deliberately not a condition for creating the account: the
+    // person gets into the system either way, we just cannot reach out.
+    const [aiConsent, setAiConsent] = useState(false);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +45,12 @@ const Signup: React.FC = () => {
             return;
         }
 
+        const normalizedPhone = normalizePhone(phone);
+        if (!normalizedPhone) {
+            setError(t('auth.phoneInvalid'));
+            return;
+        }
+
         if (password !== confirmPassword) {
             setError(t('auth.passwordMismatch'));
             return;
@@ -55,10 +68,22 @@ const Signup: React.FC = () => {
 
         setLoading(true);
 
+        const utm = readUtm();
+
         const { error, needsEmailConfirmation } = await signUp(email, password, {
             full_name: fullName,
             language,
             privacy_accepted_at: new Date().toISOString(),
+            phone: normalizedPhone,
+            // Recorded only when accepted, together with the wording accepted,
+            // so a later rewrite of the text never changes what was agreed.
+            ...(aiConsent
+                ? {
+                      ai_contact_consent_at: new Date().toISOString(),
+                      ai_contact_consent_version: AI_CONSENT_VERSION,
+                  }
+                : {}),
+            ...(utm ? { signup_utm: utm } : {}),
         });
 
         if (error) {
@@ -239,6 +264,25 @@ const Signup: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* WhatsApp */}
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                                {t('auth.whatsapp')}
+                            </label>
+                            <div className="relative">
+                                <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder={t('auth.whatsappPlaceholder')}
+                                    required
+                                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                                />
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">{t('auth.whatsappHint')}</p>
+                        </div>
+
                         {/* Language */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -331,6 +375,20 @@ const Signup: React.FC = () => {
                                     {t('auth.privacyPolicy')}
                                 </a>
                                 {' '}{t('auth.termsAcceptSuffix')}
+                            </span>
+                        </label>
+
+                        {/* WhatsApp contact consent — optional, and the submit
+                            button does not depend on it. */}
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={aiConsent}
+                                onChange={(e) => setAiConsent(e.target.checked)}
+                                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-slate-600 leading-relaxed">
+                                {t('auth.aiContactConsent')}
                             </span>
                         </label>
 

@@ -7,6 +7,13 @@ interface UserMetadata {
     language?: string;
     organization_type?: 'school' | 'club';
     privacy_accepted_at?: string;
+    /** WhatsApp number in E.164, already normalized by utils/phone. */
+    phone?: string;
+    /** Set only when the person ticked the WhatsApp contact box. */
+    ai_contact_consent_at?: string;
+    ai_contact_consent_version?: string;
+    /** First-touch attribution from utils/utm. */
+    signup_utm?: Record<string, string>;
 }
 
 export interface ResendResult {
