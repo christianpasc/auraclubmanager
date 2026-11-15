@@ -93,6 +93,12 @@ obrigatória para criar a conta. Logo, todo cadastro novo consente, e `v1` e `v2
 não querem dizer a mesma coisa — `v1` foi marcado por escolha, `v2` veio junto
 do aceite. É para guardar essa diferença que a versão existe.
 
+Em `aura-trial-2026-11-v3`, ainda em 15/11/2026, saiu o trecho "inclusive por
+um assistente virtual". O texto passa a avisar sobre contato por WhatsApp, mas
+não sobre o contato ser automatizado. **Só `v1` e `v2` trazem esse aviso** — o
+campo `ai_service_consent` do corpo continua com o nome que o CRM espera, mas
+de `v3` em diante ele não representa mais um consentimento informado de IA.
+
 Vale saber o que isso custa: consentimento embutido num aceite obrigatório não
 é separável, e a LGPD (art. 8º, §4º) trata consentimento para finalidade
 específica como algo que deveria ser. Foi uma decisão consciente para reduzir

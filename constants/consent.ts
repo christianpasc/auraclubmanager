@@ -9,5 +9,9 @@
  * of the privacy acceptance sentence, which is required to sign up. The two
  * versions therefore record different things — v1 was opted into on its own,
  * v2 came bundled — and that distinction is exactly why the version is stored.
+ *
+ * v3 (15/11/2026): the "including by a virtual assistant" clause was dropped,
+ * so from here on the text discloses contact by WhatsApp but not that it may
+ * be automated. Only v1 and v2 carry that disclosure.
  */
-export const AI_CONSENT_VERSION = 'aura-trial-2026-11-v2';
+export const AI_CONSENT_VERSION = 'aura-trial-2026-11-v3';
