@@ -18,7 +18,7 @@ do ar um dia inteiro, os cadastros seguem normais e a fila só acumula.
 
 | Estágio | Quando | Como é detectado |
 |---|---|---|
-| `Em teste` | cadastro com a caixa marcada | gatilho `crm_enqueue_on_signup_trigger` em `profiles` |
+| `Em teste` | cadastro concluído | gatilho `crm_enqueue_on_signup_trigger` em `profiles` |
 | `Assinou` | `subscription_status` vira `active` | gatilho em `tenants` |
 | `Teste encerrado` | cancelou, ou o teste venceu sem assinar | o mesmo gatilho, e a varredura diária |
 
@@ -86,6 +86,18 @@ Fica em `profiles` porque é dado pessoal, não do clube:
 A versão existe para que reescrever a caixa depois **não mude o que um lead
 antigo concordou**. Ao alterar o texto em qualquer idioma, suba
 `AI_CONSENT_VERSION`.
+
+Desde 15/11/2026 (`aura-trial-2026-11-v2`) **não existe caixa separada**: a
+frase do WhatsApp faz parte da mesma sentença da política de privacidade, que é
+obrigatória para criar a conta. Logo, todo cadastro novo consente, e `v1` e `v2`
+não querem dizer a mesma coisa — `v1` foi marcado por escolha, `v2` veio junto
+do aceite. É para guardar essa diferença que a versão existe.
+
+Vale saber o que isso custa: consentimento embutido num aceite obrigatório não
+é separável, e a LGPD (art. 8º, §4º) trata consentimento para finalidade
+específica como algo que deveria ser. Foi uma decisão consciente para reduzir
+atrito no cadastro. Voltar atrás é restaurar a segunda caixa e subir a versão
+de novo.
 
 A checagem acontece em **dois** lugares: `enqueue_crm_event` não enfileira sem
 consentimento e sem telefone, e `buildPayload` confere outra vez na saída — o

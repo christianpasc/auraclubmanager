@@ -13,9 +13,6 @@ const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
-    // Opt-in, and deliberately not a condition for creating the account: the
-    // person gets into the system either way, we just cannot reach out.
-    const [aiConsent, setAiConsent] = useState(false);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -75,14 +72,12 @@ const Signup: React.FC = () => {
             language,
             privacy_accepted_at: new Date().toISOString(),
             phone: normalizedPhone,
-            // Recorded only when accepted, together with the wording accepted,
-            // so a later rewrite of the text never changes what was agreed.
-            ...(aiConsent
-                ? {
-                      ai_contact_consent_at: new Date().toISOString(),
-                      ai_contact_consent_version: AI_CONSENT_VERSION,
-                  }
-                : {}),
+            // The WhatsApp consent lives inside the acceptance above, which is
+            // required to submit — so reaching this line means it was accepted.
+            // Stored with the wording accepted, so a later rewrite of the text
+            // never changes what was agreed.
+            ai_contact_consent_at: new Date().toISOString(),
+            ai_contact_consent_version: AI_CONSENT_VERSION,
             ...(utm ? { signup_utm: utm } : {}),
         });
 
@@ -356,7 +351,9 @@ const Signup: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Terms / Privacy acceptance */}
+                        {/* Terms / Privacy acceptance — carries the WhatsApp
+                            contact consent in the same sentence. Bump
+                            AI_CONSENT_VERSION whenever that wording changes. */}
                         <label className="flex items-start gap-2.5 cursor-pointer">
                             <input
                                 type="checkbox"
@@ -375,20 +372,6 @@ const Signup: React.FC = () => {
                                     {t('auth.privacyPolicy')}
                                 </a>
                                 {' '}{t('auth.termsAcceptSuffix')}
-                            </span>
-                        </label>
-
-                        {/* WhatsApp contact consent — optional, and the submit
-                            button does not depend on it. */}
-                        <label className="flex items-start gap-2.5 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={aiConsent}
-                                onChange={(e) => setAiConsent(e.target.checked)}
-                                className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-xs text-slate-600 leading-relaxed">
-                                {t('auth.aiContactConsent')}
                             </span>
                         </label>
 
